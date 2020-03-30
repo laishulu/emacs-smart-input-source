@@ -1,5 +1,5 @@
 #+TITLE: README
-[[https://melpa.org/#/hl-fill-column][file:https://melpa.org/packages/evil-smart-input-source.svg]]
+[[https://melpa.org/#/evil-smart-input-source][file:https://melpa.org/packages/evil-smart-input-source.svg]]
 
 * About
 
