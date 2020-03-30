@@ -7,31 +7,31 @@ Switch input method for Emacs/evil smartly.
 
 * Usage
 ** Install
-- For GUI `Emacs mac port`, just install this package.
+- For GUI ~Emacs mac port~, just install this package.
 - For other Emacs distribution, or for terminal Emacs, you should install
-  `macism` or other compatible tool:
-  - For `macism`, [download](https://github.com/laishulu/macism/releases),
-    unzip and put the file `macism` into `$PATH`
+  ~macism~ or other compatible tool:
+  - For ~macism~, [[download][https://github.com/laishulu/macism/releases]],
+    unzip and put the file ~macism~ into ~$PATH~
   - For tool fulfills the following requirements, you can just:
-    `(setq evil-smart-input-source--macism TOOL_PATH)`
-    - Run `tool` will output the current input source
-    - Run `tool SOME_INPUT_SOURCE_ID` will select to `SOME_INPUT_SOURCE_ID`.
+    ~(setq evil-smart-input-source--macism TOOL_PATH)~
+    - Run ~tool~ will output the current input source
+    - Run ~tool SOME_INPUT_SOURCE_ID~ will select to ~SOME_INPUT_SOURCE_ID~.
   - For other tool, customize the following variables:
-    - `evil-smart-input-source--do-get-input-source`
-    - `evil-smart-input-source--do-set-input-source`
+    - ~evil-smart-input-source--do-get-input-source~
+    - ~evil-smart-input-source--do-set-input-source~
 
 ** Configure
 
 | Variable                                        | Description                                | Default                                |
 |-------------------------------------------------+--------------------------------------------+----------------------------------------|
-| `evil-smart-input-source--english-pattern`      | Pattern to identify a character as english | `"[a-zA-Z]"`                           |
-| `evil-smart-input-source--other-pattern`        | Pattern to identify a character as blank   | `"\\cc"`                               |
-| `evil-smart-input-source--blank-pattern`        | Pattern to identify a character as blank   | `"[:blank:]"`                          |
-| `evil-smart-input-source--english-input-source` | Input source for english                   | `"com.apple.keylayout.US"`             |
-| `evil-smart-input-source--other-input-source`   | Input source for other lanugage            | `"com.sogou.inputmethod.sogou.pinyin"` |
-| `evil-smart-input-source--macism`               | Path of macism                             | `(executable-find "macism")`           |
-| `evil-smart-input-source--do-get-input-source`  | Function to get the current input source   | determined from the envrionment        |
-| `evil-smart-input-source--do-set-input-source`  | Function to set the input source           | determined from the envrionment        |
+| ~evil-smart-input-source--english-pattern~      | Pattern to identify a character as english | ~"[a-zA-Z]"~                           |
+| ~evil-smart-input-source--other-pattern~        | Pattern to identify a character as blank   | ~"\\cc"~                               |
+| ~evil-smart-input-source--blank-pattern~        | Pattern to identify a character as blank   | ~"[:blank:]"~                          |
+| ~evil-smart-input-source--english-input-source~ | Input source for english                   | ~"com.apple.keylayout.US"~             |
+| ~evil-smart-input-source--other-input-source~   | Input source for other lanugage            | ~"com.sogou.inputmethod.sogou.pinyin"~ |
+| ~evil-smart-input-source--macism~               | Path of macism                             | ~(executable-find "macism")~           |
+| ~evil-smart-input-source--do-get-input-source~  | Function to get the current input source   | determined from the envrionment        |
+| ~evil-smart-input-source--do-set-input-source~  | Function to set the input source           | determined from the envrionment        |
 |-------------------------------------------------+--------------------------------------------+----------------------------------------|
 
 * Inernals
@@ -42,19 +42,19 @@ Switch input method for Emacs/evil smartly.
 - Input a character: select input source smartly by inspect the context.
 
 ** How smart to select input source by context
-Denote character of other language as `A`, english character as `a`, and `^` as cursor.
+Denote character of other language as ~A~, english character as ~a~, and ~^~ as cursor.
 
 - Same line rules:
-  - `A ^` and `^ A` will change to ENGLISH.
-  - `A^` and `^A` will change to OTHER.
-  - `a^` and `^a` will change to ENGLISH.
+  - ~A ^~ and ~^ A~ will change to ENGLISH.
+  - ~A^~ and ~^A~ will change to OTHER.
+  - ~a^~ and ~^a~ will change to ENGLISH.
 - Across line rules:
-  - `A\n^` will change to OTHER.
-  - `a\n^` will change to ENGLISH.
+  - ~A\n^~ will change to OTHER.
+  - ~a\n^~ will change to ENGLISH.
 
 ** How the input source is switched
 
-- For GUI session of `emacs mac port`, use native API for better performance.
-- If `emacs mac port` is unavailable, or in terminal session, use `macism` or
+- For GUI session of ~emacs mac port~, use native API for better performance.
+- If ~emacs mac port~ is unavailable, or in terminal session, use ~macism~ or
   other compatible CLI tool.
-- If even `macism` like tool is unailable, then do nothing.
+- If even ~macism~ like tool is unailable, then do nothing.
