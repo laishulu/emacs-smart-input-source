@@ -10,7 +10,7 @@ Switch input method for Emacs/evil smartly.
 - For GUI ~Emacs mac port~, just install this package.
 - For other Emacs distribution, or for terminal Emacs, you should install
   ~macism~ or other compatible tool:
-  - For ~macism~, [[download][https://github.com/laishulu/macism/releases]],
+  - For ~macism~, [[https://github.com/laishulu/macism/releases][download]],
     unzip and put the file ~macism~ into ~$PATH~
   - For tool fulfills the following requirements, you can just:
     ~(setq evil-smart-input-source--macism TOOL_PATH)~
