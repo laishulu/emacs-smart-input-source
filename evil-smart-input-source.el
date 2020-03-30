@@ -195,11 +195,11 @@ If even `macism` like tool is unailable, then do nothing.
                  (fboundp 'mac-input-source))
             (file-executable-p -macism))
 
-    (let (((get-func, set-func) (-mk-input-source-funcs)))
+    (let ((funcs (-mk-input-source-funcs)))
       (unless (functionp -do-get-input-source)
-        (setq -do-get-input-source get-func))
+        (setq -do-get-input-source (nth funcs 0)))
       (unless (functionp -do-set-input-source)
-        (setq -do-set-input-source set-func)))
+        (setq -do-set-input-source (nth funcs 1))))
 
     (if mode
         (progn
