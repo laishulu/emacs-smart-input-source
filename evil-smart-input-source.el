@@ -182,7 +182,7 @@ Should accept a string which is the id of the input source
 
 ;;;###autoload
 (define-minor-mode mode
-  "Automatically switch input method for emacs-mac.
+  "Automatically switch input method for evil.
 
 For GUI session of `emacs mac port`, use native API to select input source
 for better performance.
