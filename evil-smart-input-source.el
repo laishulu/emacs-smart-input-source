@@ -1,8 +1,8 @@
-;;;; evil-smart-input-source.el --- Automatically switch input method for emacs-mac. -*- lexical-binding: t; -*-
+;;;; evil-smart-input-source.el --- Automatically switch input method for evil. -*- lexical-binding: t; -*-
 
 ;; URL: https://github.com/laishulu/evil-smart-input-source
 ;; Created: March 27th, 2020
-;; Keywords: evil, macos, emacs-mac, input mothod, input source
+;; Keywords: evil, macos, emacs-mac, input mothod, input source, macism
 ;; Package-Requires: ((names "0.5") (emacs "25"))
 ;; Version: 0.1
 
@@ -22,7 +22,7 @@
 ;; along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; This package provide modes to automatically switch input method for emacs-mac.
+;; This package provide modes to automatically switch input method for evil.
 ;; For more information see the README in the GitHub repo.
 
 ;;; Code:
