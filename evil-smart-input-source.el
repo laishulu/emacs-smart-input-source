@@ -34,8 +34,8 @@
 
 (define-namespace evil-smart-input-source-
 
-(setq ENGLISH "english")
-(setq OTHER "other")
+(defconst ENGLISH "english")
+(defconst OTHER "other")
 
 (defvar -english-pattern "[a-zA-Z]"
   "Pattern to identify a character as english.")
@@ -67,19 +67,17 @@ Should return a string which is the id of the input source
 Should accept a string which is the id of the input source
 ")
 
-(defun -string-match-p (regexp string &optional start)
-  "Similar to `string-match-p',but if `regexp` or `string` is not a string,
-it still works."
+(defun -string-match-p (regexp string)
+  "Similar to `string-match-p', works when REGEXP or STRING is not a string."
   (and (stringp regexp)
        (stringp string)
-       (string-match-p regexp string start)))
+       (string-match-p regexp string)))
 
 (defun -back-detect-chars ()
   "Detect char backward by two steps.
 
   First backward skip blank in the current line,
-  then backward skip blank across lines.
-  "
+  then backward skip blank across lines."
   (save-excursion
     (skip-chars-backward -blank-pattern)
     (let ((backward (point))
@@ -93,8 +91,7 @@ it still works."
 (defun -fore-detect-chars ()
   "Detect char forward.
 
-  Forward skip blank in the current line,
-  "
+  Forward skip blank in the current line,"
   (save-excursion
     (skip-chars-forward -blank-pattern)
     (let ((forward (point))
@@ -103,7 +100,7 @@ it still works."
             (when after (string after))))))
 
 (defun -guess-context ()
-  "Guest the language context for the current point"
+  "Guest the language context for the current point."
   (let* ((back-detection (-back-detect-chars))
          (fore-detection (-fore-detect-chars))
          (cross-line-before (nth 0 back-detection))
@@ -129,65 +126,58 @@ it still works."
           (t context))))
 
 (defun -prober ()
-  "Determine which language to use"
-  (let ((source nil))
+  "Determine which language to use."
+  (let ((lang nil))
     (when (or (button-at (point))
               (or (evil-normal-state-p)
                   (evil-visual-state-p)
                   (evil-motion-state-p)
                   (evil-operator-state-p)))
-      (setq source (or source ENGLISH)))
-    (setq source (or source (-guess-context)))
-    source))
+      (setq lang (or lang ENGLISH)))
+    (setq lang (or lang (-guess-context)))
+    lang))
 
-(defun -mk-get-input-source-fn ()
-  "Make a function to be bound to -do-get-input-source"
-  (cond ((and (string= (window-system) "mac") (fboundp 'mac-input-source))
-         'mac-input-source)
-        ((and (string= system-type "darwin")
+(defun -mk-input-source-funcs ()
+  "Make a function to be bound to -do-get-input-source."
+  (cond ((and (equal (window-system) "mac") (fboundp 'mac-input-source))
+         ('mac-input-source, #'(lambda (source) (mac-select-input-source source))))
+        ((and (equal system-type "darwin")
               (file-executable-p evil-smart-input-source--macism))
-         #'(lambda ()
-             (string-trim (shell-command-to-string
-                           evil-smart-input-source--macism))))))
-
-(defun -mk-set-input-source-fn ()
-  "Make a function to be bound to -do-set-input-source"
-  (cond ((and (string= (window-system) "mac") (fboundp 'mac-input-source))
-         #'(lambda (source) (mac-select-input-source source)))
-        ((and (string= system-type "darwin")
-              (file-executable-p evil-smart-input-source--macism))
-         #'(lambda (source)
-             (string-trim (shell-command-to-string
-                           (concat evil-smart-input-source--macism " " source)))))))
+         (#'(lambda ()
+              (string-trim (shell-command-to-string
+                            evil-smart-input-source--macism))),
+          #'(lambda (source)
+              (string-trim (shell-command-to-string
+                            (concat evil-smart-input-source--macism " " source))))))))
 
 (defun -get-input-source ()
-  "Get the input source id"
+  "Get the input source id."
   (funcall -do-get-input-source))
 
-(defun -set-input-source (source)
-  "Set the input source by id, avoiding unecessary switch"
+(defun -set-input-source (lang)
+  "Set the input source according to lanuage LANG, avoiding unecessary switch."
   (let ((ENGLISH_SOURCE -english-input-source)
         (OTHER_SOURCE -other-input-source))
     (pcase (-get-input-source)
-      ((pred (string= ENGLISH_SOURCE))
-       (when (string= source OTHER)
+      ((pred (equal ENGLISH_SOURCE))
+       (when (equal lang OTHER)
          (funcall -do-set-input-source OTHER_SOURCE)))
-      ((pred (string= OTHER_SOURCE))
-       (when (string= source ENGLISH)
+      ((pred (equal OTHER_SOURCE))
+       (when (equal lang ENGLISH)
          (funcall -do-set-input-source ENGLISH_SOURCE))))))
 
 (defun adaptive-input-source ()
-  "Adaptively switch to the input source"
+  "Adaptively switch to the input source."
   (let ((source (-prober)))
     (when source
       (-set-input-source source))))
 
 (defun set-input-source-english ()
-  "Set input source to `english-input-source`"
+  "Set input source to `english-input-source`."
   (-set-input-source ENGLISH))
 
 (defun set-input-source-other ()
-  "Set input source to `other-input-source`"
+  "Set input source to `other-input-source`."
   (-set-input-source OTHER))
 
 ;;;###autoload
@@ -205,11 +195,11 @@ If even `macism` like tool is unailable, then do nothing.
                  (fboundp 'mac-input-source))
             (file-executable-p -macism))
 
-    (unless (functionp -do-get-input-source)
-      (setq -do-get-input-source (-mk-get-input-source-fn)))
-
-    (unless (functionp -do-set-input-source)
-      (setq -do-set-input-source (-mk-set-input-source-fn)))
+    (let (((get-func, set-func) (-mk-input-source-funcs)))
+      (unless (functionp -do-get-input-source)
+        (setq -do-get-input-source get-func))
+      (unless (functionp -do-set-input-source)
+        (setq -do-set-input-source set-func)))
 
     (if mode
         (progn
