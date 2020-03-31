@@ -56,23 +56,27 @@
 (defvar -macism (executable-find "macism")
   "Path of macism.")
 
-(defvar -do-get-input-source nil
+(defvar -do-get-input-source
   "Function to get the current input source
 
 Should return a string which is the id of the input source
 ")
 
-(defvar -do-set-input-source nil
+(defvar -do-set-input-source
   "Function to set the input source
 
 Should accept a string which is the id of the input source
 ")
 
-(defun -string-match-p (regexp string &optional _)
-  "Wrapper of `string-match-p', works when REGEXP or STRING is not a string."
+(defun -string-match-p (regexp str &optional start)
+  "Robust wrapper of `string-match-p'.
+
+works when REGEXP or STR is not a string REGEXP, STR, START all has the same
+meanings as `string-match-p`.
+"
   (and (stringp regexp)
-       (stringp string)
-       (string-match-p regexp string)))
+       (stringp str)
+       (string-match-p regexp str start)))
 
 (defun -back-detect-chars ()
   "Detect char backward by two steps.
@@ -138,18 +142,25 @@ Should accept a string which is the id of the input source
     (setq lang (or lang (-guess-context)))
     lang))
 
-(defun -mk-input-source-funcs ()
+(defun -mk-get-input-source-fn ()
   "Make a function to be bound to -do-get-input-source."
-  (cond ((and (equal (window-system) "mac") (fboundp 'mac-input-source))
-         (list 'mac-input-source (lambda (source) (mac-select-input-source source))))
-        ((and (equal system-type "darwin")
+  (cond ((and (string= (window-system) "mac") (fboundp 'mac-input-source))
+         'mac-input-source)
+        ((and (string= system-type "darwin")
               (file-executable-p evil-smart-input-source--macism))
-         (list (lambda ()
-                 (string-trim (shell-command-to-string
-                               evil-smart-input-source--macism)))
-               (lambda (source)
-                 (string-trim (shell-command-to-string
-                               (concat evil-smart-input-source--macism " " source))))))))
+         #'(lambda ()
+             (string-trim (shell-command-to-string
+                           evil-smart-input-source--macism))))))
+
+(defun -mk-set-input-source-fn ()
+  "Make a function to be bound to -do-set-input-source."
+  (cond ((and (string= (window-system) "mac") (fboundp 'mac-input-source))
+         #'(lambda (source) (mac-select-input-source source)))
+        ((and (string= system-type "darwin")
+              (file-executable-p evil-smart-input-source--macism))
+         #'(lambda (source)
+             (string-trim (shell-command-to-string
+                           (concat evil-smart-input-source--macism " " source)))))))
 
 (defun -get-input-source ()
   "Get the input source id."
@@ -196,11 +207,11 @@ If even `macism` like tool is unailable, then do nothing.
                  (fboundp 'mac-input-source))
             (file-executable-p -macism))
 
-    (let ((funcs (-mk-input-source-funcs)))
-      (unless (functionp -do-get-input-source)
-        (setq -do-get-input-source (nth 0 funcs)))
-      (unless (functionp -do-set-input-source)
-        (setq -do-set-input-source (nth 1 funcs))))
+    (unless (functionp -do-get-input-source)
+      (setq -do-get-input-source (-mk-get-input-source-fn)))
+
+    (unless (functionp -do-set-input-source)
+      (setq -do-set-input-source (-mk-set-input-source-fn)))
 
     (if mode
         (progn
