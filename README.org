@@ -25,7 +25,7 @@ Switch input source smartly according to context language and evil mode.
 | Variable                                       | Description                                | Default                                        |
 |------------------------------------------------+--------------------------------------------+------------------------------------------------|
 | ~evil-smart-input-source-english-pattern~      | Pattern to identify a character as english | src_lisp{"[a-zA-Z]"}                           |
-| ~evil-smart-input-source-other-pattern~        | Pattern to identify a character as blank   | src_lisp{"\\cc"}                               |
+| ~evil-smart-input-source-other-pattern~        | Pattern to identify a character as blank   | src_lisp{"\\cc"}   (double \\ and double c)    |
 | ~evil-smart-input-source-blank-pattern~        | Pattern to identify a character as blank   | src_lisp{"[:blank:]"}                          |
 | ~evil-smart-input-source-english-input-source~ | Input source for english                   | src_lisp{"com.apple.keylayout.US"}             |
 | ~evil-smart-input-source-other-input-source~   | Input source for other lanugage            | src_lisp{"com.sogou.inputmethod.sogou.pinyin"} |
