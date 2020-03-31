@@ -56,13 +56,13 @@
 (defvar -macism (executable-find "macism")
   "Path of macism.")
 
-(defvar -do-get-input-source
+(defvar -do-get-input-source nil
   "Function to get the current input source
 
 Should return a string which is the id of the input source
 ")
 
-(defvar -do-set-input-source
+(defvar -do-set-input-source nil
   "Function to set the input source
 
 Should accept a string which is the id of the input source
