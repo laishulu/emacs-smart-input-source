@@ -1,4 +1,4 @@
-;;;; evil-smart-input-source.el --- Switch input source for smartly according to context language and evil mode. -*- lexical-binding: t; -*-
+;;;; evil-smart-input-source.el --- Switch input source smartly according to context language and evil mode. -*- lexical-binding: t; -*-
 
 ;; URL: https://github.com/laishulu/evil-smart-input-source
 ;; Created: March 27th, 2020
