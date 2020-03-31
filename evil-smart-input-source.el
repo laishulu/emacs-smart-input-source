@@ -19,7 +19,7 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with this program. If not, see <http://www.gnu.org/licenses/>.
+;; along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 ;; This package provide modes to switch input source for smartly according to
@@ -141,15 +141,15 @@ Should accept a string which is the id of the input source
 (defun -mk-input-source-funcs ()
   "Make a function to be bound to -do-get-input-source."
   (cond ((and (equal (window-system) "mac") (fboundp 'mac-input-source))
-         (list 'mac-input-source #'(lambda (source) (mac-select-input-source source))))
+         (list 'mac-input-source (lambda (source) (mac-select-input-source source))))
         ((and (equal system-type "darwin")
               (file-executable-p evil-smart-input-source--macism))
-         (list #'(lambda ()
-                   (string-trim (shell-command-to-string
-                                 evil-smart-input-source--macism)))
-               #'(lambda (source)
-                   (string-trim (shell-command-to-string
-                                 (concat evil-smart-input-source--macism " " source))))))))
+         (list (lambda ()
+                 (string-trim (shell-command-to-string
+                               evil-smart-input-source--macism)))
+               (lambda (source)
+                 (string-trim (shell-command-to-string
+                               (concat evil-smart-input-source--macism " " source))))))))
 
 (defun -get-input-source ()
   "Get the input source id."
@@ -205,17 +205,17 @@ If even `macism` like tool is unailable, then do nothing.
     (if mode
         (progn
           (add-hook 'evil-insert-state-entry-hook
-                    'evil-smart-input-source-adaptive-input-source)
+                    #'evil-smart-input-source-adaptive-input-source)
           (add-hook 'post-self-insert-hook
-                    'evil-smart-input-source-adaptive-input-source)
+                    #'evil-smart-input-source-adaptive-input-source)
           (add-hook 'evil-insert-state-exit-hook
-                    'evil-smart-input-source-set-input-source-english))
+                    #'evil-smart-input-source-set-input-source-english))
       (remove-hook 'evil-insert-state-entry-hook
-                   'evil-smart-input-source-adaptive-input-source)
+                   #'evil-smart-input-source-adaptive-input-source)
       (remove-hook 'post-self-insert-hook
-                   'evil-smart-input-source-adaptive-input-source)
+                   #'evil-smart-input-source-adaptive-input-source)
       (remove-hook 'evil-insert-state-exit-hook
-                   'evil-smart-input-source-set-input-source-english))))
+                   #'evil-smart-input-source-set-input-source-english))))
 
 ;; end of namespace
 )
