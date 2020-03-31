@@ -198,9 +198,9 @@ If even `macism` like tool is unailable, then do nothing.
 
     (let ((funcs (-mk-input-source-funcs)))
       (unless (functionp -do-get-input-source)
-        (setq -do-get-input-source (nth funcs 0)))
+        (setq -do-get-input-source (nth 0 funcs)))
       (unless (functionp -do-set-input-source)
-        (setq -do-set-input-source (nth funcs 1))))
+        (setq -do-set-input-source (nth 1 funcs))))
 
     (if mode
         (progn
