@@ -3,7 +3,7 @@
 ;; URL: https://github.com/laishulu/evil-smart-input-source
 ;; Created: March 27th, 2020
 ;; Keywords: convenience
-;; Package-Requires: ((names "0.5") (emacs "25"))
+;; Package-Requires: ((names "0.5") (evil) (emacs "25"))
 ;; Version: 0.1
 
 ;; This file is not part of GNU Emacs.
