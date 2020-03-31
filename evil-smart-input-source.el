@@ -68,8 +68,8 @@ Should return a string which is the id of the input source
 Should accept a string which is the id of the input source
 ")
 
-(defun -string-match-p (regexp string)
-  "Similar to `string-match-p', works when REGEXP or STRING is not a string."
+(defun -string-match-p (regexp string &optional _)
+  "Wrapper of `string-match-p', works when REGEXP or STRING is not a string."
   (and (stringp regexp)
        (stringp string)
        (string-match-p regexp string)))
