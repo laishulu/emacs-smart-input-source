@@ -35,43 +35,53 @@
 
 (define-namespace evil-smart-input-source-
 
-(defconst ENGLISH "english")
-(defconst OTHER "other")
-
-(defvar -english-pattern "[a-zA-Z]"
+(defvar english-pattern "[a-zA-Z]"
   "Pattern to identify a character as english.")
 
-(defvar -other-pattern "\\cc"
+(defvar other-pattern "\\cc"
   "Pattern to identify a character as other language.")
 
-(defvar -blank-pattern "[:blank:]"
+(defvar blank-pattern "[:blank:]"
   "Pattern to identify a character as blank.")
 
-(defvar -english-input-source "com.apple.keylayout.US"
+(defvar english-input-source "com.apple.keylayout.US"
   "Input source for english.")
 
-(defvar -other-input-source "com.sogou.inputmethod.sogou.pinyin"
+(defvar other-input-source "com.sogou.inputmethod.sogou.pinyin"
   "Input source for other lanugage.")
 
-(defvar -macism (executable-find "macism")
-  "Path of macism.")
+(defvar external-ism "macism"
+  "Path of external ism.")
 
-(defvar -do-get-input-source nil
+(defvar do-get-input-source nil
   "Function to get the current input source
 
 Should return a string which is the id of the input source
 ")
 
-(defvar -do-set-input-source nil
+(defvar do-set-input-source nil
   "Function to set the input source
 
 Should accept a string which is the id of the input source
 ")
 
+;;
+;; Following variables are not supposed to be used directly by end user.
+;;
+
+(defconst ENGLISH 1)
+(defconst OTHER 2)
+
+;; Emacs mac port builtin input source manager
+(defconst ISM-EMP 1)
+
+(defvar -ism nil
+  "Input source manager to be used")
+
 (defun -string-match-p (regexp str &optional start)
   "Robust wrapper of `string-match-p'.
 
-works when REGEXP or STR is not a string REGEXP, STR, START all has the same
+Works when REGEXP or STR is not a string REGEXP, STR, START all has the same
 meanings as `string-match-p`.
 "
   (and (stringp regexp)
@@ -84,10 +94,10 @@ meanings as `string-match-p`.
   First backward skip blank in the current line,
   then backward skip blank across lines."
   (save-excursion
-    (skip-chars-backward -blank-pattern)
+    (skip-chars-backward blank-pattern)
     (let ((backward (point))
           (before (char-before (point))))
-      (skip-chars-backward (concat -blank-pattern "\n"))
+      (skip-chars-backward (concat blank-pattern "\n"))
       (let ((cross-line-before (char-before (point))))
         (list (when cross-line-before (string cross-line-before))
               (when before (string before))
@@ -98,7 +108,7 @@ meanings as `string-match-p`.
 
   Forward skip blank in the current line."
   (save-excursion
-    (skip-chars-forward -blank-pattern)
+    (skip-chars-forward blank-pattern)
     (let ((forward (point))
           (after (char-after (point))))
       (list forward
@@ -116,18 +126,18 @@ meanings as `string-match-p`.
          (context nil))
     (cond ((and (> back (line-beginning-position))
                 (< back (point))
-                (-string-match-p -other-pattern before))
+                (-string-match-p other-pattern before))
            ENGLISH)
           ((and (< fore (line-end-position))
                 (> fore (point))
-                (-string-match-p -other-pattern after))
+                (-string-match-p other-pattern after))
            ENGLISH)
           ((and (< fore (line-end-position))
                 (= fore (point))
-                (-string-match-p -other-pattern after))
+                (-string-match-p other-pattern after))
            OTHER)
-          ((-string-match-p -english-pattern cross-line-before) ENGLISH)
-          ((-string-match-p -other-pattern cross-line-before) OTHER)
+          ((-string-match-p english-pattern cross-line-before) ENGLISH)
+          ((-string-match-p other-pattern cross-line-before) OTHER)
           (t context))))
 
 (defun -prober ()
@@ -143,40 +153,37 @@ meanings as `string-match-p`.
     lang))
 
 (defun -mk-get-input-source-fn ()
-  "Make a function to be bound to -do-get-input-source."
-  (cond ((and (string= (window-system) "mac") (fboundp 'mac-input-source))
-         'mac-input-source)
-        ((and (string= system-type "darwin")
-              (file-executable-p evil-smart-input-source--macism))
-         #'(lambda ()
-             (string-trim (shell-command-to-string
-                           evil-smart-input-source--macism))))))
+  "Make a function to be bound to do-get-input-source."
+  (if (equal -ism ISM-EMP)
+      #'mac-input-source
+    #'(lambda ()
+        (string-trim
+         (shell-command-to-string -ism)))))
 
 (defun -mk-set-input-source-fn ()
-  "Make a function to be bound to -do-set-input-source."
-  (cond ((and (string= (window-system) "mac") (fboundp 'mac-input-source))
-         #'(lambda (source) (mac-select-input-source source)))
-        ((and (string= system-type "darwin")
-              (file-executable-p evil-smart-input-source--macism))
-         #'(lambda (source)
-             (string-trim (shell-command-to-string
-                           (concat evil-smart-input-source--macism " " source)))))))
+  "Make a function to be bound to do-set-input-source."
+  (if (equal -ism ISM-EMP)
+      #'(lambda (source) (mac-select-input-source source))
+    #'(lambda (source)
+        (string-trim
+         (shell-command-to-string
+          (concat -ism " " source))))))
 
 (defun -get-input-source ()
   "Get the input source id."
-  (funcall -do-get-input-source))
+  (funcall do-get-input-source))
 
 (defun -set-input-source (lang)
   "Set the input source according to lanuage LANG, avoiding unecessary switch."
-  (let ((ENGLISH_SOURCE -english-input-source)
-        (OTHER_SOURCE -other-input-source))
+  (let ((ENGLISH_SOURCE english-input-source)
+        (OTHER_SOURCE other-input-source))
     (pcase (-get-input-source)
       ((pred (equal ENGLISH_SOURCE))
        (when (equal lang OTHER)
-         (funcall -do-set-input-source OTHER_SOURCE)))
+         (funcall do-set-input-source OTHER_SOURCE)))
       ((pred (equal OTHER_SOURCE))
        (when (equal lang ENGLISH)
-         (funcall -do-set-input-source ENGLISH_SOURCE))))))
+         (funcall do-set-input-source ENGLISH_SOURCE))))))
 
 (defun adaptive-input-source ()
   "Adaptively switch to the input source."
@@ -198,20 +205,25 @@ meanings as `string-match-p`.
 
 For GUI session of `emacs mac port`, use native API to select input source
 for better performance.
-If `emacs mac port` is unavailable, or in terminal session, use `macism` or
-other compatible CLI tool to select input source.
-If even `macism` like tool is unailable, then do nothing.
+If `emacs mac port` is unavailable, or in terminal session, use external ism
+tool to select input source.
+If no ism found, then do nothing
 "
   :init-value nil
-  (when (or (and (string= (window-system) "mac")
-                 (fboundp 'mac-input-source))
-            (file-executable-p -macism))
+  (when (and (string= (window-system) "mac")
+             (fboundp 'mac-input-source))
+    (setq -ism ISM-EMP))
 
-    (unless (functionp -do-get-input-source)
-      (setq -do-get-input-source (-mk-get-input-source-fn)))
+  (when external-ism
+    (let ((ism-path (executable-find external-ism)))
+      (setq -ism ism-path)))
 
-    (unless (functionp -do-set-input-source)
-      (setq -do-set-input-source (-mk-set-input-source-fn)))
+  (when -ism
+    (unless (functionp do-get-input-source)
+      (setq do-get-input-source (-mk-get-input-source-fn)))
+
+    (unless (functionp do-set-input-source)
+      (setq do-set-input-source (-mk-set-input-source-fn)))
 
     (if mode
         (progn

@@ -13,26 +13,26 @@ Switch input source smartly according to context language and evil mode.
   - For ~macism~, [[https://github.com/laishulu/macism/releases][download]],
     unzip and put the file ~macism~ into ~$PATH~
   - For tool fulfills the following requirements, you can just:
-    ~(setq evil-smart-input-source--macism TOOL_PATH)~
+    ~(setq evil-smart-input-source-external-ism TOOL_PATH)~
     - Run ~tool~ will output the current input source
     - Run ~tool SOME_INPUT_SOURCE_ID~ will select to ~SOME_INPUT_SOURCE_ID~.
   - For other tool, customize the following variables:
-    - ~evil-smart-input-source--do-get-input-source~
-    - ~evil-smart-input-source--do-set-input-source~
+    - ~evil-smart-input-source-do-get-input-source~
+    - ~evil-smart-input-source-do-set-input-source~
 
 ** Configure
 
-| Variable                                        | Description                                | Default                                |
-|-------------------------------------------------+--------------------------------------------+----------------------------------------|
-| ~evil-smart-input-source--english-pattern~      | Pattern to identify a character as english | ~"[a-zA-Z]"~                           |
-| ~evil-smart-input-source--other-pattern~        | Pattern to identify a character as blank   | ~"\\cc"~                               |
-| ~evil-smart-input-source--blank-pattern~        | Pattern to identify a character as blank   | ~"[:blank:]"~                          |
-| ~evil-smart-input-source--english-input-source~ | Input source for english                   | ~"com.apple.keylayout.US"~             |
-| ~evil-smart-input-source--other-input-source~   | Input source for other lanugage            | ~"com.sogou.inputmethod.sogou.pinyin"~ |
-| ~evil-smart-input-source--macism~               | Path of macism                             | ~(executable-find "macism")~           |
-| ~evil-smart-input-source--do-get-input-source~  | Function to get the current input source   | determined from the envrionment        |
-| ~evil-smart-input-source--do-set-input-source~  | Function to set the input source           | determined from the envrionment        |
-|-------------------------------------------------+--------------------------------------------+----------------------------------------|
+| Variable                                       | Description                                | Default                                  |
+|------------------------------------------------+--------------------------------------------+------------------------------------------|
+| ~evil-smart-input-source-english-pattern~      | Pattern to identify a character as english | ~\"[a-zA-Z]\"~                           |
+| ~evil-smart-input-source-other-pattern~        | Pattern to identify a character as blank   | ~\"\\cc\"~                               |
+| ~evil-smart-input-source-blank-pattern~        | Pattern to identify a character as blank   | ~\"[:blank:]\"~                          |
+| ~evil-smart-input-source-english-input-source~ | Input source for english                   | ~\"com.apple.keylayout.US\"~             |
+| ~evil-smart-input-source-other-input-source~   | Input source for other lanugage            | ~\"com.sogou.inputmethod.sogou.pinyin\"~ |
+| ~evil-smart-input-source-external-ism~         | Path of macism                             | ~\"macism\"~                             |
+| ~evil-smart-input-source-do-get-input-source~  | Function to get the current input source   | determined from the envrionment          |
+| ~evil-smart-input-source-do-set-input-source~  | Function to set the input source           | determined from the envrionment          |
+|------------------------------------------------+--------------------------------------------+------------------------------------------|
 
 * Inernals
 ** When to switch input source
