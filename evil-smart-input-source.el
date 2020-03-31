@@ -1,8 +1,8 @@
-;;;; evil-smart-input-source.el --- Switch input source smartly according to context language and evil mode. -*- lexical-binding: t; -*-
+;;; evil-smart-input-source.el --- Switch input source smartly according to context language and evil mode. -*- lexical-binding: t; -*-
 
 ;; URL: https://github.com/laishulu/evil-smart-input-source
 ;; Created: March 27th, 2020
-;; Keywords: evil, macos, emacs-mac, input mothod, input source, macism
+;; Keywords: convenience
 ;; Package-Requires: ((names "0.5") (emacs "25"))
 ;; Version: 0.1
 
