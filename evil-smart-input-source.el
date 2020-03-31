@@ -1,4 +1,4 @@
-;;;; evil-smart-input-source.el --- Automatically switch input method for evil. -*- lexical-binding: t; -*-
+;;;; evil-smart-input-source.el --- Switch input source for smartly according to context language and evil mode. -*- lexical-binding: t; -*-
 
 ;; URL: https://github.com/laishulu/evil-smart-input-source
 ;; Created: March 27th, 2020
@@ -22,7 +22,8 @@
 ;; along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; This package provide modes to automatically switch input method for evil.
+;; This package provide modes to switch input source for smartly according to
+;; context language and evil mode.
 ;; For more information see the README in the GitHub repo.
 
 ;;; Code:

@@ -3,7 +3,7 @@
 
 * About
 
-Switch input source for Emacs/evil smartly.
+Switch input source for smartly according to context language and evil mode.
 
 * Usage
 ** Install
