@@ -92,7 +92,7 @@ Should accept a string which is the id of the input source
 (defun -fore-detect-chars ()
   "Detect char forward.
 
-  Forward skip blank in the current line,"
+  Forward skip blank in the current line."
   (save-excursion
     (skip-chars-forward -blank-pattern)
     (let ((forward (point))
@@ -141,15 +141,15 @@ Should accept a string which is the id of the input source
 (defun -mk-input-source-funcs ()
   "Make a function to be bound to -do-get-input-source."
   (cond ((and (equal (window-system) "mac") (fboundp 'mac-input-source))
-         ('mac-input-source, #'(lambda (source) (mac-select-input-source source))))
+         (list 'mac-input-source #'(lambda (source) (mac-select-input-source source))))
         ((and (equal system-type "darwin")
               (file-executable-p evil-smart-input-source--macism))
-         (#'(lambda ()
-              (string-trim (shell-command-to-string
-                            evil-smart-input-source--macism))),
-          #'(lambda (source)
-              (string-trim (shell-command-to-string
-                            (concat evil-smart-input-source--macism " " source))))))))
+         (list #'(lambda ()
+                   (string-trim (shell-command-to-string
+                                 evil-smart-input-source--macism)))
+               #'(lambda (source)
+                   (string-trim (shell-command-to-string
+                                 (concat evil-smart-input-source--macism " " source))))))))
 
 (defun -get-input-source ()
   "Get the input source id."
