@@ -56,14 +56,12 @@
 (defvar do-get-input-source nil
   "Function to get the current input source
 
-Should return a string which is the id of the input source
-")
+Should return a string which is the id of the input source.")
 
 (defvar do-set-input-source nil
   "Function to set the input source
 
-Should accept a string which is the id of the input source
-")
+Should accept a string which is the id of the input source.")
 
 ;;
 ;; Following variables are not supposed to be used directly by end user.
@@ -82,8 +80,7 @@ Should accept a string which is the id of the input source
   "Robust wrapper of `string-match-p'.
 
 Works when REGEXP or STR is not a string REGEXP, STR, START all has the same
-meanings as `string-match-p`.
-"
+meanings as `string-match-p`."
   (and (stringp regexp)
        (stringp str)
        (string-match-p regexp str start)))
@@ -207,8 +204,7 @@ For GUI session of `emacs mac port`, use native API to select input source
 for better performance.
 If `emacs mac port` is unavailable, or in terminal session, use external ism
 tool to select input source.
-If no ism found, then do nothing
-"
+If no ism found, then do nothing."
   :init-value nil
   (when (and (string= (window-system) "mac")
              (fboundp 'mac-input-source))
