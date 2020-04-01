@@ -5,14 +5,12 @@
 Switch input source smartly according to context language and evil mode.
 * Install
 Just install this package from ~melpa~.
-** For GUI ~Emacs mac port~
-All is done.
-** For other MacOS emacs
-You should also install [[https://github.com/laishulu/macism][macism]]
-** For other system
-You should use other input source manager.
+- For GUI ~Emacs mac port~: all is done.
+- For other MacOS emacs: you should also install [[https://github.com/laishulu/macism][macism]]
+- For other system: use other input source manager.
 * Usage
-Load the package, and then run ~global-evil-smart-input-source-mode~
+Load the package, and then run ~global-evil-smart-input-source-mode~, if no
+input source manager found, it will do nothing.
 * Configure
 
 | Variable                                       | Description                                | Default                                                  |
