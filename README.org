@@ -10,7 +10,7 @@ Just install this package from ~melpa~.
 - For other system: use other input source manager.
 
 * Usage
-Load the package, and then run ~global-evil-smart-input-source-mode~, if find no
+Load the package, and then run ~global-evil-smart-input-source-mode~, if it finds no
 input source manager, it will do nothing.
 * Configure
 
