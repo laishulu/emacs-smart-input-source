@@ -210,7 +210,7 @@ If no ism found, then do nothing."
              (fboundp 'mac-input-source))
     (setq -ism ISM-EMP))
 
-  (when external-ism
+  (when (and (not -ism) external-ism)
     (let ((ism-path (executable-find external-ism)))
       (setq -ism ism-path)))
 
