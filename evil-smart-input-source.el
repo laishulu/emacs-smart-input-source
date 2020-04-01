@@ -64,7 +64,7 @@ Should return a string which is the id of the input source.")
 Should accept a string which is the id of the input source.")
 
 ;;
-;; Following variables are not supposed to be used directly by end user.
+;; Following symbols are not supposed to be used directly by end user.
 ;;
 
 (defconst ENGLISH 1)
@@ -73,8 +73,8 @@ Should accept a string which is the id of the input source.")
 ;; Emacs mac port builtin input source manager
 (defconst ISM-EMP 1)
 
-(defvar -ism nil
-  "Input source manager to be used")
+;; Input source manager to be used
+(setq -ism nil)
 
 (defun -string-match-p (regexp str &optional start)
   "Robust wrapper of `string-match-p'.
