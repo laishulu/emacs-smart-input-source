@@ -17,7 +17,7 @@ input source manager found, it will do nothing.
 | Variable                                       | Description                                | Default                              |
 |------------------------------------------------+--------------------------------------------+--------------------------------------|
 | ~evil-smart-input-source-english-pattern~      | Pattern to identify a character as english | ~[a-zA-Z]~                           |
-| ~evil-smart-input-source-other-pattern~        | Pattern to identify a character as other   | ~\\\\cc~ see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]]            |
+| ~evil-smart-input-source-other-pattern~        | Pattern to identify a character as other   | ~\\cc~ see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]]              |
 | ~evil-smart-input-source-blank-pattern~        | Pattern to identify a character as blank   | ~[:blank:]~                          |
 | ~evil-smart-input-source-english-input-source~ | Input source for english                   | ~com.apple.keylayout.US~             |
 | ~evil-smart-input-source-other-input-source~   | Input source for other lanugage            | ~com.sogou.inputmethod.sogou.pinyin~ |
