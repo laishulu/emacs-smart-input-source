@@ -1,14 +1,16 @@
 #+TITLE: README
-[[https://melpa.org/#/evil-smart-input-source][file:https://melpa.org/packages/evil-smart-input-source.svg]]
+[[https://melpa.org/#/emacs-smart-input-source][file:https://melpa.org/packages/emacs-smart-input-source.svg]]
 
 * About
-Switch input source smartly according to context language and evil mode.
+Switch input source smartly.
+* Features
+- Respect evil states
+-
 * Install
 Just install this package from ~melpa~.
 - For GUI ~Emacs mac port~: all is done.
 - For other MacOS emacs: you should also install [[https://github.com/laishulu/macism][macism]]
 - For other system: use other input source manager.
-
 * Usage
 Load the package, and then run ~global-evil-smart-input-source-mode~, if it finds no
 input source manager, it will do nothing.
