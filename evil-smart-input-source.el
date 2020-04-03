@@ -1,9 +1,9 @@
-;;; evil-smart-input-source.el --- Switch input source smartly according to context language and evil mode -*- lexical-binding: t; -*-
+;;; smart-input-source.el --- Switch input source smartly -*- lexical-binding: t; -*-
 
-;; URL: https://github.com/laishulu/evil-smart-input-source
+;; URL: https://github.com/laishulu/emacs-smart-input-source
 ;; Created: March 27th, 2020
 ;; Keywords: convenience
-;; Package-Requires: ((names "0.5") (evil "1.0") (emacs "25"))
+;; Package-Requires: ((names "0.5") (emacs "25"))
 ;; Version: 0.1
 
 ;; This file is not part of GNU Emacs.
@@ -22,8 +22,7 @@
 ;; along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; This package provide modes to switch input source for smartly according to
-;; context language and evil mode.
+;; This package provide modes to switch input source smartly.
 ;; For more information see the README in the GitHub repo.
 
 ;;; Code:
@@ -33,35 +32,43 @@
 ;; install through package.el.
 (eval-when-compile (require 'names))
 
-(define-namespace evil-smart-input-source-
+(define-namespace smart-input-source-
 
 (defvar english-pattern "[a-zA-Z]"
   "Pattern to identify a character as english.")
+(make-variable-buffer-local (quote english-pattern))
 
 (defvar other-pattern "\\cc"
   "Pattern to identify a character as other language.")
+(make-variable-buffer-local (quote other-pattern))
 
 (defvar blank-pattern "[:blank:]"
   "Pattern to identify a character as blank.")
+(make-variable-buffer-local (quote blank-pattern))
 
 (defvar english-input-source "com.apple.keylayout.US"
   "Input source for english.")
+(make-variable-buffer-local (quote english-input-source))
 
 (defvar other-input-source "com.sogou.inputmethod.sogou.pinyin"
   "Input source for other lanugage.")
+(make-variable-buffer-local (quote other-input-source))
 
 (defvar external-ism "macism"
   "Path of external ism.")
+(make-variable-buffer-local (quote external-ism))
 
 (defvar do-get-input-source nil
   "Function to get the current input source
 
 Should return a string which is the id of the input source.")
+(make-variable-buffer-local (quote do-get-input-source))
 
 (defvar do-set-input-source nil
   "Function to set the input source
 
 Should accept a string which is the id of the input source.")
+(make-variable-buffer-local (quote do-set-input-source))
 
 ;;
 ;; Following symbols are not supposed to be used directly by end user.
@@ -75,6 +82,7 @@ Should accept a string which is the id of the input source.")
 
 ;; Input source manager to be used
 (setq -ism nil)
+(make-variable-buffer-local (quote -ism))
 
 (defun -string-match-p (regexp str &optional start)
   "Robust wrapper of `string-match-p'.
@@ -124,7 +132,15 @@ meanings as `string-match-p`."
     (cond ((and (> back (line-beginning-position))
                 (< back (point))
                 (-string-match-p other-pattern before))
+           (activate-inline-overlay back)
            ENGLISH)
+          ((and -last-inline-overlay-start-position
+                -last-inline-overlay-end-position
+                (>= back -last-inline-overlay-start-position)
+                (<= back -last-inline-overlay-end-position)
+                (< back (point))
+                (-string-match-p english-pattern before))
+           OTHER)
           ((and (< fore (line-end-position))
                 (> fore (point))
                 (-string-match-p other-pattern after))
@@ -141,10 +157,11 @@ meanings as `string-match-p`."
   "Determine which language to use."
   (let ((lang nil))
     (when (or (button-at (point))
-              (or (evil-normal-state-p)
-                  (evil-visual-state-p)
-                  (evil-motion-state-p)
-                  (evil-operator-state-p)))
+              (and (featurep 'evil)
+                   (or (evil-normal-state-p)
+                       (evil-visual-state-p)
+                       (evil-motion-state-p)
+                       (evil-operator-state-p))))
       (setq lang (or lang ENGLISH)))
     (setq lang (or lang (-guess-context)))
     lang))
@@ -198,7 +215,7 @@ meanings as `string-match-p`."
 
 ;;;###autoload
 (define-minor-mode mode
-  "Automatically switch input method for evil.
+  "Switch input source smartly.
 
 For GUI session of `emacs mac port`, use native API to select input source
 for better performance.
@@ -223,28 +240,80 @@ If no ism found, then do nothing."
 
     (if mode
         (progn
-          (add-hook 'evil-insert-state-entry-hook
-                    #'evil-smart-input-source-adaptive-input-source)
           (add-hook 'post-self-insert-hook
-                    #'evil-smart-input-source-adaptive-input-source)
-          (add-hook 'evil-insert-state-exit-hook
-                    #'evil-smart-input-source-set-input-source-english))
-      (remove-hook 'evil-insert-state-entry-hook
-                   #'evil-smart-input-source-adaptive-input-source)
+                    #'smart-input-source-adaptive-input-source)
+          (when (featurep 'evil)
+            (add-hook 'evil-insert-state-entry-hook
+                      #'smart-input-source-adaptive-input-source)
+            (add-hook 'evil-insert-state-exit-hook
+                      #'smart-input-source-set-input-source-english)))
       (remove-hook 'post-self-insert-hook
-                   #'evil-smart-input-source-adaptive-input-source)
-      (remove-hook 'evil-insert-state-exit-hook
-                   #'evil-smart-input-source-set-input-source-english))))
+                   #'smart-input-source-adaptive-input-source)
+      (when (featurep 'evil)
+        (remove-hook 'evil-insert-state-entry-hook
+                     #'smart-input-source-adaptive-input-source)
+        (remove-hook 'evil-insert-state-exit-hook
+                     #'smart-input-source-set-input-source-english)))))
+;;
+;; The following is about the inline english region overlay
+;;
+
+(setq -inline-overlay nil)
+(make-variable-buffer-local (quote -inline-overlay))
+
+(setq -last-inline-overlay-start-position nil)
+(make-variable-buffer-local (quote -last-inline-overlay-start-position))
+
+(setq -last-inline-overlay-end-position nil)
+(make-variable-buffer-local (quote -last-inline-overlay-end-position))
+
+(defun check-to-deactive-overlay ()
+  "Check whether to deactive the inline english region overlay."
+  (when (and -inline-overlay
+             (or (< (point) (overlay-start -inline-overlay))
+                 (> (point) (overlay-end -inline-overlay))))
+    (deactivate-inline-overlay)))
+
+(defun activate-inline-overlay (start)
+  "Activate the inline english region overlay from START."
+  (when -inline-overlay
+    (delete-overlay -inline-overlay))
+  (setq -inline-overlay (make-overlay start (point) nil t t ))
+  (overlay-put -inline-overlay 'face 'region)
+  (overlay-put -inline-overlay 'keymap
+               (let ((keymap (make-sparse-keymap)))
+                 (define-key keymap (kbd "RET")
+                   (lambda ()
+                     (interactive)
+                     (smart-input-source-deactivate-inline-overlay)
+                     (smart-input-source-adaptive-input-source)))
+                 keymap))
+  (setq -last-inline-overlay-start-position nil)
+  (setq -last-inline-overlay-end-position nil)
+  (add-hook 'post-command-hook
+            #'smart-input-source-check-to-deactive-overlay)
+  (message "Press <RETURN> to enable input source switching again."))
+
+(defun deactivate-inline-overlay ()
+  "Deactivate the inline english region overlay."
+  (interactive)
+  (remove-hook 'post-command-hook
+               #'smart-input-source-check-to-deactive-overlay)
+  (when -inline-overlay
+    (setq -last-inline-overlay-start-position (overlay-start -inline-overlay))
+    (setq -last-inline-overlay-end-position (overlay-end -inline-overlay))
+    (delete-overlay -inline-overlay)
+    (setq -inline-overlay nil)))
 
 ;; end of namespace
 )
 
 ;;;###autoload
 (define-globalized-minor-mode
-  global-evil-smart-input-source-mode
-  evil-smart-input-source-mode
-  (lambda () (evil-smart-input-source-mode t))
-  :group 'evil-smart-input-source)
+  global-smart-input-source-mode
+  smart-input-source-mode
+  (lambda () (smart-input-source-mode t))
+  :group 'smart-input-source)
 
-(provide 'evil-smart-input-source)
-;;; evil-smart-input-source.el ends here
+(provide 'smart-input-source)
+;;; smart-input-source.el ends here
