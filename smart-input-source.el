@@ -277,9 +277,6 @@ If no ism found, then do nothing."
 (setq -last-inline-overlay-end-position nil)
 (make-variable-buffer-local (quote -last-inline-overlay-end-position))
 
-(setq -last-overriding-local-map nil)
-(make-variable-buffer-local (quote -last-overriding-local-map))
-
 (defun check-to-deactive-overlay ()
   "Check whether to deactive the inline english region overlay."
   (when (and mode
@@ -298,9 +295,8 @@ If no ism found, then do nothing."
                (let ((keymap (make-sparse-keymap)))
                  (define-key keymap (kbd "RET")
                    'smart-input-source-end-inline-overlay)
-                 ;; without this, GUI org mode will take precedence
-                 (setq -last-overriding-local-map overriding-local-map)
-                 (setq overriding-local-map keymap)
+                 (define-key keymap (kbd "<return>")
+                   'smart-input-source-end-inline-overlay)
                  keymap))
   (setq -last-inline-overlay-start-position nil)
   (setq -last-inline-overlay-end-position nil)
@@ -322,7 +318,6 @@ If no ism found, then do nothing."
     (setq -last-inline-overlay-start-position (overlay-start -inline-overlay))
     (setq -last-inline-overlay-end-position (overlay-end -inline-overlay))
     (delete-overlay -inline-overlay)
-    (setq overriding-local-map -last-overriding-local-map)
     (setq -inline-overlay nil)))
 
 ;; end of namespace
