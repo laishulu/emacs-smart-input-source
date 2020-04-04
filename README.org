@@ -6,6 +6,18 @@ Switch input source smartly.
 * Features
 - Respect evil states
 -
+
+* Features(Chinese)
+
+1. 使用操作系统的输入法，不改变使用习惯。
+2. 支持 GUI Emacs, 也支持 Terminal Emacs.
+3. 安装配置简单，GUI Emacs Mac Port 下使用搜狗拼音免配置。
+4. 如果在 Evil 下  this is a bbbtesthis is thisi:      this
+   
+   a. 从 normal
+
+
+
 * Install
 Just install this package from ~melpa~.
 - For GUI ~Emacs mac port~: all is done.

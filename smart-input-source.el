@@ -116,8 +116,11 @@ meanings as `string-match-p`."
     (skip-chars-forward blank-pattern)
     (let ((forward (point))
           (after (char-after (point))))
-      (list forward
-            (when after (string after))))))
+      (skip-chars-forward (concat blank-pattern "\n"))
+      (let ((cross-line-after (char-after (point))))
+        (list forward
+              (when after (string after))
+              (when cross-line-after (string cross-line-after)))))))
 
 (defun -guess-context ()
   "Guest the language context for the current point."
@@ -128,6 +131,7 @@ meanings as `string-match-p`."
          (back (nth 2 back-detection))
          (fore (nth 0 fore-detection))
          (after (nth 1 fore-detection))
+         (cross-line-after (nth 2 fore-detection))
          (context nil))
     (cond ((and (> back (line-beginning-position))
                 (< back (point))
@@ -139,7 +143,8 @@ meanings as `string-match-p`."
                 (>= back -last-inline-overlay-start-position)
                 (<= back -last-inline-overlay-end-position)
                 (< back (point))
-                (not (-string-match-p other-pattern before)))
+                (not (-string-match-p other-pattern before))
+                (not (-string-match-p english-pattern cross-line-after)))
            OTHER)
           ((and (< fore (line-end-position))
                 (> fore (point))
