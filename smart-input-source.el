@@ -162,6 +162,7 @@ meanings as `string-match-p`."
   "Determine which language to use."
   (let ((lang nil))
     (when (or (button-at (point))
+              (overlayp -inline-overlay)
               (and (featurep 'evil)
                    (or (evil-normal-state-p)
                        (evil-visual-state-p)
@@ -190,29 +191,33 @@ meanings as `string-match-p`."
 
 (defun -get-input-source ()
   "Get the input source id."
-  (funcall do-get-input-source))
+  (when (functionp do-get-input-source)
+    (funcall do-get-input-source)))
 
 (defun -set-input-source (lang)
   "Set the input source according to lanuage LANG, avoiding unecessary switch."
-  (let ((ENGLISH_SOURCE english-input-source)
-        (OTHER_SOURCE other-input-source))
-    (pcase (-get-input-source)
-      ((pred (equal ENGLISH_SOURCE))
-       (when (equal lang OTHER)
-         (funcall do-set-input-source OTHER_SOURCE)))
-      ((pred (equal OTHER_SOURCE))
-       (when (equal lang ENGLISH)
-         (funcall do-set-input-source ENGLISH_SOURCE))))))
+  (when (functionp do-set-input-source)
+    (let ((ENGLISH_SOURCE english-input-source)
+          (OTHER_SOURCE other-input-source))
+      (pcase (-get-input-source)
+        ((pred (equal ENGLISH_SOURCE))
+         (when (equal lang OTHER)
+           (funcall do-set-input-source OTHER_SOURCE)))
+        ((pred (equal OTHER_SOURCE))
+         (when (equal lang ENGLISH)
+           (funcall do-set-input-source ENGLISH_SOURCE)))))))
 
 (defun adaptive-input-source ()
   "Adaptively switch to the input source."
-  (let ((source (-prober)))
-    (when source
-      (-set-input-source source))))
+  (when mode
+    (let ((source (-prober)))
+      (when source
+        (-set-input-source source)))))
 
 (defun set-input-source-english ()
   "Set input source to `english-input-source`."
-  (-set-input-source ENGLISH))
+  (when mode
+    (-set-input-source ENGLISH)))
 
 (defun set-input-source-other ()
   "Set input source to `other-input-source`."
@@ -277,7 +282,8 @@ If no ism found, then do nothing."
 
 (defun check-to-deactive-overlay ()
   "Check whether to deactive the inline english region overlay."
-  (when (and (overlayp -inline-overlay)
+  (when (and mode
+             (overlayp -inline-overlay)
              (or (< (point) (overlay-start -inline-overlay))
                  (> (point) (overlay-end -inline-overlay))))
     (deactivate-inline-overlay)))
@@ -321,13 +327,6 @@ If no ism found, then do nothing."
 
 ;; end of namespace
 )
-
-;;;###autoload
-(define-globalized-minor-mode
-  global-smart-input-source-mode
-  smart-input-source-mode
-  (lambda () (smart-input-source-mode t))
-  :group 'smart-input-source)
 
 (provide 'smart-input-source)
 ;;; smart-input-source.el ends here
