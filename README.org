@@ -4,19 +4,47 @@
 * About
 Switch input source smartly.
 * Features
-- Respect evil states
--
+1. Use OS native input source, no need to change use experience.
+2. Support GUI Emacs, as well as Terminial Emacs.
+3. Easy to install and config. No further config for ~GUI Emacs Mac Port~ with
+   ~Sogou Input~.
+4. Respect ~Evil~:
+   a. When leave ~insert~ mode, switch to English input source automatically.
+   b. when enter ~insert~ model, switch input source automatically according to
+   context.
+5. Support ~inline english~ region:
+   a. Blank after CJK characters triggers the region.
+   b. In this mode, Engligh will be sticked.
+   c. Region is closed when cursor leaves the region or ~Enter~ is pressed.
+6. Input source switching rules are designed carefully.
+   a. When edit english, input source will never be switched automatically.
+   b. Switching considering the characters before and after the cursor, as well
+   as crossing lines.
+   c. Major rules to switch input source acorrding to context:
+      1). Input source should be consistent with context as much as possible.
+      2). Except cross lines, there should not be spaces between CJK characters.
+      3). When english is mixed with CJK, spaces are used as seperators.
+
+
 
 * Features(Chinese)
-
 1. 使用操作系统的输入法，不改变使用习惯。
 2. 支持 GUI Emacs, 也支持 Terminal Emacs.
-3. 安装配置简单，GUI Emacs Mac Port 下使用搜狗拼音免配置。
-4. 如果在 Evil 下  this is a bbbtesthis is thisi:      this
-   
-   a. 从 normal
-
-
+3. 安装配置简单， GUI Emacs Mac Port 下使用搜狗拼音免配置。
+4. 如果在 Evil 下:
+   a. 从 insert 模式离开时，自动切换到英文输入法。
+   b. 进入 insert 模式时, 根据上下文自动切换输入法。
+5. 支持 inline english 区域：
+   a. 汉字后面跟空格触发 inline english 区域。
+   b. 在 inline english 下，一直使用英文输入法。
+   c. 光标离开区域，或者回车，关闭 inline english 区域。
+6. 输入法自动切换规则经过仔细设计：
+   a. 编辑英文时，永远不会自动切换到中文输入法
+   b. 输入法的切换除了考虑到前后字符，还考虑了换行。
+   c. 根据上下文切换输入法的主要规则：
+      1). 输入法尽量和上下文一致。
+      2). 除了换行，纯中文之间不应该有空格。
+      3). 中英文混排时，中英文之间用空格隔开。
 
 * Install
 Just install this package from ~melpa~.
@@ -49,12 +77,17 @@ input source manager, it will do nothing.
 Denote character of other language as ~A~, english character as ~a~, and ~^~ as cursor.
 
 - Same line rules:
-  - ~A ^~ and ~^ A~ will change to ENGLISH.
+  - ~A ^~ and ~^ A~ will change to ENGLISH. In the former case, `inline english`
+    mode will be enabled.
   - ~A^~ and ~^A~ will change to OTHER.
   - ~a^~ and ~^a~ will change to ENGLISH.
 - Across line rules:
   - ~A\n^~ will change to OTHER.
   - ~a\n^~ will change to ENGLISH.
+- ~inline english~ ending rules:
+  - ~`inline english` ^\na~ will not change.
+  - ~`inline english` ^a~ will not change.
+  - ~`inline english` ^A~ will change to OTHER.
 ** How the input source is switched
 - For GUI session of ~emacs mac port~, use native API for better performance.
 - If ~emacs mac port~ is unavailable, or in terminal session, use ~macism~ or
@@ -63,9 +96,9 @@ Denote character of other language as ~A~, english character as ~a~, and ~^~ as 
 * Use other input source manager
 If you don't use ~macos~, your should install other compatible tool:
   - For tool fulfills the following requirements, you can just:
-    ~(setq evil-smart-input-source-external-ism TOOL_PATH)~
+    ~(setq smart-input-source-external-ism TOOL_PATH)~
     - Run ~tool~ will output the current input source
     - Run ~tool SOME_INPUT_SOURCE_ID~ will select to ~SOME_INPUT_SOURCE_ID~.
   - For other tool, customize the following variables:
-    - ~evil-smart-input-source-do-get-input-source~
-    - ~evil-smart-input-source-do-set-input-source~
+    - ~smart-input-source-do-get-input-source~
+    - ~smart-input-source-do-set-input-source~
