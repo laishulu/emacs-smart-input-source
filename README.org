@@ -10,16 +10,14 @@ Switch input source smartly.
    ~Sogou Input~.
 4. Respect ~Evil~:
    1) When leave ~insert~ mode, switch to English input source automatically.
-   2) when enter ~insert~ model, switch input source automatically according to
-   context.
+   2) when enter ~insert~ model, switch input source automatically according to context.
 5. Support ~inline english~ region:
    1) Blank after CJK characters triggers the region.
    2) In this mode, Engligh will be sticked.
    3) Region is closed when cursor leaves the region or ~Enter~ is pressed.
 6. Input source switching rules are designed carefully.
    1) When edit english, input source will never be switched automatically.
-   2) Switching considering the characters before and after the cursor, as well
-   as crossing lines.
+   2) Switching considering the characters before and after the cursor, as well as crossing lines.
    3) Major rules to switch input source acorrding to context:
       - Input source should be consistent with context as much as possible.
       - Except cross lines, there should not be spaces between CJK characters.
