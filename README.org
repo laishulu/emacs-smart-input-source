@@ -3,6 +3,10 @@
 
 * About
 Switch input source smartly.
+
+#+CAPTION: Smart input source
+[[./screenshots/smart-input-source.gif]]
+
 * Features
 1. Use OS native input source, no need to change use experience.
 2. Support GUI Emacs, as well as Terminial Emacs.
