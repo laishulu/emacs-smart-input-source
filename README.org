@@ -18,7 +18,7 @@ Switch input source smartly.
 5. Support ~inline english~ region:
    1) Blank after CJK characters triggers the region.
    2) In this mode, Engligh will be sticked.
-   3) Region is closed when cursor leaves the region or ~Enter~ is pressed.
+   3) Region is closed when cursor leaves the region or ~Return~ is pressed.
 6. Input source switching rules are designed carefully.
    1) When edit english, input source will never be switched automatically.
    2) Switching considering the characters before and after the cursor, as well as crossing lines.
