@@ -59,13 +59,13 @@
 (make-variable-buffer-local (quote external-ism))
 
 (defvar do-get-input-source nil
-  "Function to get the current input source
+  "Function to get the current input source.
 
 Should return a string which is the id of the input source.")
 (make-variable-buffer-local (quote do-get-input-source))
 
 (defvar do-set-input-source nil
-  "Function to set the input source
+  "Function to set the input source.
 
 Should accept a string which is the id of the input source.")
 (make-variable-buffer-local (quote do-set-input-source))
@@ -80,8 +80,7 @@ Should accept a string which is the id of the input source.")
 ;; Emacs mac port builtin input source manager
 (defconst ISM-EMP 1)
 
-;; Input source manager to be used
-(setq -ism nil)
+(defvar -ism nil "The input source manager.")
 (make-variable-buffer-local (quote -ism))
 
 (defun -string-match-p (regexp str &optional start)
@@ -93,6 +92,12 @@ meanings as `string-match-p`."
        (stringp str)
        (string-match-p regexp str start)))
 
+(cl-defstruct back-detect ; result of backward detect
+  to ; point after first non-blank char in the same line
+  char ; first non-blank char at the same line (just before position `to`)
+  cross-line-char ; first non-blank char cross lines bofore the current position
+  )
+
 (defun -back-detect-chars ()
   "Detect char backward by two steps.
 
@@ -100,13 +105,19 @@ meanings as `string-match-p`."
   then backward skip blank across lines."
   (save-excursion
     (skip-chars-backward blank-pattern)
-    (let ((backward (point))
-          (before (char-before (point))))
+    (let ((to (point))
+          (char (char-before (point))))
       (skip-chars-backward (concat blank-pattern "\n"))
-      (let ((cross-line-before (char-before (point))))
-        (list (when cross-line-before (string cross-line-before))
-              (when before (string before))
-              backward)))))
+      (let ((cross-line-char (char-before (point))))
+        (make-back-detect :to to
+                          :char (when char (string char))
+                          :cross-line-char (when cross-line-char (string cross-line-char)))))))
+
+(cl-defstruct fore-detect ; result of foreward detect
+  to ; point before first non-blank char in the same line
+  char ; first non-blank char at the same line (just after position `to`)
+  cross-line-char ; first non-blank char cross lines after the current position
+  )
 
 (defun -fore-detect-chars ()
   "Detect char forward.
@@ -114,44 +125,47 @@ meanings as `string-match-p`."
   Forward skip blank in the current line."
   (save-excursion
     (skip-chars-forward blank-pattern)
-    (let ((forward (point))
-          (after (char-after (point))))
+    (let ((to (point))
+          (char (char-after (point))))
       (skip-chars-forward (concat blank-pattern "\n"))
-      (let ((cross-line-after (char-after (point))))
-        (list forward
-              (when after (string after))
-              (when cross-line-after (string cross-line-after)))))))
+      (let ((cross-line-char (char-after (point))))
+        (make-fore-detect :to to
+                          :char (when char (string char))
+                          :cross-line-char (when cross-line-char (string cross-line-char)))))))
 
 (defun -guess-context ()
   "Guest the language context for the current point."
-  (let* ((back-detection (-back-detect-chars))
-         (fore-detection (-fore-detect-chars))
-         (cross-line-before (nth 0 back-detection))
-         (before (nth 1 back-detection))
-         (back (nth 2 back-detection))
-         (fore (nth 0 fore-detection))
-         (after (nth 1 fore-detection))
-         (cross-line-after (nth 2 fore-detection))
+  (let* ((back-detect (-back-detect-chars))
+         (fore-detect (-fore-detect-chars))
+
+         (cross-line-before (back-detect-cross-line-char back-detect))
+         (before (back-detect-char back-detect))
+         (back-to (back-detect-to back-detect))
+
+         (fore-to (fore-detect-to fore-detect))
+         (after (fore-detect-char fore-detect))
+         (cross-line-after (fore-detect-cross-line-char fore-detect))
+
          (context nil))
-    (cond ((and (> back (line-beginning-position))
-                (< back (point))
+    (cond ((and (> back-to (line-beginning-position))
+                (< back-to (point))
                 (-string-match-p other-pattern before))
-           (activate-inline-overlay back)
+           (activate-inline-overlay back-to)
            ENGLISH)
           ((and -last-inline-overlay-start-position
                 -last-inline-overlay-end-position
-                (>= back -last-inline-overlay-start-position)
-                (<= back -last-inline-overlay-end-position)
-                (< back (point))
+                (>= back-to -last-inline-overlay-start-position)
+                (<= back-to -last-inline-overlay-end-position)
+                (< back-to (point))
                 (not (-string-match-p other-pattern before))
                 (not (-string-match-p english-pattern cross-line-after)))
            OTHER)
-          ((and (< fore (line-end-position))
-                (> fore (point))
+          ((and (< fore-to (line-end-position))
+                (> fore-to (point))
                 (-string-match-p other-pattern after))
            ENGLISH)
-          ((and (< fore (line-end-position))
-                (= fore (point))
+          ((and (< fore-to (line-end-position))
+                (= fore-to (point))
                 (-string-match-p other-pattern after))
            OTHER)
           ((-string-match-p english-pattern cross-line-before) ENGLISH)
@@ -173,21 +187,21 @@ meanings as `string-match-p`."
     lang))
 
 (defun -mk-get-input-source-fn ()
-  "Make a function to be bound to do-get-input-source."
-  (if (equal -ism ISM-EMP)
-      #'mac-input-source
-    #'(lambda ()
-        (string-trim
-         (shell-command-to-string -ism)))))
+  "Make a function to be bound to `do-get-input-source`."
+  (when -ism
+    (if (equal -ism ISM-EMP)
+        #'mac-input-source
+      #'(lambda ()
+          (string-trim (shell-command-to-string -ism))))))
 
 (defun -mk-set-input-source-fn ()
-  "Make a function to be bound to do-set-input-source."
-  (if (equal -ism ISM-EMP)
-      #'(lambda (source) (mac-select-input-source source))
-    #'(lambda (source)
-        (string-trim
-         (shell-command-to-string
-          (concat -ism " " source))))))
+  "Make a function to be bound to `do-set-input-source`."
+  (when -ism
+    (if (equal -ism ISM-EMP)
+        #'(lambda (source) (mac-select-input-source source))
+      #'(lambda (source)
+          (string-trim
+           (shell-command-to-string (concat -ism " " source)))))))
 
 (defun -get-input-source ()
   "Get the input source id."
@@ -268,13 +282,16 @@ If no ism found, then do nothing."
 ;; The following is about the inline english region overlay
 ;;
 
-(setq -inline-overlay nil)
+(defvar -inline-overlay nil
+  "The active inline overlay.")
 (make-variable-buffer-local (quote -inline-overlay))
 
-(setq -last-inline-overlay-start-position nil)
+(defvar -last-inline-overlay-start-position nil
+  "Start position of the last inline overlay (already deactivated).")
 (make-variable-buffer-local (quote -last-inline-overlay-start-position))
 
-(setq -last-inline-overlay-end-position nil)
+(defvar -last-inline-overlay-end-position nil
+  "End position of the last inline overlay (already deactivated).")
 (make-variable-buffer-local (quote -last-inline-overlay-end-position))
 
 (defun check-to-deactive-overlay ()
@@ -305,6 +322,7 @@ If no ism found, then do nothing."
   (message "Press <RETURN> to enable input source switching again."))
 
 (defun end-inline-overlay ()
+  "End the current active inline overlay."
   (interactive)
   (smart-input-source-deactivate-inline-overlay)
   (smart-input-source-adaptive-input-source))

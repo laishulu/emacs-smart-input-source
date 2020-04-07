@@ -1,7 +1,7 @@
 (source gnu)
 (source melpa)
 
-(package-file "evil-smart-input-source.el")
+(package-file "smart-input-source.el")
 
 (development
  (depends-on "f")
