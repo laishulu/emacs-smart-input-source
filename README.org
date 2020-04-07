@@ -26,7 +26,7 @@ Switch input source smartly.
       - Input source should be consistent with context as much as possible.
       - Except cross lines, there should not be spaces between CJK characters.
       -  When english is mixed with CJK, spaces are used as seperators.
-* Features(Chinese)
+* Features (Chinese)
 1. 使用操作系统的输入法，不改变使用习惯。
 2. 支持 GUI Emacs, 也支持 Terminal Emacs.
 3. 安装配置简单， GUI Emacs Mac Port 下使用搜狗拼音免配置。
