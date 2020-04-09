@@ -158,7 +158,7 @@ meanings as `string-match-p`."
                 (<= back-to -last-inline-overlay-end-position)
                 (< back-to (point))
                 (not (-string-match-p other-pattern before))
-                (not (-string-match-p english-pattern cross-line-after)))
+                (not (-string-match-p english-pattern after)))
            OTHER)
           ((and (< fore-to (line-end-position))
                 (> fore-to (point))
