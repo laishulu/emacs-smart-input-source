@@ -74,6 +74,26 @@ Should accept a string which is the id of the input source.")
 ;; Following symbols are not supposed to be used directly by end user.
 ;;
 
+(defvar -inline-overlay nil
+  "The active inline overlay.")
+(make-variable-buffer-local (quote -inline-overlay))
+
+(defvar -last-inline-overlay-start-position nil
+  "Start position of the last inline overlay (already deactivated).")
+(make-variable-buffer-local (quote -last-inline-overlay-start-position))
+
+(defvar -last-inline-overlay-end-position nil
+  "End position of the last inline overlay (already deactivated).")
+(make-variable-buffer-local (quote -last-inline-overlay-end-position))
+
+(declare-function evil-normal-state-p "ext:evil-states.el" (&optional state) t)
+(declare-function evil-visual-state-p "ext:evil-states.el" (&optional state) t)
+(declare-function evil-motion-state-p "ext:evil-states.el" (&optional state) t)
+(declare-function evil-operator-state-p "ext:evil-states.el" (&optional state) t)
+(declare-function mac-input-source "src/macfns.c" (&optional SOURCE FORMAT) t)
+(declare-function mac-select-input-source "src/macfns.c"
+                  (SOURCE &optional SET-KEYBOARD-LAYOUT-OVERRIDE-P) t)
+
 (defconst ENGLISH 1)
 (defconst OTHER 2)
 
@@ -144,7 +164,6 @@ meanings as `string-match-p`."
 
          (fore-to (fore-detect-to fore-detect))
          (after (fore-detect-char fore-detect))
-         (cross-line-after (fore-detect-cross-line-char fore-detect))
 
          (context nil))
     (cond ((and (> back-to (line-beginning-position))
@@ -191,17 +210,17 @@ meanings as `string-match-p`."
   (when -ism
     (if (equal -ism ISM-EMP)
         #'mac-input-source
-      #'(lambda ()
-          (string-trim (shell-command-to-string -ism))))))
+      (lambda ()
+        (string-trim (shell-command-to-string -ism))))))
 
 (defun -mk-set-input-source-fn ()
   "Make a function to be bound to `do-set-input-source`."
   (when -ism
     (if (equal -ism ISM-EMP)
-        #'(lambda (source) (mac-select-input-source source))
-      #'(lambda (source)
-          (string-trim
-           (shell-command-to-string (concat -ism " " source)))))))
+        (lambda (source) (mac-select-input-source source))
+      (lambda (source)
+        (string-trim
+         (shell-command-to-string (concat -ism " " source)))))))
 
 (defun -get-input-source ()
   "Get the input source id."
@@ -220,22 +239,6 @@ meanings as `string-match-p`."
         ((pred (equal OTHER_SOURCE))
          (when (equal lang ENGLISH)
            (funcall do-set-input-source ENGLISH_SOURCE)))))))
-
-(defun adaptive-input-source ()
-  "Adaptively switch to the input source."
-  (when mode
-    (let ((source (-prober)))
-      (when source
-        (-set-input-source source)))))
-
-(defun set-input-source-english ()
-  "Set input source to `english-input-source`."
-  (when mode
-    (-set-input-source ENGLISH)))
-
-(defun set-input-source-other ()
-  "Set input source to `other-input-source`."
-  (-set-input-source OTHER))
 
 ;;;###autoload
 (define-minor-mode mode
@@ -278,22 +281,26 @@ If no ism found, then do nothing."
                      #'smart-input-source-adaptive-input-source)
         (remove-hook 'evil-insert-state-exit-hook
                      #'smart-input-source-set-input-source-english)))))
+
+(defun adaptive-input-source ()
+  "Adaptively switch to the input source."
+  (when mode
+    (let ((source (-prober)))
+      (when source
+        (-set-input-source source)))))
+
+(defun set-input-source-english ()
+  "Set input source to `english-input-source`."
+  (when mode
+    (-set-input-source ENGLISH)))
+
+(defun set-input-source-other ()
+  "Set input source to `other-input-source`."
+  (-set-input-source OTHER))
+
 ;;
 ;; The following is about the inline english region overlay
 ;;
-
-(defvar -inline-overlay nil
-  "The active inline overlay.")
-(make-variable-buffer-local (quote -inline-overlay))
-
-(defvar -last-inline-overlay-start-position nil
-  "Start position of the last inline overlay (already deactivated).")
-(make-variable-buffer-local (quote -last-inline-overlay-start-position))
-
-(defvar -last-inline-overlay-end-position nil
-  "End position of the last inline overlay (already deactivated).")
-(make-variable-buffer-local (quote -last-inline-overlay-end-position))
-
 (defun check-to-deactive-overlay ()
   "Check whether to deactive the inline english region overlay."
   (when (and mode
