@@ -31,6 +31,7 @@
 ;; However, requiring it here means it will also work for people who don't
 ;; install through package.el.
 (eval-when-compile (require 'names))
+(require 'subr-x)
 
 (define-namespace smart-input-source-
 
