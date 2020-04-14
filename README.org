@@ -57,7 +57,7 @@ Just install this package from ~melpa~.
   #+END_SRC
 - For other MacOS emacs, either EMP in Termnial or other Emacs distribution:
   you should also install [[https://github.com/laishulu/macism][macism]], which is already preconfigured.
-- For other system: use other input source manager. Configure for ~fcitx~ is
+- For other system: use other input source manager. Configuration for ~fcitx~ is
   given as an example.
 * Usage
 Load the package, edit a file, and then run ~smart-input-source-mode~, if it finds no input source manager, it will do nothing.
