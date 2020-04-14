@@ -2,7 +2,8 @@
 [[https://melpa.org/#/smart-input-source][file:https://melpa.org/packages/smart-input-source-badge.svg]]
 
 * About
-Switch input source smartly.
+This package provide a buffer local mode ~smart-input-source-mode~ to switch
+input source smartly.
 
 #+CAPTION: Smart input source
 [[./screenshots/smart-input-source.gif]]
@@ -60,8 +61,9 @@ Just install this package from ~melpa~.
 - For other system: use other input source manager. Configuration for ~fcitx~ is
   given as an example.
 * Usage
-Load the package, edit a file, and then run ~smart-input-source-mode~, if it
-finds no input source manager, it will do nothing.
+Load the package, open a file buffer, and then run ~smart-input-source-mode~ to
+enable the mode for this buffer, if it finds no input source manager, it will do
+nothing.
 
 The mode is designed carefully, so it's safe to enable for all buffers even
 its all English.
