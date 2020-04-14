@@ -50,7 +50,7 @@ Switch input source smartly.
 * Install
 Just install this package from ~melpa~.
 - For MacOS GUI ~Emacs mac port (EMP)~: all is done. You can install ~EMP~ by
-  following command:
+  the following commands:
   #+BEGIN_SRC bash
   brew tap railwaycat/emacsmacport
   brew install emacs-mac --with-modules --with-rsvg --with-imagemagick --with-natural-title-bar
@@ -111,8 +111,8 @@ If you don't use ~macos~, your should install other compatible tool:
     - ~smart-input-source-do-set-input-source~
 
 Case study: ~fcitx~, a input method popular among Chinese Linux users.
-~fcitx-remote~ can server as an input source manager for `fcitx`, you can config
-as following:
+~fcitx-remote~ can server as an input source manager for `fcitx`, you can 
+configure as following:
 #+BEGIN_SRC lisp
 (require 'subr-x)
 (let fcitx-remote-path (executable-find "fcitx-remote")
