@@ -14,14 +14,16 @@ Switch input source smartly.
    ~Sogou Input~.
 4. Respect ~Evil~:
    1) When leave ~insert~ mode, switch to English input source automatically.
-   2) when enter ~insert~ model, switch input source automatically according to context.
+   2) when enter ~insert~ model, switch input source automatically according to
+      context.
 5. Support ~inline english~ region:
    1) Blank after CJK characters triggers the region.
    2) In this mode, Engligh will be sticked.
    3) Region is closed when cursor leaves the region or ~Return~ is pressed.
 6. Input source switching rules are designed carefully.
    1) When edit english, input source will never be switched automatically.
-   2) Switching considering the characters before and after the cursor, as well as crossing lines.
+   2) Switching considering the characters before and after the cursor, as well
+      as crossing lines.
    3) Major rules to switch input source acorrding to context:
       - Input source should be consistent with context as much as possible.
       - Except cross lines, there should not be spaces between CJK characters.
@@ -48,8 +50,10 @@ Switch input source smartly.
 * Install
 Just install this package from ~melpa~.
 - For GUI ~Emacs mac port~: all is done.
-- For other MacOS emacs: you should also install [[https://github.com/laishulu/macism][macism]]
-- For other system: use other input source manager.
+- For other MacOS emacs: you should also install [[https://github.com/laishulu/macism][macism]], which is already
+  preconfigured.
+- For other system: use other input source manager. Configure for ~fcitx~ is
+  given as an example.
 * Usage
 Load the package, edit a file, and then run ~smart-input-source-mode~, if it finds no input source manager, it will do nothing.
 * Configure
@@ -100,3 +104,23 @@ If you don't use ~macos~, your should install other compatible tool:
   - For other tool, customize the following variables:
     - ~smart-input-source-do-get-input-source~
     - ~smart-input-source-do-set-input-source~
+
+Case study: ~fcitx~, a input method popular among Chinese Linux users.
+~fcitx-remote~ can server as an input source manager for `fcitx`, you can config
+as following:
+#+BEGIN_SRC lisp
+(require 'subr-x)
+(let fcitx-remote-path (executable-find "fcitx-remote")
+     (when fcitx-remote-path
+       (setq smart-input-source-english-input-source "1")
+       (setq smart-input-source-other-input-source "2")
+       (setq smart-input-source-do-get-input-source
+             (lambda()(string-trim (shell-command-to-string fcitx-remote-path))))
+       (setq smart-input-source-do-set-input-source
+             (lambda(source)
+               (pcase source
+                 ("1" (string-trim (shell-command-to-string
+                             (concat fcitx-remote-path " -c"))))
+                 ("2" (string-trim (shell-command-to-string
+                             (concat fcitx-remote-path " -o")))))))))
+#+END_SRC
