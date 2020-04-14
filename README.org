@@ -1,5 +1,5 @@
 #+TITLE: README
-[[https://melpa.org/#/emacs-smart-input-source][file:https://melpa.org/packages/emacs-smart-input-source.svg]]
+[[https://melpa.org/#/smart-input-source][file:https://melpa.org/packages/smart-input-source.svg]]
 
 * About
 Switch input source smartly.
