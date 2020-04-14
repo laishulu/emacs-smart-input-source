@@ -67,8 +67,14 @@ The mode is designed carefully, so it's safe to enable for all buffers even
 its all English.
 
 #+BEGIN_SRC lisp
-(add-hook! '(text-mode-hook prog-mode-hook)
-           #'smart-input-source-mode)
+(use-package smart-input-source
+  :config
+  (setq smart-input-source-english-input-source
+        "com.apple.keylayout.ABC")
+  (setq smart-input-source-other-input-source
+        "com.baidu.inputmethod.BaiduIM.wubi")
+  (add-hook text-mode-hook #'smart-input-source-mode)
+  (add-hook prog-mode-hook #'smart-input-source-mode))
 #+END_SRC
 * Configure
 
