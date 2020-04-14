@@ -70,9 +70,9 @@ its all English.
 (use-package smart-input-source
   :config
   (setq smart-input-source-english-input-source
-        "com.apple.keylayout.ABC")
+        "com.apple.keylayout.US")
   (setq smart-input-source-other-input-source
-        "com.baidu.inputmethod.BaiduIM.wubi")
+        "com.sogou.inputmethod.sogou.pinyin")
   (add-hook text-mode-hook #'smart-input-source-mode)
   (add-hook prog-mode-hook #'smart-input-source-mode))
 #+END_SRC
