@@ -49,9 +49,14 @@ Switch input source smartly.
 
 * Install
 Just install this package from ~melpa~.
-- For GUI ~Emacs mac port~: all is done.
-- For other MacOS emacs: you should also install [[https://github.com/laishulu/macism][macism]], which is already
-  preconfigured.
+- For MacOS GUI ~Emacs mac port (EMP)~: all is done. You can install ~EMP~ by
+  following command:
+  #+BEGIN_SRC bash
+  brew tap railwaycat/emacsmacport
+  brew install emacs-mac --with-modules --with-rsvg --with-imagemagick --with-natural-title-bar
+  #+END_SRC
+- For other MacOS emacs, either EMP in Termnial or other Emacs distribution:
+  you should also install [[https://github.com/laishulu/macism][macism]], which is already preconfigured.
 - For other system: use other input source manager. Configure for ~fcitx~ is
   given as an example.
 * Usage
