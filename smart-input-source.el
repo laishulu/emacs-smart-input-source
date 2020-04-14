@@ -52,7 +52,7 @@
 (make-variable-buffer-local (quote english-input-source))
 
 (defvar other-input-source "com.sogou.inputmethod.sogou.pinyin"
-  "Input source for other lanugage.")
+  "Input source for other language.")
 (make-variable-buffer-local (quote other-input-source))
 
 (defvar external-ism "macism"
@@ -116,7 +116,7 @@ meanings as `string-match-p`."
 (cl-defstruct back-detect ; result of backward detect
   to ; point after first non-blank char in the same line
   char ; first non-blank char at the same line (just before position `to`)
-  cross-line-char ; first non-blank char cross lines bofore the current position
+  cross-line-char ; first non-blank char cross lines before the current position
   )
 
 (defun -back-detect-chars ()
@@ -134,7 +134,7 @@ meanings as `string-match-p`."
                           :char (when char (string char))
                           :cross-line-char (when cross-line-char (string cross-line-char)))))))
 
-(cl-defstruct fore-detect ; result of foreward detect
+(cl-defstruct fore-detect ; result of forward detect
   to ; point before first non-blank char in the same line
   char ; first non-blank char at the same line (just after position `to`)
   cross-line-char ; first non-blank char cross lines after the current position
@@ -229,7 +229,7 @@ meanings as `string-match-p`."
     (funcall do-get-input-source)))
 
 (defun -set-input-source (lang)
-  "Set the input source according to lanuage LANG, avoiding unecessary switch."
+  "Set the input source according to language LANG, avoiding unnecessary switch."
   (when (functionp do-set-input-source)
     (let ((ENGLISH_SOURCE english-input-source)
           (OTHER_SOURCE other-input-source))
