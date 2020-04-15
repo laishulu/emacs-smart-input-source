@@ -116,6 +116,7 @@ meanings as `string-match-p`."
 (cl-defstruct back-detect ; result of backward detect
   to ; point after first non-blank char in the same line
   char ; first non-blank char at the same line (just before position `to`)
+  cross-line-to ; point after first non-blank char cross lines
   cross-line-char ; first non-blank char cross lines before the current position
   )
 
@@ -132,11 +133,14 @@ meanings as `string-match-p`."
       (let ((cross-line-char (char-before (point))))
         (make-back-detect :to to
                           :char (when char (string char))
-                          :cross-line-char (when cross-line-char (string cross-line-char)))))))
+                          :cross-line-to (point)
+                          :cross-line-char (when cross-line-char
+                                             (string cross-line-char)))))))
 
 (cl-defstruct fore-detect ; result of forward detect
   to ; point before first non-blank char in the same line
   char ; first non-blank char at the same line (just after position `to`)
+  cross-line-to ; point before first non-blank char cross lines
   cross-line-char ; first non-blank char cross lines after the current position
   )
 
@@ -152,45 +156,70 @@ meanings as `string-match-p`."
       (let ((cross-line-char (char-after (point))))
         (make-fore-detect :to to
                           :char (when char (string char))
-                          :cross-line-char (when cross-line-char (string cross-line-char)))))))
+                          :cross-line-to (point)
+                          :cross-line-char (when cross-line-char
+                                             (string cross-line-char)))))))
 
 (defun -guess-context ()
   "Guest the language context for the current point."
   (let* ((back-detect (-back-detect-chars))
          (fore-detect (-fore-detect-chars))
 
-         (cross-line-before (back-detect-cross-line-char back-detect))
-         (before (back-detect-char back-detect))
          (back-to (back-detect-to back-detect))
+         (back-char (back-detect-char back-detect))
+         (cross-line-back-to (back-detect-cross-line-to back-detect))
+         (cross-line-back-char (back-detect-cross-line-char back-detect))
 
          (fore-to (fore-detect-to fore-detect))
-         (after (fore-detect-char fore-detect))
+         (fore-char (fore-detect-char fore-detect))
+         (cross-line-fore-to (fore-detect-cross-line-to fore-detect))
+         (cross-line-fore-char (fore-detect-cross-line-char fore-detect))
 
          (context nil))
-    (cond ((and (> back-to (line-beginning-position))
-                (< back-to (point))
-                (-string-match-p other-pattern before))
-           (activate-inline-overlay back-to)
-           ENGLISH)
-          ((and -last-inline-overlay-start-position
-                -last-inline-overlay-end-position
-                (>= back-to -last-inline-overlay-start-position)
-                (<= back-to -last-inline-overlay-end-position)
-                (< back-to (point))
-                (not (-string-match-p other-pattern before))
-                (not (-string-match-p english-pattern after)))
-           OTHER)
-          ((and (< fore-to (line-end-position))
-                (> fore-to (point))
-                (-string-match-p other-pattern after))
-           ENGLISH)
-          ((and (< fore-to (line-end-position))
-                (= fore-to (point))
-                (-string-match-p other-pattern after))
-           OTHER)
-          ((-string-match-p english-pattern cross-line-before) ENGLISH)
-          ((-string-match-p other-pattern cross-line-before) OTHER)
-          (t context))))
+    (cond
+     ;; [other lanuage][blank][^]
+     ((and (> back-to (line-beginning-position))
+           (< back-to (point))
+           (-string-match-p other-pattern back-char))
+      (activate-inline-overlay back-to)
+      ENGLISH)
+     ;; [lastest overlay: last char is not other language]
+     ;; [blank: in or out of lastest overlay][^][not english]
+     ((and -last-inline-overlay-start-position
+           -last-inline-overlay-end-position
+           (>= back-to -last-inline-overlay-start-position)
+           (<= back-to -last-inline-overlay-end-position)
+           (< back-to (point))
+           (not (-string-match-p other-pattern back-char))
+           (not (-string-match-p english-pattern fore-char)))
+      OTHER)
+     ;; [^][blank][other lanuage]
+     ((and (< fore-to (line-end-position))
+           (> fore-to (point))
+           (-string-match-p other-pattern fore-char))
+      ENGLISH)
+     ;; [^][other lanuage]
+     ((and (< fore-to (line-end-position))
+           (= fore-to (point))
+           (-string-match-p other-pattern fore-char))
+      OTHER)
+     ;; [english: include the previous line][blank][^]
+     ((and (> cross-line-back-to (line-beginning-position 0))
+           (-string-match-p english-pattern cross-line-back-char))
+      ENGLISH)
+     ;; [other lanuage: include the previous line][blank][^]
+     ((and (> cross-line-back-to (line-beginning-position 0))
+           (-string-match-p other-pattern cross-line-back-char))
+      OTHER)
+     ;; [^][blank][english: include the next line]
+     ((and (< cross-line-fore-to (line-end-position 2))
+           (-string-match-p english-pattern cross-line-fore-char))
+      ENGLISH)
+     ;; [^][blank][other lanuage: include the next line]
+     ((and (< cross-line-fore-to (line-end-position 2))
+           (-string-match-p other-pattern cross-line-fore-char))
+      OTHER)
+     (t context))))
 
 (defun -prober ()
   "Determine which language to use."
