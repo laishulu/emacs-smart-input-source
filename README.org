@@ -164,7 +164,7 @@ You can configure as following:
 (setq smart-input-source-do-set-input-source
       (lambda(source)
         (string-trim (shell-command-to-string
-          (concat ibus-path " engine " source)))))
+          (concat smart-input-source-external-ism " engine " source)))))
 #+END_SRC
 ** Example: ~im-select~
 [[https://github.com/daipeihust/im-select][im-select]] can be used as input source manager in Microsoft Windows.
