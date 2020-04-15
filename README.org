@@ -132,8 +132,9 @@ Case study: ~fcitx~, a input method popular among Chinese Linux users.
 configure as following:
 #+BEGIN_SRC lisp
 (require 'subr-x)
-(let fcitx-remote-path (executable-find "fcitx-remote")
+(let ((fcitx-remote-path (executable-find "fcitx-remote")))
      (when fcitx-remote-path
+       (setq smart-input-source-external-ism fcitx-remote-path)
        (setq smart-input-source-english-input-source "1")
        (setq smart-input-source-other-input-source "2")
        (setq smart-input-source-do-get-input-source
