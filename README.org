@@ -127,7 +127,7 @@ If you don't use ~macos~, your should install other compatible tool:
     - ~smart-input-source-do-get-input-source~
     - ~smart-input-source-do-set-input-source~
 
-** Case study: ~fcitx~
+** Example: ~fcitx~
 ~fcitx~ is a input method popular among Chinese Linux users.
 ~fcitx-remote~ can serve as an input source manager for `fcitx`, you can
 configure as following:
@@ -148,7 +148,7 @@ configure as following:
                  ("2" (string-trim (shell-command-to-string
                              (concat fcitx-remote-path " -o")))))))))
 #+END_SRC
-** Case study: ~ibus~
+** Example: ~ibus~
 #+BEGIN_SRC lisp
 (require 'subr-x)
 (let ((ibus-path (executable-find "ibus")))
