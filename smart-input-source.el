@@ -315,7 +315,7 @@ If no ism found, then do nothing."
   (when (overlayp -inline-overlay)
     (delete-overlay -inline-overlay))
   (setq -inline-overlay (make-overlay start (point) nil t t ))
-  (overlay-put -inline-overlay 'face '((t (:inherit default :inverse-video t))))
+  (overlay-put -inline-overlay 'face '((:inherit default :inverse-video t)))
   (overlay-put -inline-overlay 'keymap
                (let ((keymap (make-sparse-keymap)))
                  (define-key keymap (kbd "RET")
