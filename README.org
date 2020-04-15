@@ -133,33 +133,44 @@ If you don't use ~macos~, your should install other compatible tool:
 configure as following:
 #+BEGIN_SRC lisp
 (require 'subr-x)
-(let ((fcitx-remote-path (executable-find "fcitx-remote")))
-     (when fcitx-remote-path
-       (setq smart-input-source-external-ism fcitx-remote-path)
-       (setq smart-input-source-english-input-source "1")
-       (setq smart-input-source-other-input-source "2")
-       (setq smart-input-source-do-get-input-source
-             (lambda()(string-trim (shell-command-to-string fcitx-remote-path))))
-       (setq smart-input-source-do-set-input-source
-             (lambda(source)
-               (pcase source
-                 ("1" (string-trim (shell-command-to-string
-                             (concat fcitx-remote-path " -c"))))
-                 ("2" (string-trim (shell-command-to-string
-                             (concat fcitx-remote-path " -o")))))))))
+(setq smart-input-source-external-ism "fcitx-remote")
+(setq smart-input-source-english-input-source "1")
+(setq smart-input-source-other-input-source "2")
+(setq smart-input-source-do-get-input-source
+      (lambda()
+        (string-trim
+         (shell-command-to-string
+          smart-input-source-external-ism))))
+(setq smart-input-source-do-set-input-source
+      (lambda(source)
+        (pcase source
+          ("1" (string-trim (shell-command-to-string
+                             (concat smart-input-source-external-ism " -c"))))
+          ("2" (string-trim (shell-command-to-string
+                             (concat smart-input-source-external-ism " -o")))))))
 #+END_SRC
 ** Example: ~ibus~
 #+BEGIN_SRC lisp
 (require 'subr-x)
-(let ((ibus-path (executable-find "ibus")))
-     (when ibus-path
-       (setq smart-input-source-external-ism ibus-path)
-       (setq smart-input-source-english-input-source "xkb:us::eng")
-       (setq smart-input-source-other-input-source "rime")
-       (setq smart-input-source-do-get-input-source
-             (lambda()(string-trim (shell-command-to-string
-                                    (concat ibus-path " engine")))))
-       (setq smart-input-source-do-set-input-source
-             (lambda(source)(string-trim (shell-command-to-string
-                                    (concat ibus-path " engine " source)))))))
+(setq smart-input-source-external-ism "ibus")
+(setq smart-input-source-english-input-source "xkb:us::eng")
+(setq smart-input-source-other-input-source "OTHER_INPUT_SOURCE")
+(setq smart-input-source-do-get-input-source
+      (lambda()
+        (string-trim (shell-command-to-string
+          (concat smart-input-source-external-ism " engine")))))
+(setq smart-input-source-do-set-input-source
+      (lambda(source)
+        (string-trim (shell-command-to-string
+          (concat ibus-path " engine " source)))))
+#+END_SRC
+** Example: ~im-select~
+[[https://github.com/daipeihust/im-select][~im-select~]] can be used as input source manager in Microsoft Windows.
+It fulfills the requirements to replace `macism`, so its configuration is
+simpler than other input source managers.
+#+BEGIN_SRC lisp
+(require 'subr-x)
+(setq smart-input-source-external-ism "im-select.exe")
+(setq smart-input-source-english-input-source "ENGLISH_INPUT_SOURCE")
+(setq smart-input-source-other-input-source "OTHER_INPUT_SOURCE")
 #+END_SRC
