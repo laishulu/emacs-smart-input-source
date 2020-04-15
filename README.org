@@ -56,10 +56,10 @@ Just install this package from ~melpa~.
   brew tap railwaycat/emacsmacport
   brew install emacs-mac --with-modules --with-rsvg --with-imagemagick --with-natural-title-bar
   #+END_SRC
-- For other MacOS emacs, either EMP in Termnial or other Emacs distribution:
-  you should also install [[https://github.com/laishulu/macism][macism]], which is already preconfigured.
-- For other system: use other input source manager. Configuration for ~fcitx~ is
-  given as an example.
+- For other MacOS emacs, either EMP in Termnial or other Emacs distribution: you
+  should also install [[https://github.com/laishulu/macism][macism]], which is already preconfigured.
+- For other system: use other external input source manager. Configuration for
+  ~fcitx~ and ~ibus~ are given as examples.
 * Usage
 Load the package, open a file buffer, and then run ~smart-input-source-mode~ to
 enable the mode for this buffer, if it finds no input source manager, it will do
