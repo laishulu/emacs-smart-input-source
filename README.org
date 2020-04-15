@@ -128,8 +128,8 @@ If you don't use ~macos~, your should install other compatible tool:
     - ~smart-input-source-do-set-input-source~
 
 ** Example: ~fcitx~
-~fcitx~ is a input method popular among Chinese Linux users.
-~fcitx-remote~ can serve as an input source manager for `fcitx`, you can
+~fcitx~ is a input method framework popular among Chinese Linux users.
+~fcitx-remote~ can serve as an input source manager for `fcitx`, and you can
 configure as following:
 #+BEGIN_SRC lisp
 (require 'subr-x)
@@ -150,6 +150,8 @@ configure as following:
                              (concat smart-input-source-external-ism " -o")))))))
 #+END_SRC
 ** Example: ~ibus~
+~ibus~ is another popular input method framework in the Linux world.
+You can configure as following:
 #+BEGIN_SRC lisp
 (require 'subr-x)
 (setq smart-input-source-external-ism "ibus")
@@ -166,8 +168,8 @@ configure as following:
 #+END_SRC
 ** Example: ~im-select~
 [[https://github.com/daipeihust/im-select][im-select]] can be used as input source manager in Microsoft Windows.
-It fulfills the requirements to replace `macism`, so its configuration is
-simpler than other input source managers.
+It fulfills the requirements as a drop-in replacement of ~macism~, thus its
+configuration is simpler than other input source managers.
 #+BEGIN_SRC lisp
 (require 'subr-x)
 (setq smart-input-source-external-ism "im-select.exe")
