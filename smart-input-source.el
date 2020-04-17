@@ -1,4 +1,4 @@
-;;; smart-input-source.el --- Switch input source smartly -*- lexical-binding: t; -*-
+;;; smart-input-source.el --- Switch OS native input source smartly -*- lexical-binding: t; -*-
 
 ;; URL: https://github.com/laishulu/emacs-smart-input-source
 ;; Created: March 27th, 2020
@@ -22,7 +22,7 @@
 ;; along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; This package provide modes to switch input source smartly.
+;; This package provide modes to switch OS native input source smartly.
 ;; For more information see the README in the GitHub repo.
 
 ;;; Code:

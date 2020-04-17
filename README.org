@@ -3,7 +3,7 @@
 
 * About
 This package provide a buffer local mode ~smart-input-source-mode~ to switch
-input source smartly.
+OS native input source smartly.
 
 #+CAPTION: Smart input source
 [[./screenshots/smart-input-source.gif]]
