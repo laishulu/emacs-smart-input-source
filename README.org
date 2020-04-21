@@ -178,8 +178,8 @@ configuration is simpler than other input source managers.
 
 However, because though ~im-select~ supports switching different input
 languages, it does not support multiple input methods in the same lanuage,
-you should ensure that each there is only one input method in one input lanuage.
-Just like the following screenshot.
+you should ensure that in each input language there is only one input method,
+just like the following screenshot.
 
 #+CAPTION: Smart input source
 [[./screenshots/windows-im-select.jpg]]
