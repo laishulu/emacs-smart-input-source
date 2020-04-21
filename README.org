@@ -175,3 +175,11 @@ configuration is simpler than other input source managers.
 (setq smart-input-source-english-input-source "ENGLISH_INPUT_SOURCE")
 (setq smart-input-source-other-input-source "OTHER_INPUT_SOURCE")
 #+END_SRC
+
+However, because though ~im-select~ supports switching different input
+languages, it does not support multiple input methods in the same lanuage,
+you should ensure that each there is only one input method in one input lanuage.
+Just like the following screenshot.
+
+#+CAPTION: Smart input source
+[[./screenshots/windows-im-select.jpg]]
