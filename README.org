@@ -64,7 +64,7 @@ by any of the following ways:
 
   If ~YOUR_ISM~ *CAN'T* be used in the following way:
   + Run ~YOUR_ISM~ will output the current input source
-  + Run ~YOUR_ISM SOME_INPUT_SOURCE_ID~ will select ~SOME_INPUT_SOURCE_ID~.
+  + Run ~YOUR_ISM INPUT_SOURCE_ID~ will select ~INPUT_SOURCE_ID~.
 
   you should also configure the following:
   #+BEGIN_SRC lisp
@@ -95,6 +95,13 @@ its all in English.
   (add-hook prog-mode-hook #'smart-input-source-mode))
 #+END_SRC
 
+**  How to get the input source id
+After /input source manager/ is configured, you can get your /current
+input source id/ by runing the following command in Emacs:
+#+BEGIN_SRC lisp
+(smart-input-source--get-input-source)
+#+END_SRC
+
 ** Additional usage for none-evil user
 ~smart-input-source-mode~ provides three key functions to be used by end user:
 - ~smart-input-source-check-to-activate-overlay~: check to activate the /inline
@@ -108,13 +115,6 @@ With ~evil~, user need not to touch those commands directly, because they are
 added to ~evil~ hooks already. Without ~evil~, only
 ~smart-input-source-check-to-activate-overlay~ is added to hooks,
 ~smart-input-source-follow-context~ is not added to hooks by default.
-
-**  How to get the input source id
-After /input source manager/ is configured, you can get your /current
-input source id/ by runing the following command in Emacs:
-#+BEGIN_SRC lisp
-(smart-input-source--get-input-source)
-#+END_SRC
 
 * Configure
 
