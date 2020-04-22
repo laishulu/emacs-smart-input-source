@@ -104,7 +104,7 @@ its all in English.
 #+END_SRC
 
 **  How to get the input source id
-After you have configured /input source manager/, you can get your /current
+After /input source manager/ is configured, you can get your /current
 input source id/ by runing the following command in Emacs:
 #+BEGIN_SRC lisp
 (smart-input-source--get-input-source)
