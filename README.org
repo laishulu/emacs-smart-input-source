@@ -111,10 +111,12 @@ input source id/ by runing the following command in Emacs:
 - ~smart-input-source-do~: do ~smart-input-source-check-to-activate-overlay~ as
   well as ~smart-input-source-follow-context~.
 
-With ~evil~, user need not to touch those commands directly, because they are
-added to ~evil~ hooks already. Without ~evil~, only
-~smart-input-source-check-to-activate-overlay~ is added to hooks,
-~smart-input-source-follow-context~ is not added to hooks by default.
+With ~evil~, user need not to touch those three functions directly, because they
+are already added to ~evil~ hooks. Without ~evil~, only
+~smart-input-source-check-to-activate-overlay~ is added to
+~post-self-insert-hook~, the other two functions are not added to any hooks.
+So by default none-evil user only have the /inline english region/ feature, it's
+up to the user to decide where to hook the other two functions.
 
 * Configure
 
