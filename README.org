@@ -29,6 +29,7 @@ OS native input source smartly.
       - Input source should be consistent with context as much as possible.
       - Except cross lines, there should not be spaces between CJK characters.
       -  When english is mixed with CJK, spaces are used as seperators.
+       
 * Features (Chinese)
 1. 使用操作系统的输入法，不改变使用习惯。
 2. 支持 GUI Emacs, 也支持 Terminal Emacs.
@@ -49,17 +50,40 @@ OS native input source smartly.
       - 中英文混排时，中英文之间用空格隔开。
 
 * Install
-Just install this package from ~melpa~.
-- For MacOS GUI ~Emacs mac port (EMP)~: all is done. You can install ~EMP~ by
-  the following commands:
+Just install this package from ~melpa~, and then install *input source manager*
+by any of the following ways:
+- On MacOS, use GUI Emacs Mac Port (EMP), no need to configure input source
+  manager. You can install ~EMP~ by the following commands:
   #+BEGIN_SRC bash
   brew tap railwaycat/emacsmacport
   brew install emacs-mac --with-modules --with-rsvg --with-imagemagick --with-natural-title-bar
   #+END_SRC
-- For other MacOS emacs, either EMP in Termnial or other Emacs distribution: you
-  should also install [[https://github.com/laishulu/macism][macism]], which is already preconfigured.
-- For other system: use other external input source manager. Configuration for
-  ~fcitx~ and ~ibus~ are given as examples.
+- On MacOS, use Emacs other than GUI EMP, with ~macism~, no need to configure
+  input source manager. you can install ~macism~ by the following commands:
+  #+BEGIN_SRC bash
+  brew tap laishulu/macism
+  brew install macism
+  #+END_SRC
+- Any other case (eg. on Linux or Windows), input source manager should be
+  configured:
+  #+BEGIN_SRC lisp
+  (setq smart-input-source-external-ism "YOUR_ISM")
+  #+END_SRC
+
+  If ~YOUR_ISM~ *CAN'T* be used in the following way:
+  + Run ~YOUR_ISM~ will output the current input source
+  + Run ~YOUR_ISM SOME_INPUT_SOURCE_ID~ will select ~SOME_INPUT_SOURCE_ID~.
+
+  you should also configure the following:
+  #+BEGIN_SRC lisp
+  (setq smart-input-source-do-get-input-source
+        #'YOUR_DO_GET_INPUT_SOURCE_FUNCTION)
+  (setq smart-input-source-do-set-input-source
+        #'YOUR_DO_SET_INPUT_SOURCE_FUNCTION)
+  #+END_SRC
+  Refer to the section of /Configuration for other input source managers/
+  at the end of this documentation.
+ 
 * Usage
 Load the package, open a file buffer, and then run ~smart-input-source-mode~ to
 enable the mode for this buffer, if it finds no input source manager, it will do
@@ -78,6 +102,14 @@ its all in English.
   (add-hook text-mode-hook #'smart-input-source-mode)
   (add-hook prog-mode-hook #'smart-input-source-mode))
 #+END_SRC
+
+**  How to get the input source id
+After you have configured /input source manager/, you can get your /current
+input source id/ by runing the following command in Emacs:
+#+BEGIN_SRC lisp
+(smart-input-source--get-input-source)
+#+END_SRC
+
 * Configure
 
 | Variable                                       | Description                                | Default                              |
@@ -97,6 +129,7 @@ its all in English.
 - Enter insert mode: select input source smartly by inspect the context.
 - Leave insert mode: select english input source
 - Input a character: select input source smartly by inspect the context.
+ 
 ** How smart to select input source by context
 Denote character of other language as ~A~, english character as ~a~, and ~^~ as cursor.
 
@@ -112,21 +145,14 @@ Denote character of other language as ~A~, english character as ~a~, and ~^~ as 
   - ~`inline english` ^\na~ will not change.
   - ~`inline english` ^a~ will not change.
   - ~`inline english` ^A~ will change to OTHER.
+   
 ** How the input source is switched
 - For GUI session of ~emacs mac port~, use native API for better performance.
 - If ~emacs mac port~ is unavailable, or in terminal session, use ~macism~ or
   other compatible CLI tool.
 - If even ~macism~ like tool is unailable, then do nothing.
-* Use other input source manager
-If you don't use ~macos~, your should install other compatible tool:
-  - For tool fulfills the following requirements, you can just:
-    ~(setq smart-input-source-external-ism TOOL_PATH)~
-    - Run ~tool~ will output the current input source
-    - Run ~tool SOME_INPUT_SOURCE_ID~ will select to ~SOME_INPUT_SOURCE_ID~.
-  - For other tool, customize the following variables:
-    - ~smart-input-source-do-get-input-source~
-    - ~smart-input-source-do-set-input-source~
-
+ 
+* Configurations for other input source managers
 ** Example: ~fcitx~
 ~fcitx~ is a input method framework popular among Chinese Linux users.
 ~fcitx-remote~ can serve as an input source manager for `fcitx`, and you can
@@ -149,6 +175,7 @@ configure as following:
           ("2" (string-trim (shell-command-to-string
                              (concat smart-input-source-external-ism " -o")))))))
 #+END_SRC
+
 ** Example: ~ibus~
 ~ibus~ is another popular input method framework in the Linux world.
 You can configure as following:
@@ -166,6 +193,7 @@ You can configure as following:
         (string-trim (shell-command-to-string
           (concat smart-input-source-external-ism " engine " source)))))
 #+END_SRC
+
 ** Example: ~im-select~
 [[https://github.com/daipeihust/im-select][im-select]] can be used as input source manager in Microsoft Windows.
 It fulfills the requirements as a drop-in replacement of ~macism~, thus its
