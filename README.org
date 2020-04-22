@@ -102,7 +102,7 @@ input source id/ by runing the following command in Emacs:
 (smart-input-source--get-input-source)
 #+END_SRC
 
-** Additional usage for none-evil user
+**  For none-evil user
 ~smart-input-source-mode~ provides three key functions to be used by end user:
 - ~smart-input-source-check-to-activate-overlay~: check to activate the /inline
   english region/.
