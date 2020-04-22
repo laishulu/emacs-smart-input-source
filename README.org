@@ -81,7 +81,7 @@ by any of the following ways:
   (setq smart-input-source-do-set-input-source
         #'YOUR_DO_SET_INPUT_SOURCE_FUNCTION)
   #+END_SRC
-  Refer to the section of /Configuration for other input source managers/
+  Refer to the section of /Configurations for other input source managers/
   at the end of this documentation.
  
 * Usage
