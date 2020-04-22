@@ -322,10 +322,10 @@ return `t` after activating the overlay."
 (defun do ()
   "Do the smart input source."
   (unless (check-to-activate-overlay)
-    (adaptive-input-source)))
+    (follow-context)))
 
-(defun adaptive-input-source ()
-  "Adaptively switch to the input source."
+(defun follow-context ()
+  "Set input source following context."
   (when mode
     (let ((context (-guess-context)))
       (when context
@@ -375,7 +375,7 @@ return `t` after activating the overlay."
   "End the current active inline overlay."
   (interactive)
   (smart-input-source-deactivate-inline-overlay)
-  (smart-input-source-adaptive-input-source))
+  (smart-input-source-follow-context))
 
 (defun deactivate-inline-overlay ()
   "Deactivate the inline english region overlay."
