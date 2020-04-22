@@ -173,16 +173,8 @@ meanings as `string-match-p`."
          (fore-to (fore-detect-to fore-detect))
          (fore-char (fore-detect-char fore-detect))
          (cross-line-fore-to (fore-detect-cross-line-to fore-detect))
-         (cross-line-fore-char (fore-detect-cross-line-char fore-detect))
-
-         (context nil))
+         (cross-line-fore-char (fore-detect-cross-line-char fore-detect)))
     (cond
-     ;; [other lanuage][blank][^]
-     ((and (> back-to (line-beginning-position))
-           (< back-to (point))
-           (-string-match-p other-pattern back-char))
-      (activate-inline-overlay back-to)
-      ENGLISH)
      ;; [lastest overlay: last char is not other language]
      ;; [blank: in or out of lastest overlay][^][not english]
      ((and -last-inline-overlay-start-position
@@ -198,8 +190,15 @@ meanings as `string-match-p`."
            (> fore-to (point))
            (-string-match-p other-pattern fore-char))
       ENGLISH)
-     ;; [^][other lanuage]
-     ((and (< fore-to (line-end-position))
+     ;; [line beginning][^][other lanuage]
+     ;; [other language][^][other lanuage]
+     ;; [not other language][blank][^][other lanuage]
+     ((and (or (= back-to (line-beginning-position))
+               (and (= back-to (point))
+                    (-string-match-p other-pattern back-char))
+               (and (< back-to (point))
+                    (not (-string-match-p other-pattern back-char))))
+           (< fore-to (line-end-position))
            (= fore-to (point))
            (-string-match-p other-pattern fore-char))
       OTHER)
@@ -218,22 +217,7 @@ meanings as `string-match-p`."
      ;; [^][blank][other lanuage: include the next line]
      ((and (< cross-line-fore-to (line-end-position 2))
            (-string-match-p other-pattern cross-line-fore-char))
-      OTHER)
-     (t context))))
-
-(defun -prober ()
-  "Determine which language to use."
-  (let ((lang nil))
-    (when (or (button-at (point))
-              (overlayp -inline-overlay)
-              (and (featurep 'evil)
-                   (or (evil-normal-state-p)
-                       (evil-visual-state-p)
-                       (evil-motion-state-p)
-                       (evil-operator-state-p))))
-      (setq lang (or lang ENGLISH)))
-    (setq lang (or lang (-guess-context)))
-    lang))
+      OTHER))))
 
 (defun -mk-get-input-source-fn ()
   "Make a function to be bound to `do-get-input-source`."
@@ -298,26 +282,54 @@ If no ism found, then do nothing."
     (if mode
         (progn
           (add-hook 'post-self-insert-hook
-                    #'smart-input-source-adaptive-input-source)
+                    #'smart-input-source-check-to-activate-overlay)
           (when (featurep 'evil)
             (add-hook 'evil-insert-state-entry-hook
-                      #'smart-input-source-adaptive-input-source)
+                      #'smart-input-source-do)
             (add-hook 'evil-insert-state-exit-hook
                       #'smart-input-source-set-input-source-english)))
       (remove-hook 'post-self-insert-hook
-                   #'smart-input-source-adaptive-input-source)
+                   #'smart-input-source-check-to-activate-overlay)
       (when (featurep 'evil)
         (remove-hook 'evil-insert-state-entry-hook
-                     #'smart-input-source-adaptive-input-source)
+                     #'smart-input-source-do)
         (remove-hook 'evil-insert-state-exit-hook
                      #'smart-input-source-set-input-source-english)))))
+
+(defun check-to-activate-overlay()
+  "Check whether to activate the inline english region overlay.
+
+return `t` after activating the overlay."
+  (unless (or (not mode)
+              (overlayp -inline-overlay)
+              (button-at (point))
+              (and (featurep 'evil)
+                   (or (evil-normal-state-p)
+                       (evil-visual-state-p)
+                       (evil-motion-state-p)
+                       (evil-operator-state-p))))
+    (let* ((back-detect (-back-detect-chars))
+           (back-to (back-detect-to back-detect))
+           (back-char (back-detect-char back-detect)))
+      ;; [other lanuage][blank][^]
+      (when (and (> back-to (line-beginning-position))
+                 (< back-to (point))
+                 (-string-match-p other-pattern back-char))
+        (activate-inline-overlay back-to)
+        (set-input-source-english)
+        t))))
+
+(defun do ()
+  "Do the smart input source."
+  (unless (check-to-activate-overlay)
+    (adaptive-input-source)))
 
 (defun adaptive-input-source ()
   "Adaptively switch to the input source."
   (when mode
-    (let ((source (-prober)))
-      (when source
-        (-set-input-source source)))))
+    (let ((context (-guess-context)))
+      (when context
+        (-set-input-source context)))))
 
 (defun set-input-source-english ()
   "Set input source to `english-input-source`."
@@ -331,8 +343,8 @@ If no ism found, then do nothing."
 ;;
 ;; The following is about the inline english region overlay
 ;;
-(defun check-to-deactive-overlay ()
-  "Check whether to deactive the inline english region overlay."
+(defun check-to-deactivate-overlay ()
+  "Check whether to deactivate the inline english region overlay."
   (when (and mode
              (overlayp -inline-overlay)
              (or (< (point) (overlay-start -inline-overlay))
@@ -344,7 +356,8 @@ If no ism found, then do nothing."
   (when (overlayp -inline-overlay)
     (delete-overlay -inline-overlay))
   (setq -inline-overlay (make-overlay start (point) nil t t ))
-  (overlay-put -inline-overlay 'face '((:inherit default :inverse-video t)))
+  (overlay-put -inline-overlay
+               'face '((:inherit font-lock-keyword-face :inverse-video t)))
   (overlay-put -inline-overlay 'keymap
                (let ((keymap (make-sparse-keymap)))
                  (define-key keymap (kbd "RET")
@@ -355,7 +368,7 @@ If no ism found, then do nothing."
   (setq -last-inline-overlay-start-position nil)
   (setq -last-inline-overlay-end-position nil)
   (add-hook 'post-command-hook
-            #'smart-input-source-check-to-deactive-overlay)
+            #'smart-input-source-check-to-deactivate-overlay)
   (message "Press <RETURN> to enable input source switching again."))
 
 (defun end-inline-overlay ()
@@ -368,7 +381,7 @@ If no ism found, then do nothing."
   "Deactivate the inline english region overlay."
   (interactive)
   (remove-hook 'post-command-hook
-               #'smart-input-source-check-to-deactive-overlay)
+               #'smart-input-source-check-to-deactivate-overlay)
   (when (overlayp -inline-overlay)
     (setq -last-inline-overlay-start-position (overlay-start -inline-overlay))
     (setq -last-inline-overlay-end-position (overlay-end -inline-overlay))
