@@ -37,8 +37,8 @@ OS native input source smartly.
    1) 汉字后面跟空格触发 inline english 区域。
    2) 在 inline english 下，一直使用英文输入法。
    3) 光标离开区域，或者回车，关闭 inline english 区域。
-6. 输入法自动切换规则经过仔细设计：
-   1) 编辑英文时，永远不会自动切换到中文输入法
+6. 可以安全地默认开启mode：
+   1) 编辑英文时，永远不会自动切换输入法
    2) 输入法的切换除了考虑到前后字符，还考虑了换行。
 
 * Install
