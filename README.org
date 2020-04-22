@@ -25,16 +25,12 @@ OS native input source smartly.
    1) When edit english, input source will never be switched automatically.
    2) Switching considering the characters before and after the cursor, as well
       as crossing lines.
-   3) Major rules to switch input source acorrding to context:
-      - Input source should be consistent with context as much as possible.
-      - Except cross lines, there should not be spaces between CJK characters.
-      -  When english is mixed with CJK, spaces are used as seperators.
-       
+
 * Features (Chinese)
 1. 使用操作系统的输入法，不改变使用习惯。
 2. 支持 GUI Emacs, 也支持 Terminal Emacs.
 3. 安装配置简单， GUI Emacs Mac Port 下使用搜狗拼音免配置。
-4. 如果在 Evil 下（没有evil也可以正常工作）:
+4. 如果在 Evil 下（没有 evil 也可以正常工作）:
    1) 从 insert 模式离开时，自动切换到英文输入法。
    2) 进入 insert 模式时, 根据上下文自动切换输入法。
 5. 支持 inline english 区域：
@@ -44,10 +40,6 @@ OS native input source smartly.
 6. 输入法自动切换规则经过仔细设计：
    1) 编辑英文时，永远不会自动切换到中文输入法
    2) 输入法的切换除了考虑到前后字符，还考虑了换行。
-   3) 根据上下文切换输入法的主要规则：
-      - 输入法尽量和上下文一致。
-      - 除了换行，纯中文之间不应该有空格。
-      - 中英文混排时，中英文之间用空格隔开。
 
 * Install
 Just install this package from ~melpa~, and then install *input source manager*
@@ -103,6 +95,20 @@ its all in English.
   (add-hook prog-mode-hook #'smart-input-source-mode))
 #+END_SRC
 
+** Additional usage for none-evil user
+~smart-input-source-mode~ provides three key functions to be used by end user:
+- ~smart-input-source-check-to-activate-overlay~: check to activate the /inline
+  english region/.
+- ~smart-input-source-follow-context~: set input source smartly by following the
+  context.
+- ~smart-input-source-do~: do ~smart-input-source-check-to-activate-overlay~ as
+  well as ~smart-input-source-follow-context~.
+
+With ~evil~, user need not to touch those commands directly, because they are
+added to ~evil~ hooks already. Without ~evil~, only
+~smart-input-source-check-to-activate-overlay~ is added to hooks,
+~smart-input-source-follow-context~ is not added to hooks by default.
+
 **  How to get the input source id
 After /input source manager/ is configured, you can get your /current
 input source id/ by runing the following command in Emacs:
@@ -112,8 +118,8 @@ input source id/ by runing the following command in Emacs:
 
 * Configure
 
-| Variable                                       | Description                                | Default                              |
-|------------------------------------------------+--------------------------------------------+--------------------------------------|
+| Variable                                  | Description                                | Default                              |
+|-------------------------------------------+--------------------------------------------+--------------------------------------|
 | ~smart-input-source-english-pattern~      | Pattern to identify a character as english | ~[a-zA-Z]~                           |
 | ~smart-input-source-other-pattern~        | Pattern to identify a character as other   | ~\\cc~ see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]]              |
 | ~smart-input-source-blank-pattern~        | Pattern to identify a character as blank   | ~[:blank:]~                          |
@@ -122,36 +128,8 @@ input source id/ by runing the following command in Emacs:
 | ~smart-input-source-external-ism~         | input resource manager                     | ~macism~                             |
 | ~smart-input-source-do-get-input-source~  | Function to get the current input source   | determined from the envrionment      |
 | ~smart-input-source-do-set-input-source~  | Function to set the input source           | determined from the envrionment      |
-|------------------------------------------------+--------------------------------------------+--------------------------------------|
+|-------------------------------------------+--------------------------------------------+--------------------------------------|
 
-* Inernals
-** When to switch input source
-- Enter insert mode: select input source smartly by inspect the context.
-- Leave insert mode: select english input source
-- Input a character: select input source smartly by inspect the context.
- 
-** How smart to select input source by context
-Denote character of other language as ~A~, english character as ~a~, and ~^~ as cursor.
-
-- Same line rules:
-  - ~A ^~ and ~^ A~ will change to ENGLISH. In the former case, `inline english`
-    mode will be enabled.
-  - ~A^~ and ~^A~ will change to OTHER.
-  - ~a^~ and ~^a~ will change to ENGLISH.
-- Across line rules:
-  - ~A\n^~ will change to OTHER.
-  - ~a\n^~ will change to ENGLISH.
-- ~inline english~ ending rules:
-  - ~`inline english` ^\na~ will not change.
-  - ~`inline english` ^a~ will not change.
-  - ~`inline english` ^A~ will change to OTHER.
-   
-** How the input source is switched
-- For GUI session of ~emacs mac port~, use native API for better performance.
-- If ~emacs mac port~ is unavailable, or in terminal session, use ~macism~ or
-  other compatible CLI tool.
-- If even ~macism~ like tool is unailable, then do nothing.
- 
 * Configurations for other input source managers
 ** Example: ~fcitx~
 ~fcitx~ is a input method framework popular among Chinese Linux users.
