@@ -27,7 +27,7 @@
 
 ;;; Code:
 
-;; ~define-namespace~ is autoloaded, so there's no need to require ~names~.
+;; `define-namespace' is autoloaded, so there's no need to require `names'.
 ;; However, requiring it here means it will also work for people who don't
 ;; install through package.el.
 (eval-when-compile (require 'names))
@@ -109,17 +109,17 @@ Should accept a string which is the id of the input source.")
 (make-variable-buffer-local (quote -ism))
 
 (defun -string-match-p (regexp str &optional start)
-  "Robust wrapper of ~string-match-p~.
+  "Robust wrapper of `string-match-p'.
 
 Works when REGEXP or STR is not a string REGEXP, STR, START all has the same
-meanings as ~string-match-p~."
+meanings as `string-match-p'."
   (and (stringp regexp)
        (stringp str)
        (string-match-p regexp str start)))
 
 (cl-defstruct back-detect ; result of backward detect
   to ; point after first non-blank char in the same line
-  char ; first non-blank char at the same line (just before position ~to~)
+  char ; first non-blank char at the same line (just before position `to')
   cross-line-to ; point after first non-blank char cross lines
   cross-line-char ; first non-blank char cross lines before the current position
   )
@@ -143,7 +143,7 @@ meanings as ~string-match-p~."
 
 (cl-defstruct fore-detect ; result of forward detect
   to ; point before first non-blank char in the same line
-  char ; first non-blank char at the same line (just after position ~to~)
+  char ; first non-blank char at the same line (just after position `to')
   cross-line-to ; point before first non-blank char cross lines
   cross-line-char ; first non-blank char cross lines after the current position
   )
@@ -224,7 +224,7 @@ meanings as ~string-match-p~."
       OTHER))))
 
 (defun -mk-get-input-source-fn ()
-  "Make a function to be bound to ~do-get-input-source~."
+  "Make a function to be bound to `do-get-input-source'."
   (when -ism
     (if (equal -ism ISM-EMP)
         #'mac-input-source
@@ -232,7 +232,7 @@ meanings as ~string-match-p~."
         (string-trim (shell-command-to-string -ism))))))
 
 (defun -mk-set-input-source-fn ()
-  "Make a function to be bound to ~do-set-input-source~."
+  "Make a function to be bound to `do-set-input-source'."
   (when -ism
     (if (equal -ism ISM-EMP)
         (lambda (source) (mac-select-input-source source))
@@ -341,12 +341,12 @@ source."
         (-set-input-source context)))))
 
 (defun set-input-source-english ()
-  "Set input source to ~english-input-source~."
+  "Set input source to `english-input-source'."
   (when mode
     (-set-input-source ENGLISH)))
 
 (defun set-input-source-other ()
-  "Set input source to ~other-input-source~."
+  "Set input source to `other-input-source'."
   (-set-input-source OTHER))
 
 ;;
