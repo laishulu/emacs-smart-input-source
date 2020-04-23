@@ -71,6 +71,10 @@ Should return a string which is the id of the input source.")
 Should accept a string which is the id of the input source.")
 (make-variable-buffer-local (quote do-set-input-source))
 
+(defvar inline-english-face '(:inherit font-lock-constant-face :inverse-video t)
+  "Face of the inline english region overlay.")
+(make-variable-buffer-local (quote inline-english-face))
+
 ;;
 ;; Following symbols are not supposed to be used directly by end user.
 ;;
@@ -361,8 +365,7 @@ source."
   (when (overlayp -inline-overlay)
     (delete-overlay -inline-overlay))
   (setq -inline-overlay (make-overlay start (point) nil t t ))
-  (overlay-put -inline-overlay
-               'face '((:inherit font-lock-keyword-face :inverse-video t)))
+  (overlay-put -inline-overlay 'face inline-english-face)
   (overlay-put -inline-overlay 'keymap
                (let ((keymap (make-sparse-keymap)))
                  (define-key keymap (kbd "RET")
