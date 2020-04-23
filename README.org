@@ -104,8 +104,10 @@ input source id/ by runing the following command in Emacs:
 
 **  For none-evil user
 ~smart-input-source-mode~ provides three key functions to be used by end user:
-- ~smart-input-source-check-to-activate-overlay~: check to activate the /inline
-  english region/.
+- ~smart-input-source-check-to-activate-overlay~: check the context to determine
+  whether the /inline english region/ should be activated or not, is the answer
+  is yes, then activate the /inline english region/, and set the input
+  source to English.
 - ~smart-input-source-follow-context~: set input source smartly by following the
   context.
 - ~smart-input-source-do~: do ~smart-input-source-check-to-activate-overlay~ as
