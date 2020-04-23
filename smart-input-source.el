@@ -324,13 +324,13 @@ input source to English, and then return ~t~."
 (defun do ()
   "Do the smart input source switching.
 
-Do ~smart-input-source-check-to-activate-overlay~ as
-well as ~smart-input-source-follow-context~. "
+If no need to activate the overlay, then follow the context to switch input
+source."
   (unless (check-to-activate-overlay)
     (follow-context)))
 
 (defun follow-context ()
-  "Set input source following context."
+  "Follow the context to switch input source."
   (when mode
     (let ((context (-guess-context)))
       (when context
