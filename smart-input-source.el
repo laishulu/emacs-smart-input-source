@@ -208,7 +208,7 @@ meanings as `string-match-p'."
                     (not (-string-match-p english-pattern back-char))))
            (< fore-to (line-end-position))
            (= fore-to (point))
-           (-string-match-p other-pattern fore-char))
+           (-string-match-p english-pattern fore-char))
       ENGLISH)
      ;; [line beginning][^][other lanuage]
      ;; [other language][^][other lanuage]
