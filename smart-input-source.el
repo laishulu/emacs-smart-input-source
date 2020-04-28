@@ -59,6 +59,10 @@
   "Path of external ism.")
 (make-variable-buffer-local (quote external-ism))
 
+(defvar aggressive-line t
+  "Aggressively detect context across blank lines.")
+(make-variable-buffer-local (quote aggressive-line))
+
 (defvar do-get-input-source nil
   "Function to get the current input source.
 
@@ -194,6 +198,18 @@ meanings as `string-match-p'."
            (> fore-to (point))
            (-string-match-p other-pattern fore-char))
       ENGLISH)
+     ;; [line beginning][^][english]
+     ;; [english][^][english]
+     ;; [not english][blank][^][english]
+     ((and (or (= back-to (line-beginning-position))
+               (and (= back-to (point))
+                    (-string-match-p english-pattern back-char))
+               (and (< back-to (point))
+                    (not (-string-match-p english-pattern back-char))))
+           (< fore-to (line-end-position))
+           (= fore-to (point))
+           (-string-match-p other-pattern fore-char))
+      ENGLISH)
      ;; [line beginning][^][other lanuage]
      ;; [other language][^][other lanuage]
      ;; [not other language][blank][^][other lanuage]
@@ -207,19 +223,23 @@ meanings as `string-match-p'."
            (-string-match-p other-pattern fore-char))
       OTHER)
      ;; [english: include the previous line][blank][^]
-     ((and (> cross-line-back-to (line-beginning-position 0))
+     ((and (or (aggressive-line)
+               (> cross-line-back-to (line-beginning-position 0)))
            (-string-match-p english-pattern cross-line-back-char))
       ENGLISH)
      ;; [other lanuage: include the previous line][blank][^]
-     ((and (> cross-line-back-to (line-beginning-position 0))
+     ((and (or (aggressive-line)
+               (> cross-line-back-to (line-beginning-position 0)))
            (-string-match-p other-pattern cross-line-back-char))
       OTHER)
      ;; [^][blank][english: include the next line]
-     ((and (< cross-line-fore-to (line-end-position 2))
+     ((and (or aggressive-line
+               (< cross-line-fore-to (line-end-position 2)))
            (-string-match-p english-pattern cross-line-fore-char))
       ENGLISH)
      ;; [^][blank][other lanuage: include the next line]
-     ((and (< cross-line-fore-to (line-end-position 2))
+     ((and (or aggressive-line
+               (< cross-line-fore-to (line-end-position 2)))
            (-string-match-p other-pattern cross-line-fore-char))
       OTHER))))
 
