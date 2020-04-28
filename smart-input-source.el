@@ -223,13 +223,13 @@ meanings as `string-match-p'."
            (-string-match-p other-pattern fore-char))
       OTHER)
      ;; [english: include the previous line][blank][^]
-     ((and (or (aggressive-line)
+     ((and (or aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
            (-string-match-p english-pattern cross-line-back-char))
       ENGLISH)
      ;; [other lanuage: include the previous line][blank][^]
-     ((and (or (aggressive-line)
+     ((and (or aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
            (-string-match-p other-pattern cross-line-back-char))
