@@ -225,21 +225,25 @@ meanings as `string-match-p'."
      ;; [english: include the previous line][blank][^]
      ((and (or (aggressive-line)
                (> cross-line-back-to (line-beginning-position 0)))
+           (< cross-line-back-to (line-beginning-position))
            (-string-match-p english-pattern cross-line-back-char))
       ENGLISH)
      ;; [other lanuage: include the previous line][blank][^]
      ((and (or (aggressive-line)
                (> cross-line-back-to (line-beginning-position 0)))
+           (< cross-line-back-to (line-beginning-position))
            (-string-match-p other-pattern cross-line-back-char))
       OTHER)
      ;; [^][blank][english: include the next line]
      ((and (or aggressive-line
                (< cross-line-fore-to (line-end-position 2)))
+           (> cross-line-fore-to (line-end-position))
            (-string-match-p english-pattern cross-line-fore-char))
       ENGLISH)
      ;; [^][blank][other lanuage: include the next line]
      ((and (or aggressive-line
                (< cross-line-fore-to (line-end-position 2)))
+           (> cross-line-fore-to (line-end-position))
            (-string-match-p other-pattern cross-line-fore-char))
       OTHER))))
 
