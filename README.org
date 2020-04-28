@@ -109,8 +109,8 @@ its all in English.
         "com.apple.keylayout.US")
   (setq smart-input-source-other-input-source
         "com.sogou.inputmethod.sogou.pinyin")
-  (add-hook text-mode-hook #'smart-input-source-mode)
-  (add-hook prog-mode-hook #'smart-input-source-mode))
+  (add-hook 'text-mode-hook #'smart-input-source-mode)
+  (add-hook 'prog-mode-hook #'smart-input-source-mode))
 #+END_SRC
 
 **  How to get the input source id
