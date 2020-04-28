@@ -51,7 +51,7 @@ by any of the following ways:
   brew install emacs-mac --with-modules --with-rsvg --with-imagemagick --with-natural-title-bar
   #+END_SRC
 - On MacOS, use Emacs other than GUI EMP, with ~macism~, no need to configure
-  input source manager. you can install ~macism~ by the following commands:
+  input source manager. You can install ~macism~ by the following commands:
   #+BEGIN_SRC bash
   brew tap laishulu/macism
   brew install macism
@@ -146,7 +146,7 @@ up to the user to decide where to hook the other two functions.
 | ~smart-input-source-blank-pattern~        | Pattern to identify a character as blank       | ~[:blank:]~                                          |
 | ~smart-input-source-english-input-source~ | Input source for english                       | ~com.apple.keylayout.US~                             |
 | ~smart-input-source-other-input-source~   | Input source for other lanugage                | ~com.sogou.inputmethod.sogou.pinyin~                 |
-| ~smart-input=source-aggressive-line~      | Aggressively detect context across blank lines | ~t~                                                  |
+| ~smart-input-source-aggressive-line~      | Aggressively detect context across blank lines | ~t~                                                  |
 | ~smart-input-source-external-ism~         | input resource manager                         | ~macism~                                             |
 | ~smart-input-source-do-get-input-source~  | Function to get the current input source       | determined from the envrionment                      |
 | ~smart-input-source-do-set-input-source~  | Function to set the input source               | determined from the envrionment                      |
