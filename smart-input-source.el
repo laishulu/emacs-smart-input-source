@@ -75,6 +75,10 @@ Should return a string which is the id of the input source.")
 Should accept a string which is the id of the input source.")
 (make-variable-buffer-local (quote do-set-input-source))
 
+(defvar with-inline-english-feature t
+  "Enable the inline english feature.")
+(make-variable-buffer-local (quote with-inline-english-feature))
+
 (defvar inline-english-face '(:inherit font-lock-constant-face :inverse-video t)
   "Face of the inline english region overlay.")
 (make-variable-buffer-local (quote inline-english-face))
@@ -330,14 +334,15 @@ meanings as `string-match-p'."
 Check the context to determine whether the overlay should be activated or not,
 if the answer is yes, then activate the /inline english region/, set the
 input source to English, and then return ~t~."
-  (unless (or (not mode)
-              (overlayp -inline-overlay)
-              (button-at (point))
-              (and (featurep 'evil)
-                   (or (evil-normal-state-p)
-                       (evil-visual-state-p)
-                       (evil-motion-state-p)
-                       (evil-operator-state-p))))
+  (when (and with-inline-english-feature
+             mode
+             (not (overlayp -inline-overlay))
+             (not (button-at (point)))
+             (not (and (featurep 'evil)
+                       (or (evil-normal-state-p)
+                           (evil-visual-state-p)
+                           (evil-motion-state-p)
+                           (evil-operator-state-p)))))
     (let* ((back-detect (-back-detect-chars))
            (back-to (back-detect-to back-detect))
            (back-char (back-detect-char back-detect)))
