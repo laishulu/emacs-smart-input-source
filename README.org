@@ -139,20 +139,20 @@ up to the user to decide where to hook the other two functions.
 
 * Configure
 
-| Variable                                         | Description                                    | Default                                              |
-|--------------------------------------------------+------------------------------------------------+------------------------------------------------------|
-| ~smart-input-source-other-pattern~               | Pattern to identify a character as other       | ~\cc~ , see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]]                             |
-| ~smart-input-source-english-pattern~             | Pattern to identify a character as english     | ~[a-zA-Z]~                                           |
-| ~smart-input-source-blank-pattern~               | Pattern to identify a character as blank       | ~[:blank:]~                                          |
-| ~smart-input-source-english-input-source~        | Input source for english                       | ~com.apple.keylayout.US~                             |
-| ~smart-input-source-other-input-source~          | Input source for other lanugage                | ~com.sogou.inputmethod.sogou.pinyin~                 |
-| ~smart-input-source-aggressive-line~             | Aggressively detect context across blank lines | ~t~                                                  |
-| ~smart-input-source-external-ism~                | input resource manager                         | ~macism~                                             |
-| ~smart-input-source-do-get-input-source~         | Function to get the current input source       | determined from the envrionment                      |
-| ~smart-input-source-do-set-input-source~         | Function to set the input source               | determined from the envrionment                      |
-| ~smart-input-source-with-inline-english-feature~ | With the inline english feature                | ~t~                                                  |
-| ~smart-input-source-inline-english-face~         | Face for the online english region overlay     | '(:inherit font-lock-constant-face :inverse-video t) |
-|--------------------------------------------------+------------------------------------------------+------------------------------------------------------|
+| Variable                                  | Description                                    | Default                                              |
+|-------------------------------------------+------------------------------------------------+------------------------------------------------------|
+| ~smart-input-source-other-pattern~        | Pattern to identify a character as other       | ~\cc~ , see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]]                             |
+| ~smart-input-source-english-pattern~      | Pattern to identify a character as english     | ~[a-zA-Z]~                                           |
+| ~smart-input-source-blank-pattern~        | Pattern to identify a character as blank       | ~[:blank:]~                                          |
+| ~smart-input-source-english-input-source~ | Input source for english                       | ~com.apple.keylayout.US~                             |
+| ~smart-input-source-other-input-source~   | Input source for other lanugage                | ~com.sogou.inputmethod.sogou.pinyin~                 |
+| ~smart-input-source-aggressive-line~      | Aggressively detect context across blank lines | ~t~                                                  |
+| ~smart-input-source-external-ism~         | input resource manager                         | ~macism~                                             |
+| ~smart-input-source-do-get-input-source~  | Function to get the current input source       | determined from the envrionment                      |
+| ~smart-input-source-do-set-input-source~  | Function to set the input source               | determined from the envrionment                      |
+| ~smart-input-source-with-inline-english~  | With the inline english feature                | ~t~                                                  |
+| ~smart-input-source-inline-english-face~  | Face for the online english region overlay     | '(:inherit font-lock-constant-face :inverse-video t) |
+|-------------------------------------------+------------------------------------------------+------------------------------------------------------|
 
 * Configurations for other input source managers
 ** Example: ~fcitx~
