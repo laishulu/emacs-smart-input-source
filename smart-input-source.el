@@ -385,8 +385,10 @@ source."
   "Check whether to deactivate the inline english region overlay."
   (when (and mode
              (overlayp -inline-overlay)
-             (or (< (point) (overlay-start -inline-overlay))
-                 (> (point) (overlay-end -inline-overlay))))
+             (or
+              (= (overlay-start -inline-overlay) (overlay-end -inline-overlay))
+              (< (point) (overlay-start -inline-overlay))
+              (> (point) (overlay-end -inline-overlay))))
     (deactivate-inline-overlay)))
 
 (defun activate-inline-overlay (start)
