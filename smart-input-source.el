@@ -79,9 +79,14 @@ Should accept a string which is the id of the input source.")
   "Enable the inline english feature.")
 (make-variable-buffer-local (quote with-inline-english))
 
-(defvar inline-english-face '(:inherit font-lock-constant-face :inverse-video t)
+(defface inline-english-face
+  '()
   "Face of the inline english region overlay.")
-(make-variable-buffer-local (quote inline-english-face))
+
+(set-face-attribute
+ 'smart-input-source-inline-english-face nil
+ :background (face-attribute 'font-lock-constant-face :foreground)
+ :foreground (face-attribute 'default :background))
 
 ;;
 ;; Following symbols are not supposed to be used directly by end user.
@@ -401,7 +406,7 @@ source."
   (when (overlayp -inline-overlay)
     (delete-overlay -inline-overlay))
   (setq -inline-overlay (make-overlay start (point) nil t t ))
-  (overlay-put -inline-overlay 'face inline-english-face)
+  (overlay-put -inline-overlay 'face 'smart-input-source-inline-english-face)
   (overlay-put -inline-overlay 'keymap
                (let ((keymap (make-sparse-keymap)))
                  (define-key keymap (kbd "RET")
