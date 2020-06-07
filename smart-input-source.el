@@ -85,8 +85,8 @@ Should accept a string which is the id of the input source.")
 
 (set-face-attribute
  'smart-input-source-inline-english-face nil
- :background (face-attribute 'font-lock-constant-face :foreground)
- :foreground (face-attribute 'default :background))
+ :foreground (face-attribute 'font-lock-constant-face :foreground)
+ :inverse-video t)
 
 ;;
 ;; Following symbols are not supposed to be used directly by end user.
@@ -419,7 +419,7 @@ source."
   (setq -last-inline-overlay-end-position nil)
   (add-hook 'post-command-hook
             #'smart-input-source-check-to-deactivate-overlay)
-  (message "Press <RETURN> to enable input source switching again."))
+  (message "Press <RETURN> to close inline english region."))
 
 (defun end-inline-overlay ()
   "End the current active inline overlay."
