@@ -108,8 +108,9 @@ Should accept a string which is the id of the input source.")
 (declare-function evil-visual-state-p "ext:evil-states.el" (&optional state) t)
 (declare-function evil-motion-state-p "ext:evil-states.el" (&optional state) t)
 (declare-function evil-operator-state-p "ext:evil-states.el" (&optional state) t)
-(declare-function mac-input-source "src/macfns.c" (&optional SOURCE FORMAT) t)
-(declare-function mac-select-input-source "src/macfns.c"
+(declare-function company--active-p "ext:company.el" () t)
+(declare-function mac-input-source "ext:macfns.c" (&optional SOURCE FORMAT) t)
+(declare-function mac-select-input-source "ext:macfns.c"
                   (SOURCE &optional SET-KEYBOARD-LAYOUT-OVERRIDE-P) t)
 
 (defconst ENGLISH 1)
@@ -423,8 +424,11 @@ source."
 (defun end-inline-overlay ()
   "End the current active inline overlay."
   (interactive)
-  (smart-input-source-deactivate-inline-overlay)
-  (smart-input-source-follow-context))
+  (if (and (featurep 'evil)
+           (company--active-p))
+      (company-complete-selection)
+    (smart-input-source-deactivate-inline-overlay)
+    (smart-input-source-follow-context)))
 
 (defun deactivate-inline-overlay ()
   "Deactivate the inline english region overlay."
