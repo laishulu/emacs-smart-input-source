@@ -468,8 +468,6 @@ source."
           (let ((end (point)))
             (skip-chars-backward blank-pattern)
             (let ((start (point)))
-              (print start)
-              (print end)
               (delete-region start end))))))))
 
 (defun deactivate-inline-overlay ()
