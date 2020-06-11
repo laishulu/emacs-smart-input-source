@@ -40,7 +40,7 @@
 (make-variable-buffer-local (quote english-pattern))
 
 (defvar other-pattern "\\cc"
-  "Pattern to identify a character as other language.")
+  "Pattern to identify a character as other lang.")
 (make-variable-buffer-local (quote other-pattern))
 
 (defvar blank-pattern "[:blank:]"
@@ -52,7 +52,7 @@
 (make-variable-buffer-local (quote english-input-source))
 
 (defvar other-input-source "com.sogou.inputmethod.sogou.pinyin"
-  "Input source for other language.")
+  "Input source for other lang.")
 (make-variable-buffer-local (quote other-input-source))
 
 (defvar external-ism "macism"
@@ -80,7 +80,7 @@ Should accept a string which is the id of the input source.")
 (make-variable-buffer-local (quote with-inline-english))
 
 (defvar tighten-other-punctuation t
-  "Automatically delete blank between inline english region to puctuation of other language.")
+  "Auto delete blank between inline english and other lang puctuation.")
 (make-variable-buffer-local (quote tighten-other-punctuation))
 
 (defface inline-english-face
@@ -183,7 +183,7 @@ meanings as `string-match-p'."
                                              (string cross-line-char)))))))
 
 (defun -guess-context ()
-  "Guest the language context for the current point."
+  "Guest the lang context for the current point."
   (let* ((back-detect (-back-detect-chars))
          (fore-detect (-fore-detect-chars))
 
@@ -198,7 +198,7 @@ meanings as `string-match-p'."
          (cross-line-fore-char (fore-detect-cross-line-char fore-detect)))
     (cond
 
-     ;; [lastest overlay: last char is not other language]
+     ;; [lastest overlay: last char is not other lang]
      ;; [blank: in or out of lastest overlay][^][not english]
      ((and -last-inline-overlay-start-position
            -last-inline-overlay-end-position
@@ -209,7 +209,7 @@ meanings as `string-match-p'."
            (not (-string-match-p english-pattern fore-char)))
       OTHER)
 
-     ;; [^][blank][other lanuage]
+     ;; [^][blank][other lang]
      ((and (< fore-to (line-end-position))
            (> fore-to (point))
            (-string-match-p other-pattern fore-char))
@@ -228,9 +228,9 @@ meanings as `string-match-p'."
            (-string-match-p english-pattern fore-char))
       ENGLISH)
 
-     ;; [line beginning][^][other lanuage]
-     ;; [other language][^][other lanuage]
-     ;; [not other language][blank][^][other lanuage]
+     ;; [line beginning][^][other lang]
+     ;; [other lang][^][other lang]
+     ;; [not other lang][blank][^][other lang]
      ((and (or (= back-to (line-beginning-position))
                (and (= back-to (point))
                     (-string-match-p other-pattern back-char))
@@ -260,7 +260,7 @@ meanings as `string-match-p'."
            (-string-match-p english-pattern cross-line-back-char))
       ENGLISH)
 
-     ;; [other lanuage: include the previous line][blank][^]
+     ;; [other lang: include the previous line][blank][^]
      ((and (or aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
@@ -274,7 +274,7 @@ meanings as `string-match-p'."
            (-string-match-p english-pattern cross-line-fore-char))
       ENGLISH)
 
-     ;; [^][blank][other lanuage: include the next line]
+     ;; [^][blank][other lang: include the next line]
      ((and (or aggressive-line
                (< cross-line-fore-to (line-end-position 2)))
            (> cross-line-fore-to (line-end-position))
@@ -304,7 +304,7 @@ meanings as `string-match-p'."
     (funcall do-get-input-source)))
 
 (defun -set-input-source (lang)
-  "Set the input source according to language LANG, avoiding unnecessary switch."
+  "Set the input source according to lang LANG, avoiding unnecessary switch."
   (when (functionp do-set-input-source)
     (let ((ENGLISH_SOURCE english-input-source)
           (OTHER_SOURCE other-input-source))
@@ -376,7 +376,7 @@ input source to English, and then return ~t~."
     (let* ((back-detect (-back-detect-chars))
            (back-to (back-detect-to back-detect))
            (back-char (back-detect-char back-detect)))
-      ;; [other lanuage][blank][^]
+      ;; [other lang][blank][^]
       (when (and (> back-to (line-beginning-position))
                  (< back-to (point))
                  (-string-match-p other-pattern back-char))
@@ -455,7 +455,7 @@ source."
     (smart-input-source-follow-context)))
 
 (defun check-to-tighten-other-punctuation ()
-  "Check to delete blank between inline english region to puctuation of other language."
+  "Check to delete blank between inline english and other lang puctuation."
   (remove-hook 'post-self-insert-hook
                #'smart-input-source-check-to-tighten-other-punctuation)
   (when (and -last-inline-overlay-end-position
