@@ -131,17 +131,6 @@ meanings as `string-match-p'."
        (stringp str)
        (string-match-p regexp str start)))
 
-(defun -string-or-match-p (regexp str &optional start)
-  "Relaxed wrapper of `string-match-p'.
-
-Return ~t~ when str is ~nil~ or control character. Works when REGEXP or STR is
-not a string REGEXP, STR, START all has the same meanings as `string-match-p'."
-  (cond
-   ((not (stringp regexp)) nil)
-   ((not (stringp str)) t)
-   ((string-match-p "[\t\n\r\f]" str start) t)
-   (t (string-match-p regexp str start))))
-
 (cl-defstruct back-detect ; result of backward detect
   to ; point after first non-blank char in the same line
   char ; first non-blank char at the same line (just before position `to')
@@ -204,6 +193,7 @@ not a string REGEXP, STR, START all has the same meanings as `string-match-p'."
          (cross-line-fore-to (fore-detect-cross-line-to fore-detect))
          (cross-line-fore-char (fore-detect-cross-line-char fore-detect)))
     (cond
+
      ;; [lastest overlay: last char is not other language]
      ;; [blank: in or out of lastest overlay][^][not english]
      ((and -last-inline-overlay-start-position
@@ -214,11 +204,13 @@ not a string REGEXP, STR, START all has the same meanings as `string-match-p'."
            (not (-string-match-p other-pattern back-char))
            (not (-string-match-p english-pattern fore-char)))
       OTHER)
+
      ;; [^][blank][other lanuage]
      ((and (< fore-to (line-end-position))
            (> fore-to (point))
            (-string-match-p other-pattern fore-char))
       ENGLISH)
+
      ;; [line beginning][^][english]
      ;; [english][^][english]
      ;; [not english][blank][^][english]
@@ -227,10 +219,11 @@ not a string REGEXP, STR, START all has the same meanings as `string-match-p'."
                     (-string-match-p english-pattern back-char))
                (and (< back-to (point))
                     (not (-string-match-p english-pattern back-char))))
-           (<= fore-to (line-end-position))
+           (< fore-to (line-end-position))
            (= fore-to (point))
-           (-string-or-match-p english-pattern fore-char))
+           (-string-match-p english-pattern fore-char))
       ENGLISH)
+
      ;; [line beginning][^][other lanuage]
      ;; [other language][^][other lanuage]
      ;; [not other language][blank][^][other lanuage]
@@ -239,28 +232,44 @@ not a string REGEXP, STR, START all has the same meanings as `string-match-p'."
                     (-string-match-p other-pattern back-char))
                (and (< back-to (point))
                     (not (-string-match-p other-pattern back-char))))
-           (<= fore-to (line-end-position))
+           (< fore-to (line-end-position))
            (= fore-to (point))
-           (-string-or-match-p other-pattern fore-char))
+           (-string-match-p other-pattern fore-char))
       OTHER)
+
+     ;; [english][^][line end]
+     ((and (= back-to (point))
+           (-string-match-p english-pattern back-char)
+           (= fore-to (line-end-position)))
+      ENGLISH)
+
+     ;; [other][^][line end]
+     ((and (= back-to (point))
+           (-string-match-p other-pattern back-char)
+           (= fore-to (line-end-position)))
+      OTHER)
+
      ;; [english: include the previous line][blank][^]
      ((and (or aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
            (-string-match-p english-pattern cross-line-back-char))
       ENGLISH)
+
      ;; [other lanuage: include the previous line][blank][^]
      ((and (or aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
            (-string-match-p other-pattern cross-line-back-char))
       OTHER)
+
      ;; [^][blank][english: include the next line]
      ((and (or aggressive-line
                (< cross-line-fore-to (line-end-position 2)))
            (> cross-line-fore-to (line-end-position))
            (-string-match-p english-pattern cross-line-fore-char))
       ENGLISH)
+
      ;; [^][blank][other lanuage: include the next line]
      ((and (or aggressive-line
                (< cross-line-fore-to (line-end-position 2)))
