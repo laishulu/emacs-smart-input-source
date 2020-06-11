@@ -79,6 +79,10 @@ Should accept a string which is the id of the input source.")
   "Enable the inline english feature.")
 (make-variable-buffer-local (quote with-inline-english))
 
+(defvar tighten-other-punctuation t
+  "Automatically delete blank between inline english region to puctuation of other language.")
+(make-variable-buffer-local (quote tighten-other-punctuation))
+
 (defface inline-english-face
   '()
   "Face of the inline english region overlay.")
@@ -450,11 +454,31 @@ source."
     (smart-input-source-deactivate-inline-overlay)
     (smart-input-source-follow-context)))
 
+(defun check-to-tighten-other-punctuation ()
+  "Check to delete blank between inline english region to puctuation of other language."
+  (remove-hook 'post-self-insert-hook
+               #'smart-input-source-check-to-tighten-other-punctuation)
+  (when (and -last-inline-overlay-end-position
+             (= -last-inline-overlay-end-position (1- (point))))
+    (let ((char (char-before (point))))
+      (when (and (-string-match-p "[[:punct:]]" (string char))
+                 (-string-match-p other-pattern (string char)))
+        (save-excursion
+          (backward-char)
+          (let ((end (point)))
+            (skip-chars-backward blank-pattern)
+            (let ((start (point)))
+              (print start)
+              (print end)
+              (delete-region start end))))))))
+
 (defun deactivate-inline-overlay ()
   "Deactivate the inline english region overlay."
   (interactive)
   (remove-hook 'post-command-hook
                #'smart-input-source-check-to-deactivate-overlay)
+  (add-hook 'post-self-insert-hook
+            #'smart-input-source-check-to-tighten-other-punctuation)
   (when (overlayp -inline-overlay)
     (setq -last-inline-overlay-start-position (overlay-start -inline-overlay))
     (setq -last-inline-overlay-end-position (overlay-end -inline-overlay))
