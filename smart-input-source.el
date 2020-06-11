@@ -131,6 +131,17 @@ meanings as `string-match-p'."
        (stringp str)
        (string-match-p regexp str start)))
 
+(defun -string-or-match-p (regexp str &optional start)
+  "Relaxed wrapper of `string-match-p'.
+
+Return ~t~ when str is ~nil~ or control character. Works when REGEXP or STR is
+not a string REGEXP, STR, START all has the same meanings as `string-match-p'."
+  (cond
+   ((not (stringp regexp)) nil)
+   ((not (stringp str)) t)
+   ((string-match-p "[\t\n\r\f]" str start) t)
+   (t (string-match-p regexp str start))))
+
 (cl-defstruct back-detect ; result of backward detect
   to ; point after first non-blank char in the same line
   char ; first non-blank char at the same line (just before position `to')
@@ -216,9 +227,9 @@ meanings as `string-match-p'."
                     (-string-match-p english-pattern back-char))
                (and (< back-to (point))
                     (not (-string-match-p english-pattern back-char))))
-           (< fore-to (line-end-position))
+           (<= fore-to (line-end-position))
            (= fore-to (point))
-           (-string-match-p english-pattern fore-char))
+           (-string-or-match-p english-pattern fore-char))
       ENGLISH)
      ;; [line beginning][^][other lanuage]
      ;; [other language][^][other lanuage]
@@ -228,9 +239,9 @@ meanings as `string-match-p'."
                     (-string-match-p other-pattern back-char))
                (and (< back-to (point))
                     (not (-string-match-p other-pattern back-char))))
-           (< fore-to (line-end-position))
+           (<= fore-to (line-end-position))
            (= fore-to (point))
-           (-string-match-p other-pattern fore-char))
+           (-string-or-match-p other-pattern fore-char))
       OTHER)
      ;; [english: include the previous line][blank][^]
      ((and (or aggressive-line
