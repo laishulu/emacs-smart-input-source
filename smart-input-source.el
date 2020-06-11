@@ -147,7 +147,7 @@ meanings as `string-match-p'."
     (skip-chars-backward blank-pattern)
     (let ((to (point))
           (char (char-before (point))))
-      (skip-chars-backward (concat blank-pattern "\n"))
+      (skip-chars-backward (concat blank-pattern "[:cntrl:]"))
       (let ((cross-line-char (char-before (point))))
         (make-back-detect :to to
                           :char (when char (string char))
@@ -170,7 +170,7 @@ meanings as `string-match-p'."
     (skip-chars-forward blank-pattern)
     (let ((to (point))
           (char (char-after (point))))
-      (skip-chars-forward (concat blank-pattern "\n"))
+      (skip-chars-forward (concat blank-pattern "[:cntrl:]"))
       (let ((cross-line-char (char-after (point))))
         (make-fore-detect :to to
                           :char (when char (string char))
