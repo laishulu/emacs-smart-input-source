@@ -75,6 +75,10 @@ Should return a string which is the id of the input source.")
 Should accept a string which is the id of the input source.")
 (make-variable-buffer-local (quote do-set-input-source))
 
+(defvar start-with-english t
+  "Start the mode with english input source.")
+(make-variable-buffer-local (quote start-with-english))
+
 (defvar with-inline-english t
   "Enable the inline english feature.")
 (make-variable-buffer-local (quote with-inline-english))
@@ -349,6 +353,7 @@ meanings as `string-match-p'."
 
     (if mode
         (progn
+          (when start-with-english (set-input-source-english))
           (add-hook 'post-self-insert-hook
                     #'smart-input-source-check-to-activate-overlay)
           (when (featurep 'evil)
