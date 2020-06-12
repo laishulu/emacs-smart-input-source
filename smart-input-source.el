@@ -530,11 +530,13 @@ input source to English, and then return ~t~."
 (define-minor-mode mode
   "Switch input source smartly.
 
-- For GUI session of ~emacs mac port~, use native API to select input source
-  for better performance.
-- If ~emacs mac port~ is unavailable, or in terminal session, use external ism
-  tool to select input source.
-- If no ism found, then do nothing."
+Just for lazy user, at the cost of inconsistent logic on use of the global mode
+`global-auto-english-mode'. It's highly recommended to use 
+`smart-input-source-global-auto-english-mode',
+`smart-input-source-inline-english-mode'
+`smart-input-source-follow-context-mode'
+separatly instead of this all-in-one mode.
+"
   :init-value nil
 
   (unless -ism-inited
