@@ -12,9 +12,9 @@ This package provide several modes to switch OS native input source smartly:
   source smarted according to context when entering ~evil~ insert mode. A
   function ~smart-input-source-follow-context~ is also provided to hook as your
   wish, regardless the presence of ~evil~.
-- A buffer local inline english mode: ~smart-input-source-inline-english-mode~
-  to enable the automatic triggerring of a temporarily overlay to input english
-  and then back to CJK without switching input sources manually.
+- A buffer local mode: ~smart-input-source-inline-english-mode~ to enable the
+  automatic triggerring of a temporary overlay to input english and then back to
+  none-english without switching input sources manually.
 
 #+CAPTION: Smart input source
 [[./screenshots/smart-input-source.gif]]
@@ -29,11 +29,11 @@ This package provide several modes to switch OS native input source smartly:
    2) when enter ~insert~ model, switch input source automatically according to
       context.
 5. Support ~inline english~ region:
-   1) Blank after CJK characters triggers the region.
+   1) Blank after none-english characters triggers the region.
    2) In this mode, Engligh will be sticked.
    3) Region is closed when cursor leaves the region or ~Return~ is pressed.
-   4) If the closed region ends with blank, input source will be switched back
-      from English. If the following character is a non-english punctuation, the
+   4) If the closed region ends with blank, none-english input source will be
+      selected. If the following character is a non-english punctuation, the
       leading blanks will be deleted.
    5) If the closed region ends with english, english input source will be
       retained.
@@ -53,8 +53,8 @@ This package provide several modes to switch OS native input source smartly:
    1) 汉字后面跟空格触发 inline english 区域。
    2) 在 inline english 下，一直使用英文输入法。
    3) 光标离开区域，或者回车，关闭 inline english 区域。
-   4) 关闭的区域如果是空格结尾，输入法从英文切换回去。后续如果输入非中文的标点符
-      号，前面的空格会被自动删除。
+   4) 关闭的区域如果是空格结尾，输入法切回非英文。后续如果输入非中文的标点符号，
+      前面的空格会被自动删除。
    5) 关闭的区域如果是英文结尾，输入法保持英文。
 6. 可以安全地默认开启mode：
    1) 编辑英文时，永远不会自动切换输入法
