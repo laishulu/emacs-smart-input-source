@@ -4,7 +4,7 @@
 ;; Created: March 27th, 2020
 ;; Keywords: convenience
 ;; Package-Requires: ((names "0.5") (emacs "25"))
-;; Version: 0.1
+;; Version: 1.0
 
 ;; This file is not part of GNU Emacs.
 
@@ -35,9 +35,27 @@
 
 (define-namespace smart-input-source-
 
+(defvar external-ism "macism"
+  "Path of external ism.")
+
+(defvar do-get-input-source nil
+  "Function to get the current input source.
+
+Should return a string which is the id of the input source.")
+
+(defvar do-set-input-source nil
+  "Function to set the input source.
+
+Should accept a string which is the id of the input source.")
+
 (defvar english-pattern "[a-zA-Z]"
   "Pattern to identify a character as english.")
-(make-variable-buffer-local (quote english-pattern))
+
+(defvar english-input-source "com.apple.keylayout.US"
+  "Input source for english.")
+
+(defvar start-with-english t
+  "Switch to english when `global-auto-english-mode' enabled.")
 
 (defvar other-pattern "\\cc"
   "Pattern to identify a character as other lang.")
@@ -47,41 +65,13 @@
   "Pattern to identify a character as blank.")
 (make-variable-buffer-local (quote blank-pattern))
 
-(defvar english-input-source "com.apple.keylayout.US"
-  "Input source for english.")
-(make-variable-buffer-local (quote english-input-source))
-
 (defvar other-input-source "com.sogou.inputmethod.sogou.pinyin"
   "Input source for other lang.")
 (make-variable-buffer-local (quote other-input-source))
 
-(defvar external-ism "macism"
-  "Path of external ism.")
-(make-variable-buffer-local (quote external-ism))
-
 (defvar aggressive-line t
   "Aggressively detect context across blank lines.")
 (make-variable-buffer-local (quote aggressive-line))
-
-(defvar do-get-input-source nil
-  "Function to get the current input source.
-
-Should return a string which is the id of the input source.")
-(make-variable-buffer-local (quote do-get-input-source))
-
-(defvar do-set-input-source nil
-  "Function to set the input source.
-
-Should accept a string which is the id of the input source.")
-(make-variable-buffer-local (quote do-set-input-source))
-
-(defvar start-with-english t
-  "Start the mode with english input source.")
-(make-variable-buffer-local (quote start-with-english))
-
-(defvar with-inline-english t
-  "Enable the inline english feature.")
-(make-variable-buffer-local (quote with-inline-english))
 
 (defvar tighten-other-punctuation t
   "Auto delete blank between inline english and other lang puctuation.")
@@ -89,7 +79,8 @@ Should accept a string which is the id of the input source.")
 
 (defface inline-english-face
   '()
-  "Face of the inline english region overlay.")
+  "Face of the inline english region overlay."
+  :group 'smart-input-source)
 
 (set-face-attribute
  'smart-input-source-inline-english-face nil
@@ -100,18 +91,6 @@ Should accept a string which is the id of the input source.")
 ;; Following symbols are not supposed to be used directly by end user.
 ;;
 
-(defvar -inline-overlay nil
-  "The active inline overlay.")
-(make-variable-buffer-local (quote -inline-overlay))
-
-(defvar -last-inline-overlay-start-position nil
-  "Start position of the last inline overlay (already deactivated).")
-(make-variable-buffer-local (quote -last-inline-overlay-start-position))
-
-(defvar -last-inline-overlay-end-position nil
-  "End position of the last inline overlay (already deactivated).")
-(make-variable-buffer-local (quote -last-inline-overlay-end-position))
-
 (declare-function evil-normal-state-p "ext:evil-states.el" (&optional state) t)
 (declare-function evil-visual-state-p "ext:evil-states.el" (&optional state) t)
 (declare-function evil-motion-state-p "ext:evil-states.el" (&optional state) t)
@@ -121,6 +100,9 @@ Should accept a string which is the id of the input source.")
 (declare-function mac-select-input-source "ext:macfns.c"
                   (SOURCE &optional SET-KEYBOARD-LAYOUT-OVERRIDE-P) t)
 
+;;
+;; Following codes are mainly about input source manager
+;;
 (defconst ENGLISH 1)
 (defconst OTHER 2)
 
@@ -128,7 +110,106 @@ Should accept a string which is the id of the input source.")
 (defconst ISM-EMP 1)
 
 (defvar -ism nil "The input source manager.")
-(make-variable-buffer-local (quote -ism))
+(defvar -ism-inited nil "Input source manager initialized.")
+
+(defun -init-ism ()
+  "Init input source manager."
+  (when (and (string= (window-system) "mac")
+             (fboundp 'mac-input-source))
+    (setq -ism ISM-EMP))
+
+  (when (and (not -ism) external-ism)
+    (let ((ism-path (executable-find external-ism)))
+      (setq -ism ism-path)))
+
+  (when -ism
+    (unless (functionp do-get-input-source)
+      (setq do-get-input-source (-mk-get-input-source-fn)))
+
+    (unless (functionp do-set-input-source)
+      (setq do-set-input-source (-mk-set-input-source-fn))))
+
+  (setq -ism-inited t))
+
+(defun -mk-get-input-source-fn ()
+  "Make a function to be bound to `do-get-input-source'."
+  (when -ism
+    (if (equal -ism ISM-EMP)
+        #'mac-input-source
+      (lambda ()
+        (string-trim (shell-command-to-string -ism))))))
+
+(defun -mk-set-input-source-fn ()
+  "Make a function to be bound to `do-set-input-source'."
+  (when -ism
+    (if (equal -ism ISM-EMP)
+        (lambda (source) (mac-select-input-source source))
+      (lambda (source)
+        (string-trim
+         (shell-command-to-string (concat -ism " " source)))))))
+
+(defun -get-input-source ()
+  "Get the input source id."
+  (when (functionp do-get-input-source)
+    (funcall do-get-input-source)))
+
+(defun -set-input-source (lang)
+  "Set the input source according to lang LANG, avoiding unnecessary switch."
+  (when (functionp do-set-input-source)
+    (let ((ENGLISH_SOURCE english-input-source)
+          (OTHER_SOURCE other-input-source))
+      (pcase (-get-input-source)
+        ((pred (equal ENGLISH_SOURCE))
+         (when (equal lang OTHER)
+           (funcall do-set-input-source OTHER_SOURCE)))
+        ((pred (equal OTHER_SOURCE))
+         (when (equal lang ENGLISH)
+           (funcall do-set-input-source ENGLISH_SOURCE)))))))
+
+(defun set-input-source-english ()
+  "Set input source to `english-input-source'."
+  (interactive)
+  (unless -ism-inited
+    (-init-ism))
+  (when -ism
+    (-set-input-source ENGLISH)))
+
+(defun set-input-source-other ()
+  "Set input source to `other-input-source'."
+  (interactive)
+  (unless -ism-inited
+    (-init-ism))
+  (when -ism
+    (-set-input-source OTHER)))
+
+;;;###autoload
+(define-minor-mode global-auto-english-mode
+  "Automatically select english input source when startup or with evil.
+
+- For GUI session of ~emacs mac port~, use native API to select input source
+  for better performance.
+- If ~emacs mac port~ is unavailable, or in terminal session, use external ism
+  tool to select input source.
+- If no ism found, then do nothing."
+  :global t
+  :init-value nil
+  (unless -ism-inited
+    (-init-ism))
+
+  (when -ism
+    (if global-auto-english-mode
+        (progn
+          (when start-with-english (set-input-source-english))
+          (when (featurep 'evil)
+            (add-hook 'evil-insert-state-exit-hook
+                      #'smart-input-source-set-input-source-english)))
+      (when (featurep 'evil)
+        (remove-hook 'evil-insert-state-exit-hook
+                     #'smart-input-source-set-input-source-english)))))
+
+;;
+;; Following codes are mainly about follow-context-mode
+;;
 
 (defun -string-match-p (regexp str &optional start)
   "Robust wrapper of `string-match-p'.
@@ -188,10 +269,7 @@ meanings as `string-match-p'."
 
 (defun -guess-context ()
   "Guest the lang context for the current point."
-  (let* ((overlay-start-position -last-inline-overlay-start-position)
-         (overlay-end-position -last-inline-overlay-end-position)
-
-         (back-detect (-back-detect-chars))
+  (let* ((back-detect (-back-detect-chars))
          (fore-detect (-fore-detect-chars))
 
          (back-to (back-detect-to back-detect))
@@ -205,19 +283,6 @@ meanings as `string-match-p'."
          (cross-line-fore-char (fore-detect-cross-line-char fore-detect)))
 
     (cond
-
-     ;; [blank inline overlay]^
-     ;; [lastest overlay: last char is not other lang]
-     ;; [blank: in or out of lastest overlay][^][not english]
-     ((and overlay-start-position
-           overlay-end-position
-           (or (= back-to overlay-start-position)
-               (and (> back-to overlay-start-position)
-                    (<= back-to overlay-end-position)
-                    (< back-to (point))
-                    (not (-string-match-p other-pattern back-char))
-                    (not (-string-match-p english-pattern fore-char)))))
-      OTHER)
 
      ;; [^][blank][other lang]
      ((and (< fore-to (line-end-position))
@@ -291,44 +356,10 @@ meanings as `string-match-p'."
            (-string-match-p other-pattern cross-line-fore-char))
       OTHER))))
 
-(defun -mk-get-input-source-fn ()
-  "Make a function to be bound to `do-get-input-source'."
-  (when -ism
-    (if (equal -ism ISM-EMP)
-        #'mac-input-source
-      (lambda ()
-        (string-trim (shell-command-to-string -ism))))))
-
-(defun -mk-set-input-source-fn ()
-  "Make a function to be bound to `do-set-input-source'."
-  (when -ism
-    (if (equal -ism ISM-EMP)
-        (lambda (source) (mac-select-input-source source))
-      (lambda (source)
-        (string-trim
-         (shell-command-to-string (concat -ism " " source)))))))
-
-(defun -get-input-source ()
-  "Get the input source id."
-  (when (functionp do-get-input-source)
-    (funcall do-get-input-source)))
-
-(defun -set-input-source (lang)
-  "Set the input source according to lang LANG, avoiding unnecessary switch."
-  (when (functionp do-set-input-source)
-    (let ((ENGLISH_SOURCE english-input-source)
-          (OTHER_SOURCE other-input-source))
-      (pcase (-get-input-source)
-        ((pred (equal ENGLISH_SOURCE))
-         (when (equal lang OTHER)
-           (funcall do-set-input-source OTHER_SOURCE)))
-        ((pred (equal OTHER_SOURCE))
-         (when (equal lang ENGLISH)
-           (funcall do-set-input-source ENGLISH_SOURCE)))))))
 
 ;;;###autoload
-(define-minor-mode mode
-  "Switch input source smartly.
+(define-minor-mode follow-context-mode
+  "Switch input source smartly according to context.
 
 - For GUI session of ~emacs mac port~, use native API to select input source
   for better performance.
@@ -336,38 +367,61 @@ meanings as `string-match-p'."
   tool to select input source.
 - If no ism found, then do nothing."
   :init-value nil
-  (when (and (string= (window-system) "mac")
-             (fboundp 'mac-input-source))
-    (setq -ism ISM-EMP))
 
-  (when (and (not -ism) external-ism)
-    (let ((ism-path (executable-find external-ism)))
-      (setq -ism ism-path)))
+  (unless -ism-inited
+    (-init-ism))
 
   (when -ism
-    (unless (functionp do-get-input-source)
-      (setq do-get-input-source (-mk-get-input-source-fn)))
-
-    (unless (functionp do-set-input-source)
-      (setq do-set-input-source (-mk-set-input-source-fn)))
-
-    (if mode
-        (progn
-          (when start-with-english (set-input-source-english))
-          (add-hook 'post-self-insert-hook
-                    #'smart-input-source-check-to-activate-overlay)
-          (when (featurep 'evil)
-            (add-hook 'evil-insert-state-entry-hook
-                      #'smart-input-source-do)
-            (add-hook 'evil-insert-state-exit-hook
-                      #'smart-input-source-set-input-source-english)))
-      (remove-hook 'post-self-insert-hook
-                   #'smart-input-source-check-to-activate-overlay)
+    (if follow-context-mode
+        (when (featurep 'evil)
+          (add-hook 'evil-insert-state-entry-hook
+                    #'smart-input-source-follow-context))
       (when (featurep 'evil)
         (remove-hook 'evil-insert-state-entry-hook
-                     #'smart-input-source-do)
-        (remove-hook 'evil-insert-state-exit-hook
-                     #'smart-input-source-set-input-source-english)))))
+                     #'smart-input-source-follow-context)))))
+
+(defun follow-context ()
+  "Follow the context to switch input source."
+  (let ((context (-guess-context)))
+    (when context
+      (-set-input-source context))))
+
+;;
+;; Following codes are mainly about the inline english region overlay
+;;
+
+(defvar -inline-overlay nil
+  "The active inline overlay.")
+(make-variable-buffer-local (quote -inline-overlay))
+
+(defvar -last-inline-overlay-start-position nil
+  "Start position of the last inline overlay (already deactivated).")
+(make-variable-buffer-local (quote -last-inline-overlay-start-position))
+
+(defvar -last-inline-overlay-end-position nil
+  "End position of the last inline overlay (already deactivated).")
+(make-variable-buffer-local (quote -last-inline-overlay-end-position))
+
+;;;###autoload
+(define-minor-mode inline-english-mode
+  "English overlay mode for mixed language editing.
+
+- For GUI session of ~emacs mac port~, use native API to select input source
+  for better performance.
+- If ~emacs mac port~ is unavailable, or in terminal session, use external ism
+  tool to select input source.
+- If no ism found, then do nothing."
+  :init-value nil
+
+  (unless -ism-inited
+    (-init-ism))
+
+  (when -ism
+    (if inline-english-mode
+        (add-hook 'post-self-insert-hook
+                  #'smart-input-source-check-to-activate-overlay)
+      (remove-hook 'post-self-insert-hook
+                   #'smart-input-source-check-to-activate-overlay))))
 
 (defun check-to-activate-overlay()
   "Check whether to activate the inline english region overlay.
@@ -375,8 +429,7 @@ meanings as `string-match-p'."
 Check the context to determine whether the overlay should be activated or not,
 if the answer is yes, then activate the /inline english region/, set the
 input source to English, and then return ~t~."
-  (when (and with-inline-english
-             mode
+  (when (and inline-english-mode
              (not (overlayp -inline-overlay))
              (not (button-at (point)))
              (not (and (featurep 'evil)
@@ -395,44 +448,6 @@ input source to English, and then return ~t~."
         (set-input-source-english)
         t))))
 
-(defun do ()
-  "Do the smart input source switching.
-
-If no need to activate the overlay, then follow the context to switch input
-source."
-  (unless (check-to-activate-overlay)
-    (follow-context)))
-
-(defun follow-context ()
-  "Follow the context to switch input source."
-  (when mode
-    (let ((context (-guess-context)))
-      (when context
-        (-set-input-source context)))))
-
-(defun set-input-source-english ()
-  "Set input source to `english-input-source'."
-  (when mode
-    (-set-input-source ENGLISH)))
-
-(defun set-input-source-other ()
-  "Set input source to `other-input-source'."
-  (-set-input-source OTHER))
-
-;;
-;; The following is about the inline english region overlay
-;;
-(defun check-to-deactivate-overlay ()
-  "Check whether to deactivate the inline english region overlay."
-  (when (and mode (overlayp -inline-overlay))
-    (setq -last-inline-overlay-start-position (overlay-start -inline-overlay))
-    (setq -last-inline-overlay-end-position (overlay-end -inline-overlay))
-    (when (or (= -last-inline-overlay-start-position
-                 -last-inline-overlay-end-position)
-              (or(< (point) -last-inline-overlay-start-position)
-                 (> (point) -last-inline-overlay-end-position)))
-      (end-inline-overlay))))
-
 (defun activate-inline-overlay (start)
   "Activate the inline english region overlay from START."
   (when (overlayp -inline-overlay)
@@ -442,9 +457,9 @@ source."
   (overlay-put -inline-overlay 'keymap
                (let ((keymap (make-sparse-keymap)))
                  (define-key keymap (kbd "RET")
-                   'smart-input-source-end-inline-overlay)
+                   'smart-input-source-deactivate-inline-overlay)
                  (define-key keymap (kbd "<return>")
-                   'smart-input-source-end-inline-overlay)
+                   'smart-input-source-deactivate-inline-overlay)
                  keymap))
   (setq -last-inline-overlay-start-position nil)
   (setq -last-inline-overlay-end-position nil)
@@ -452,14 +467,49 @@ source."
             #'smart-input-source-check-to-deactivate-overlay)
   (message "Press <RETURN> to close inline english region."))
 
-(defun end-inline-overlay ()
-  "End the current active inline overlay."
+(defun check-to-deactivate-overlay ()
+  "Check whether to deactivate the inline english region overlay."
+  (when (and inline-english-mode (overlayp -inline-overlay))
+    (setq -last-inline-overlay-start-position (overlay-start -inline-overlay))
+    (setq -last-inline-overlay-end-position (overlay-end -inline-overlay))
+    (when (or (= -last-inline-overlay-start-position
+                 -last-inline-overlay-end-position)
+              (or(< (point) -last-inline-overlay-start-position)
+                 (> (point) -last-inline-overlay-end-position)))
+      (deactivate-inline-overlay))))
+
+(defun deactivate-inline-overlay ()
+  "Deactivate the inline english region overlay."
   (interactive)
+
+  ;; company
   (if (and (featurep 'evil)
            (company--active-p))
-      (company-complete-selection)
-    (smart-input-source-deactivate-inline-overlay)
-    (smart-input-source-follow-context)))
+      (company-complete-selection))
+
+  ;; clean up
+  (remove-hook 'post-command-hook
+               #'smart-input-source-check-to-deactivate-overlay)
+  (add-hook 'post-self-insert-hook
+            #'smart-input-source-check-to-tighten-other-punctuation)
+  (when (overlayp -inline-overlay)
+    (delete-overlay -inline-overlay)
+    (setq -inline-overlay nil))
+
+  ;; select input source
+  (let* ((start -last-inline-overlay-start-position)
+         (end -last-inline-overlay-end-position)
+         (back-detect (-back-detect-chars))
+         (back-to (back-detect-to back-detect)))
+
+    ;; [:blank inline overlay:]^
+    ;; [:with trailing blank :]^
+    (when (and start end
+               (or (= back-to start)
+                   (and (> back-to start)
+                        (< back-to end)
+                        (< back-to (point)))))
+      (set-input-source-other))))
 
 (defun check-to-tighten-other-punctuation ()
   "Check to delete blank between inline english and other lang puctuation."
@@ -477,16 +527,29 @@ source."
             (let ((start (point)))
               (delete-region start end))))))))
 
-(defun deactivate-inline-overlay ()
-  "Deactivate the inline english region overlay."
-  (interactive)
-  (remove-hook 'post-command-hook
-               #'smart-input-source-check-to-deactivate-overlay)
-  (add-hook 'post-self-insert-hook
-            #'smart-input-source-check-to-tighten-other-punctuation)
-  (when (overlayp -inline-overlay)
-    (delete-overlay -inline-overlay)
-    (setq -inline-overlay nil)))
+(define-minor-mode mode
+  "Switch input source smartly.
+
+- For GUI session of ~emacs mac port~, use native API to select input source
+  for better performance.
+- If ~emacs mac port~ is unavailable, or in terminal session, use external ism
+  tool to select input source.
+- If no ism found, then do nothing."
+  :init-value nil
+
+  (unless -ism-inited
+    (-init-ism))
+
+  (when -ism
+    (if mode
+        (progn
+          (unless global-auto-english-mode
+            (global-auto-english-mode t))
+          (inline-english-mode t)
+          (follow-context-mode t))
+      ;; only turn off buffer local mode
+      (inline-english-mode -1)
+      (follow-context-mode -1))))
 
 ;; end of namespace
 )

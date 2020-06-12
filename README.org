@@ -2,8 +2,19 @@
 [[https://melpa.org/#/smart-input-source][file:https://melpa.org/packages/smart-input-source-badge.svg]]
 
 * About
-This package provide a buffer local mode ~smart-input-source-mode~ to switch
-OS native input source smartly.
+This package provide several modes to switch OS native input source smartly:
+
+- A global mode: ~smart-input-source-global-auto-english-mode~ to automatically
+  switch to english when leaving ~evil~ insert mode. It can also be used
+  regardless the presence of ~evil~, to optionally switched to english
+  immediately when the mode is turned on.
+- A buffer local mode: ~smart-input-source-follow-context-mode~ to switch input
+  source smarted according to context when entering ~evil~ insert mode. A
+  function ~smart-input-source-follow-context~ is also provided to hook as your
+  wish, regardless the presence of ~evil~.
+- A buffer local inline english mode: ~smart-input-source-inline-english-mode~
+  to enable the automatic triggerring of a temporarily overlay to input english
+  and then back to CJK without switching input sources manually.
 
 #+CAPTION: Smart input source
 [[./screenshots/smart-input-source.gif]]
@@ -21,6 +32,11 @@ OS native input source smartly.
    1) Blank after CJK characters triggers the region.
    2) In this mode, Engligh will be sticked.
    3) Region is closed when cursor leaves the region or ~Return~ is pressed.
+   4) If the closed region ends with blank, input source will be switched back
+      from English. If the following character is a non-english punctuation, the
+      leading blanks will be deleted.
+   5) If the closed region ends with english, english input source will be
+      retained.
 6. Input source switching rules are designed carefully.
    1) When edit english, input source will never be switched automatically.
    2) Switching considering the characters before and after the cursor, as well
@@ -37,6 +53,9 @@ OS native input source smartly.
    1) 汉字后面跟空格触发 inline english 区域。
    2) 在 inline english 下，一直使用英文输入法。
    3) 光标离开区域，或者回车，关闭 inline english 区域。
+   4) 关闭的区域如果是空格结尾，输入法从英文切换回去。后续如果输入非中文的标点符
+      号，前面的空格会被自动删除。
+   5) 关闭的区域如果是英文结尾，输入法保持英文。
 6. 可以安全地默认开启mode：
    1) 编辑英文时，永远不会自动切换输入法
    2) 输入法的切换除了考虑到前后字符，还考虑了换行。
@@ -95,10 +114,6 @@ by any of the following ways:
   at the end of this documentation.
  
 * Usage
-Load the package, open a file buffer, and then run ~smart-input-source-mode~ to
-enable the mode for this buffer, if it finds no input source manager, it will do
-nothing.
-
 The mode is designed carefully, so it's safe to enable for all buffers even
 its all in English.
 
@@ -109,8 +124,11 @@ its all in English.
         "com.apple.keylayout.US")
   (setq smart-input-source-other-input-source
         "com.sogou.inputmethod.sogou.pinyin")
-  (add-hook 'text-mode-hook #'smart-input-source-mode)
-  (add-hook 'prog-mode-hook #'smart-input-source-mode))
+  (smart-input-source-global-auto-english-mode t)
+  (add-hook 'text-mode-hook #'smart-input-source-follow-context-mode)
+  (add-hook 'prog-mode-hook #'smart-input-source-follow-context-mode)
+  (add-hook 'text-mode-hook #'smart-input-source-inline-english-mode)
+  (add-hook 'prog-mode-hook #'smart-input-source-inline-english-mode))
 #+END_SRC
 
 **  How to get the input source id
@@ -120,46 +138,29 @@ input source id/ by runing the following command in Emacs:
 (smart-input-source--get-input-source)
 #+END_SRC
 
-**  For none-evil user
-~smart-input-source-mode~ provides three key functions to be used by end user:
-- ~smart-input-source-check-to-activate-overlay~: check the context to determine
-  whether the /inline english region/ should be activated or not, is the answer
-  is yes, then activate the /inline english region/, and switch the input
-  source to English.
-- ~smart-input-source-follow-context~: follow the context to switch input source.
-- ~smart-input-source-do~: Do the smart input source switching. If no need to
-  activate the overlay, then follow the context to switch input source.
-
-With ~evil~, user need not to touch those three functions directly, because they
-are already added to ~evil~ hooks. Without ~evil~, only
-~smart-input-source-check-to-activate-overlay~ is added to
-~post-self-insert-hook~, the other two functions are not added to any hooks.
-So by default none-evil user only have the /inline english region/ feature, it's
-up to the user to decide where to hook the other two functions.
-
 * Configure
 
-| Variable                                       | Description                                                         | Default                              |
-|------------------------------------------------+---------------------------------------------------------------------+--------------------------------------|
-| ~smart-input-source-other-pattern~             | Pattern to identify a character as other                            | ~\cc~ , see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]]             |
-| ~smart-input-source-english-pattern~           | Pattern to identify a character as English                          | ~[a-zA-Z]~                           |
-| ~smart-input-source-blank-pattern~             | Pattern to identify a character as blank                            | ~[:blank:]~                          |
-| ~smart-input-source-english-input-source~      | Input source for English                                            | ~com.apple.keylayout.US~             |
-| ~smart-input-source-other-input-source~        | Input source for other language                                     | ~com.sogou.inputmethod.sogou.pinyin~ |
-| ~smart-input-source-aggressive-line~           | Aggressively detect context across blank lines                      | ~t~                                  |
-| ~smart-input-source-external-ism~              | input resource manager                                              | ~macism~                             |
-| ~smart-input-source-do-get-input-source~       | Function to get the current input source                            | determined from the environment      |
-| ~smart-input-source-do-set-input-source~       | Function to set the input source                                    | determined from the environment      |
-| ~smart-input-source-start-with-english~        | Start the mode with english input source                            | ~t~                                  |
-| ~smart-input-source-with-inline-english~       | With the inline English feature                                     | ~t~                                  |
-| ~smart-input-source-tighten-other-punctuation~ | Auto delete blank between inline english and other lang punctuation | ~t~                                  |
-|------------------------------------------------+---------------------------------------------------------------------+--------------------------------------|
+| Variable                                       | Buffer | Description                                            | Default                              |
+|------------------------------------------------+--------+--------------------------------------------------------+--------------------------------------|
+| ~smart-input-source-external-ism~              | yes    | input resource manager                                 | ~macism~                             |
+| ~smart-input-source-do-get-input-source~       | yes    | Function to get the current input source               | determined from the environment      |
+| ~smart-input-source-do-set-input-source~       | yes    | Function to set the input source                       | determined from the environment      |
+| ~smart-input-source-english-pattern~           | yes    | Pattern to identify a character as English             | ~[a-zA-Z]~                           |
+| ~smart-input-source-english-input-source~      | yes    | Input source for English                               | ~com.apple.keylayout.US~             |
+| ~smart-input-source-start-with-english~        | yes    | Switch to english when `auto-english-mode' enabled     | ~t~                                  |
+| ~smart-input-source-other-pattern~             | no     | Pattern to identify a character as other               | ~\cc~ , see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]]             |
+| ~smart-input-source-blank-pattern~             | no     | Pattern to identify a character as blank               | ~[:blank:]~                          |
+| ~smart-input-source-other-input-source~        | no     | Input source for other language                        | ~com.sogou.inputmethod.sogou.pinyin~ |
+| ~smart-input-source-aggressive-line~           | no     | Aggressively detect context across blank lines         | ~t~                                  |
+| ~smart-input-source-tighten-other-punctuation~ | no     | No blank from inline english to other lang punctuation | ~t~                                  |
+|------------------------------------------------+--------+--------------------------------------------------------+--------------------------------------|
 
 
 | Face Name                                | Description                                |
 |------------------------------------------+--------------------------------------------|
 | ~smart-input-source-inline-english-face~ | Face for the online english region overlay |
 |------------------------------------------+--------------------------------------------|
+
 * Configurations for other input source managers
 ** Example: ~fcitx~
 ~fcitx~ is a input method framework popular among Chinese Linux users.
