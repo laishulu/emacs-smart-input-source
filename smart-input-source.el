@@ -200,9 +200,6 @@ meanings as `string-match-p'."
          (cross-line-fore-to (fore-detect-cross-line-to fore-detect))
          (cross-line-fore-char (fore-detect-cross-line-char fore-detect)))
 
-    (setq -last-inline-overlay-start-position nil)
-    (setq -last-inline-overlay-end-position nil)
-
     (cond
 
      ;; [blank inline overlay]^
