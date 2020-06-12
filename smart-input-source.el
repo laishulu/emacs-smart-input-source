@@ -184,7 +184,10 @@ meanings as `string-match-p'."
 
 (defun -guess-context ()
   "Guest the lang context for the current point."
-  (let* ((back-detect (-back-detect-chars))
+  (let* ((overlay-start-position -last-inline-overlay-start-position)
+         (overlay-end-position -last-inline-overlay-end-position)
+
+         (back-detect (-back-detect-chars))
          (fore-detect (-fore-detect-chars))
 
          (back-to (back-detect-to back-detect))
@@ -196,17 +199,23 @@ meanings as `string-match-p'."
          (fore-char (fore-detect-char fore-detect))
          (cross-line-fore-to (fore-detect-cross-line-to fore-detect))
          (cross-line-fore-char (fore-detect-cross-line-char fore-detect)))
+
+    (setq -last-inline-overlay-start-position nil)
+    (setq -last-inline-overlay-end-position nil)
+
     (cond
 
+     ;; [blank inline overlay]^
      ;; [lastest overlay: last char is not other lang]
      ;; [blank: in or out of lastest overlay][^][not english]
-     ((and -last-inline-overlay-start-position
-           -last-inline-overlay-end-position
-           (>= back-to -last-inline-overlay-start-position)
-           (<= back-to -last-inline-overlay-end-position)
-           (< back-to (point))
-           (not (-string-match-p other-pattern back-char))
-           (not (-string-match-p english-pattern fore-char)))
+     ((and overlay-start-position
+           overlay-end-position
+           (or (= back-to overlay-start-position)
+               (and (> back-to overlay-start-position)
+                    (<= back-to overlay-end-position)
+                    (< back-to (point))
+                    (not (-string-match-p other-pattern back-char))
+                    (not (-string-match-p english-pattern fore-char)))))
       OTHER)
 
      ;; [^][blank][other lang]
@@ -414,17 +423,13 @@ source."
 (defun check-to-deactivate-overlay ()
   "Check whether to deactivate the inline english region overlay."
   (when (and mode (overlayp -inline-overlay))
-    (cond
-
-     ((= (overlay-start -inline-overlay)
-         (overlay-end -inline-overlay))
-      (deactivate-inline-overlay)
-      ;; revert input source
-      (set-input-source-other))
-
-     ((or(< (point) (overlay-start -inline-overlay))
-         (> (point) (overlay-end -inline-overlay)))
-      (deactivate-inline-overlay)))))
+    (setq -last-inline-overlay-start-position (overlay-start -inline-overlay))
+    (setq -last-inline-overlay-end-position (overlay-end -inline-overlay))
+    (when (or (= -last-inline-overlay-start-position
+                 -last-inline-overlay-end-position)
+              (or(< (point) -last-inline-overlay-start-position)
+                 (> (point) -last-inline-overlay-end-position)))
+      (end-inline-overlay))))
 
 (defun activate-inline-overlay (start)
   "Activate the inline english region overlay from START."
@@ -478,8 +483,6 @@ source."
   (add-hook 'post-self-insert-hook
             #'smart-input-source-check-to-tighten-other-punctuation)
   (when (overlayp -inline-overlay)
-    (setq -last-inline-overlay-start-position (overlay-start -inline-overlay))
-    (setq -last-inline-overlay-end-position (overlay-end -inline-overlay))
     (delete-overlay -inline-overlay)
     (setq -inline-overlay nil)))
 
