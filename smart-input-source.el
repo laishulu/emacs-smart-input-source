@@ -485,31 +485,31 @@ input source to English, and then return ~t~."
   ;; company
   (if (and (featurep 'evil)
            (company--active-p))
-      (company-complete-selection))
+      (company-complete-selection)
 
-  ;; clean up
-  (remove-hook 'post-command-hook
-               #'smart-input-source-check-to-deactivate-overlay)
-  (add-hook 'post-self-insert-hook
-            #'smart-input-source-check-to-tighten-other-punctuation)
-  (when (overlayp -inline-overlay)
-    (delete-overlay -inline-overlay)
-    (setq -inline-overlay nil))
+    ;; clean up
+    (remove-hook 'post-command-hook
+                 #'smart-input-source-check-to-deactivate-overlay)
+    (add-hook 'post-self-insert-hook
+              #'smart-input-source-check-to-tighten-other-punctuation)
+    (when (overlayp -inline-overlay)
+      (delete-overlay -inline-overlay)
+      (setq -inline-overlay nil))
 
-  ;; select input source
-  (let* ((start -last-inline-overlay-start-position)
-         (end -last-inline-overlay-end-position)
-         (back-detect (-back-detect-chars))
-         (back-to (back-detect-to back-detect)))
+    ;; select input source
+    (let* ((start -last-inline-overlay-start-position)
+           (end -last-inline-overlay-end-position)
+           (back-detect (-back-detect-chars))
+           (back-to (back-detect-to back-detect)))
 
-    ;; [:blank inline overlay:]^
-    ;; [:with trailing blank :]^
-    (when (and start end
-               (or (= back-to start)
-                   (and (> back-to start)
-                        (< back-to end)
-                        (< back-to (point)))))
-      (set-input-source-other))))
+      ;; [:blank inline overlay:]^
+      ;; [:with trailing blank :]^
+      (when (and start end
+                 (or (= back-to start)
+                     (and (> back-to start)
+                          (< back-to end)
+                          (< back-to (point)))))
+        (set-input-source-other)))))
 
 (defun check-to-tighten-other-punctuation ()
   "Check to delete blank between inline english and other lang puctuation."
