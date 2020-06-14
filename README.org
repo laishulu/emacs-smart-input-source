@@ -16,10 +16,24 @@ This package provide several modes to switch OS native input source smartly:
   automatic triggerring of a temporary overlay to input English and then back to
   none-English without switching input sources manually.
 
-#+CAPTION: Smart input source
-[[./screenshots/smart-input-source.gif]]
-
 * Features
+**  Screenshots
+#+CAPTION: Start up 
+[[./screenshots/1.startup.png]]
+
+#+CAPTION: Exit evil insert
+[[./screenshots/2.exit-evil-insert.png]]
+
+#+CAPTION: Follow context to other language
+[[./screenshots/3.follow-context-other.png]]
+
+#+CAPTION: Follow context to English
+[[./screenshots/4.follow-context-english.png]]
+
+#+CAPTION: Inline English
+[[./screenshots/5.inline-english-typical.png]]
+
+**  In English
 1. Use OS native input source, no need to change use experience.
 2. Support GUI Emacs, as well as Terminial Emacs.
 3. Easy to install and config. No further config for ~GUI Emacs Mac Port~ with
@@ -43,7 +57,7 @@ This package provide several modes to switch OS native input source smartly:
 7. Input source switching rules are designed carefully, for pure English
    editing, input source will never be switched to other languages.
 
-* Features (Chinese)
+** Features (Chinese)
 1. 使用操作系统的输入法，不改变使用习惯。
 2. 支持 GUI Emacs, 也支持 Terminal Emacs.
 3. 安装配置简单， GUI Emacs Mac Port 下使用搜狗拼音免配置。
