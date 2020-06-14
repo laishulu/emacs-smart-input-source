@@ -372,15 +372,15 @@ meanings as `string-match-p'."
   "The active inline overlay.")
 (make-variable-buffer-local 'smart-input-source--inline-overlay)
 
-(defvar -last-inline-overlay-start-position nil
-  "Start position of the last inline overlay (already deactivated).")
-(make-variable-buffer-local
- 'smart-input-source--last-inline-overlay-start-position)
+(defun -inline-overlay-start ()
+  "Start position of the inline overlay."
+  (when -inline-overlay
+    (overlay-start -inline-overlay)))
 
-(defvar -last-inline-overlay-end-position nil
-  "End position of the last inline overlay (already deactivated).")
-(make-variable-buffer-local
- 'smart-input-source--last-inline-overlay-end-position)
+(defun -inline-overlay-end ()
+  "End position of the inline overlay."
+  (when -inline-overlay
+    (overlay-end -inline-overlay)))
 
 ;;;###autoload
 (define-minor-mode inline-english-mode
@@ -455,32 +455,30 @@ input source to English."
                  (define-key keymap (kbd "<return>")
                    'smart-input-source-ret-check-to-deactivate-inline-overlay)
                  keymap))
-  (setq -last-inline-overlay-start-position nil)
-  (setq -last-inline-overlay-end-position nil)
   (add-hook 'post-command-hook
             #'smart-input-source-fly-check-to-deactivate-inline-overlay)
   (message "Press <RETURN> to close inline english region."))
 
 (defun fly-check-to-deactivate-inline-overlay ()
   "Check whether to deactivate the inline english region overlay."
-  (when (and inline-english-mode (overlayp -inline-overlay))
-    (setq -last-inline-overlay-start-position (overlay-start -inline-overlay))
-    (setq -last-inline-overlay-end-position (overlay-end -inline-overlay))
-    (when (or (= -last-inline-overlay-start-position
-                 -last-inline-overlay-end-position)
-              (or(< (point) -last-inline-overlay-start-position)
-                 (> (point) -last-inline-overlay-end-position)))
-      (deactivate-inline-overlay))))
+  (when (and inline-english-mode
+             (overlayp -inline-overlay)
+             (or (= (-inline-overlay-start)
+                    (-inline-overlay-end))
+                 (or(< (point) (-inline-overlay-start))
+                    (> (point) (-inline-overlay-end)))))
+    (deactivate-inline-overlay)))
 
 (defun ret-check-to-deactivate-inline-overlay ()
   "Deactivate the inline english region overlay."
   (interactive)
 
-  ;; company
-  (if (and (featurep 'evil)
-           (company--active-p))
-      (company-complete-selection)
-    (deactivate-inline-overlay)))
+  (when (and inline-english-mode (overlayp -inline-overlay))
+    ;; company
+    (if (and (featurep 'evil)
+             (company--active-p))
+        (company-complete-selection)
+      (deactivate-inline-overlay))))
 
 (defun deactivate-inline-overlay ()
   "Deactivate the inline english region overlay."
@@ -489,45 +487,38 @@ input source to English."
   ;; clean up
   (remove-hook 'post-command-hook
                #'smart-input-source-fly-check-to-deactivate-inline-overlay)
-  (when (overlayp -inline-overlay)
-    (delete-overlay -inline-overlay)
-    (setq -inline-overlay nil))
 
   ;; select input source
   (let* ((back-detect (-back-detect-chars))
-         (back-to (back-detect-to back-detect)))
+         (back-to (back-detect-to back-detect))
+         (back-char (back-detect-char back-detect)))
 
-    ;; [:blank inline overlay:]^
-    ;; [:with trailing blank :]^
-    (when (and -last-inline-overlay-start-position
-               -last-inline-overlay-end-position)
+    ;; [other lang][:blank inline overlay:]^
+    ;; [:overlay with trailing blank :]^
+    (when (or (and (= back-to (-inline-overlay-start))
+                   (-string-match-p other-pattern back-char))
+              (and (> back-to (-inline-overlay-start))
+                   (< back-to (-inline-overlay-end))
+                   (< back-to (point))))
+      (set-input-source-other))
 
-      (when (or (= back-to -last-inline-overlay-start-position)
-                (and (> back-to -last-inline-overlay-start-position)
-                     (< back-to -last-inline-overlay-end-position)
-                     (< back-to (point))))
-        (set-input-source-other))
+    (save-excursion
+      (goto-char (-inline-overlay-end))
+      (let* ((tighten-back-detect (-back-detect-chars))
+             (tighten-back-to (back-detect-to tighten-back-detect)))
+        (when (and (< tighten-back-to (-inline-overlay-end))
+                   (> tighten-back-to (-inline-overlay-start)))
+          (delete-char -1))))
 
+    (save-excursion
+      (goto-char (-inline-overlay-start))
+      (let* ((tighten-fore-detect (-fore-detect-chars))
+             (tighten-fore-to (fore-detect-to tighten-fore-detect)))
+        (when (> tighten-fore-to (-inline-overlay-start))
+          (delete-char 1))))
 
-      (save-excursion
-        (goto-char -last-inline-overlay-end-position)
-        (let* ((tighten-back-detect (-back-detect-chars))
-               (tighten-back-to (back-detect-to tighten-back-detect)))
-          (when (and (< tighten-back-to -last-inline-overlay-end-position)
-                     (> tighten-back-to -last-inline-overlay-start-position))
-            (delete-char -1)
-            (setq -last-inline-overlay-end-position
-                  (1- -last-inline-overlay-end-position)))))
-
-      (save-excursion
-        (goto-char -last-inline-overlay-start-position)
-        (let* ((tighten-fore-detect (-fore-detect-chars))
-               (tighten-fore-to (fore-detect-to tighten-fore-detect)))
-          (when (and (< tighten-fore-to -last-inline-overlay-end-position)
-                     (> tighten-fore-to -last-inline-overlay-start-position))
-            (delete-char 1)
-            (setq -last-inline-overlay-end-position
-                  (1- -last-inline-overlay-end-position))))))))
+    (delete-overlay -inline-overlay)
+    (setq -inline-overlay nil)))
 
 (define-minor-mode mode
   "Switch input source smartly.
