@@ -18,18 +18,23 @@ This package provide several modes to switch OS native input source smartly:
 
 * Features
 **  Screenshots
+*** Start up 
 #+CAPTION: Start up 
 [[./screenshots/1.startup.png]]
 
+*** Exit evil insert 
 #+CAPTION: Exit evil insert
 [[./screenshots/2.exit-evil-insert.png]]
 
+*** Follow context to other language 
 #+CAPTION: Follow context to other language
 [[./screenshots/3.follow-context-other.png]]
 
+*** Follow context to English 
 #+CAPTION: Follow context to English
 [[./screenshots/4.follow-context-english.png]]
 
+*** Inline English 
 #+CAPTION: Inline English
 [[./screenshots/5.inline-english-typical.png]]
 
