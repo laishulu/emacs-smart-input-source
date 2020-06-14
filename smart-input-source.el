@@ -59,23 +59,19 @@ Should accept a string which is the id of the input source.")
 
 (defvar other-pattern "\\cc"
   "Pattern to identify a character as other lang.")
-(make-variable-buffer-local (quote other-pattern))
+(make-variable-buffer-local 'smart-input-source-other-pattern)
 
 (defvar blank-pattern "[:blank:]"
   "Pattern to identify a character as blank.")
-(make-variable-buffer-local (quote blank-pattern))
+(make-variable-buffer-local 'smart-input-source-blank-pattern)
 
 (defvar other-input-source "com.sogou.inputmethod.sogou.pinyin"
   "Input source for other lang.")
-(make-variable-buffer-local (quote other-input-source))
+(make-variable-buffer-local 'smart-input-source-other-input-source)
 
 (defvar aggressive-line t
   "Aggressively detect context across blank lines.")
-(make-variable-buffer-local (quote aggressive-line))
-
-(defvar tighten-other-punctuation t
-  "Auto delete blank between inline english and other lang puctuation.")
-(make-variable-buffer-local (quote tighten-other-punctuation))
+(make-variable-buffer-local 'smart-input-source-aggressive-line)
 
 (defface inline-english-face
   '()
@@ -94,7 +90,8 @@ Should accept a string which is the id of the input source.")
 (declare-function evil-normal-state-p "ext:evil-states.el" (&optional state) t)
 (declare-function evil-visual-state-p "ext:evil-states.el" (&optional state) t)
 (declare-function evil-motion-state-p "ext:evil-states.el" (&optional state) t)
-(declare-function evil-operator-state-p "ext:evil-states.el" (&optional state) t)
+(declare-function evil-operator-state-p
+                  "ext:evil-states.el" (&optional state) t)
 (declare-function company--active-p "ext:company.el" () t)
 (declare-function mac-input-source "ext:macfns.c" (&optional SOURCE FORMAT) t)
 (declare-function mac-select-input-source "ext:macfns.c"
@@ -284,11 +281,11 @@ meanings as `string-match-p'."
 
     (cond
 
-     ;; [^][blank][other lang]
-     ((and (< fore-to (line-end-position))
-           (> fore-to (point))
-           (-string-match-p other-pattern fore-char))
-      ENGLISH)
+     ;; [other lang][blank or not][^]
+     ;; [^][blank or not][other lang]
+     ((or (-string-match-p other-pattern back-char)
+          (-string-match-p other-pattern fore-char))
+      OTHER)
 
      ;; [line beginning][^][english]
      ;; [english][^][english]
@@ -303,30 +300,11 @@ meanings as `string-match-p'."
            (-string-match-p english-pattern fore-char))
       ENGLISH)
 
-     ;; [line beginning][^][other lang]
-     ;; [other lang][^][other lang]
-     ;; [not other lang][blank][^][other lang]
-     ((and (or (= back-to (line-beginning-position))
-               (and (= back-to (point))
-                    (-string-match-p other-pattern back-char))
-               (and (< back-to (point))
-                    (not (-string-match-p other-pattern back-char))))
-           (< fore-to (line-end-position))
-           (= fore-to (point))
-           (-string-match-p other-pattern fore-char))
-      OTHER)
-
      ;; [english][^][line end]
      ((and (= back-to (point))
            (-string-match-p english-pattern back-char)
            (= fore-to (line-end-position)))
       ENGLISH)
-
-     ;; [other][^][line end]
-     ((and (= back-to (point))
-           (-string-match-p other-pattern back-char)
-           (= fore-to (line-end-position)))
-      OTHER)
 
      ;; [english: include the previous line][blank][^]
      ((and (or aggressive-line
@@ -392,15 +370,17 @@ meanings as `string-match-p'."
 
 (defvar -inline-overlay nil
   "The active inline overlay.")
-(make-variable-buffer-local (quote -inline-overlay))
+(make-variable-buffer-local 'smart-input-source--inline-overlay)
 
 (defvar -last-inline-overlay-start-position nil
   "Start position of the last inline overlay (already deactivated).")
-(make-variable-buffer-local (quote -last-inline-overlay-start-position))
+(make-variable-buffer-local
+ 'smart-input-source--last-inline-overlay-start-position)
 
 (defvar -last-inline-overlay-end-position nil
   "End position of the last inline overlay (already deactivated).")
-(make-variable-buffer-local (quote -last-inline-overlay-end-position))
+(make-variable-buffer-local
+ 'smart-input-source--last-inline-overlay-end-position)
 
 ;;;###autoload
 (define-minor-mode inline-english-mode
@@ -428,7 +408,7 @@ meanings as `string-match-p'."
 
 Check the context to determine whether the overlay should be activated or not,
 if the answer is yes, then activate the /inline english region/, set the
-input source to English, and then return ~t~."
+input source to English."
   (when (and inline-english-mode
              (not (overlayp -inline-overlay))
              (not (button-at (point)))
@@ -440,13 +420,27 @@ input source to English, and then return ~t~."
     (let* ((back-detect (-back-detect-chars))
            (back-to (back-detect-to back-detect))
            (back-char (back-detect-char back-detect)))
+
       ;; [other lang][blank][^]
       (when (and (> back-to (line-beginning-position))
                  (< back-to (point))
                  (-string-match-p other-pattern back-char))
         (activate-inline-overlay back-to)
-        (set-input-source-english)
-        t))))
+        (set-input-source-english))
+
+      (when (not (overlayp -inline-overlay))
+        (let* ((fore-detect (-fore-detect-chars))
+               (fore-to (fore-detect-to fore-detect))
+               (fore-char (fore-detect-char fore-detect)))
+
+          ;; [not other lang][blank][^][blank or not][other lang]
+          (when (and (< fore-to (line-end-position))
+                     (-string-match-p other-pattern fore-char)
+                     (>= back-to (line-beginning-position))
+                     (< back-to (point))
+                     (not (-string-match-p other-pattern back-char)))
+            (activate-inline-overlay back-to)
+            (set-input-source-english)))))))
 
 (defun activate-inline-overlay (start)
   "Activate the inline english region overlay from START."
@@ -457,17 +451,17 @@ input source to English, and then return ~t~."
   (overlay-put -inline-overlay 'keymap
                (let ((keymap (make-sparse-keymap)))
                  (define-key keymap (kbd "RET")
-                   'smart-input-source-deactivate-inline-overlay)
+                   'smart-input-source-ret-check-to-deactivate-inline-overlay)
                  (define-key keymap (kbd "<return>")
-                   'smart-input-source-deactivate-inline-overlay)
+                   'smart-input-source-ret-check-to-deactivate-inline-overlay)
                  keymap))
   (setq -last-inline-overlay-start-position nil)
   (setq -last-inline-overlay-end-position nil)
   (add-hook 'post-command-hook
-            #'smart-input-source-check-to-deactivate-overlay)
+            #'smart-input-source-fly-check-to-deactivate-inline-overlay)
   (message "Press <RETURN> to close inline english region."))
 
-(defun check-to-deactivate-overlay ()
+(defun fly-check-to-deactivate-inline-overlay ()
   "Check whether to deactivate the inline english region overlay."
   (when (and inline-english-mode (overlayp -inline-overlay))
     (setq -last-inline-overlay-start-position (overlay-start -inline-overlay))
@@ -478,7 +472,7 @@ input source to English, and then return ~t~."
                  (> (point) -last-inline-overlay-end-position)))
       (deactivate-inline-overlay))))
 
-(defun deactivate-inline-overlay ()
+(defun ret-check-to-deactivate-inline-overlay ()
   "Deactivate the inline english region overlay."
   (interactive)
 
@@ -486,50 +480,54 @@ input source to English, and then return ~t~."
   (if (and (featurep 'evil)
            (company--active-p))
       (company-complete-selection)
+    (deactivate-inline-overlay)))
 
-    ;; clean up
-    (remove-hook 'post-command-hook
-                 #'smart-input-source-check-to-deactivate-overlay)
-    (add-hook 'post-self-insert-hook
-              #'smart-input-source-check-to-tighten-other-punctuation)
-    (when (overlayp -inline-overlay)
-      (delete-overlay -inline-overlay)
-      (setq -inline-overlay nil))
+(defun deactivate-inline-overlay ()
+  "Deactivate the inline english region overlay."
+  (interactive)
 
-    ;; select input source
-    (let* ((back-detect (-back-detect-chars))
-           (back-to (back-detect-to back-detect)))
+  ;; clean up
+  (remove-hook 'post-command-hook
+               #'smart-input-source-fly-check-to-deactivate-inline-overlay)
+  (when (overlayp -inline-overlay)
+    (delete-overlay -inline-overlay)
+    (setq -inline-overlay nil))
 
-      ;; [:blank inline overlay:]^
-      ;; [:with trailing blank :]^
-      (when (and -last-inline-overlay-start-position
-                 -last-inline-overlay-end-position
-                 (or (= back-to -last-inline-overlay-start-position)
-                     (and (> back-to -last-inline-overlay-start-position)
-                          (< back-to -last-inline-overlay-end-position)
-                          (< back-to (point)))))
-        (set-input-source-other)))))
+  ;; select input source
+  (let* ((back-detect (-back-detect-chars))
+         (back-to (back-detect-to back-detect)))
 
-(defun check-to-tighten-other-punctuation ()
-  "Check to delete blank between inline english and other lang puctuation."
-  (remove-hook 'post-self-insert-hook
-               #'smart-input-source-check-to-tighten-other-punctuation)
-  
-  (let* ((last-end-position -last-inline-overlay-end-position)
-         (-last-inline-overlay-start-position nil)
-         (-last-inline-overlay-end-position nil))
+    ;; [:blank inline overlay:]^
+    ;; [:with trailing blank :]^
+    (when (and -last-inline-overlay-start-position
+               -last-inline-overlay-end-position)
 
-    (when (and last-end-position
-               (= last-end-position (1- (point))))
-      (let ((char (char-before (point))))
-        (when (and (-string-match-p "[[:punct:]]" (string char))
-                   (-string-match-p other-pattern (string char)))
-          (save-excursion
-            (backward-char)
-            (let ((end (point)))
-              (skip-chars-backward blank-pattern)
-              (let ((start (point)))
-                (delete-region start end)))))))))
+      (when (or (= back-to -last-inline-overlay-start-position)
+                (and (> back-to -last-inline-overlay-start-position)
+                     (< back-to -last-inline-overlay-end-position)
+                     (< back-to (point))))
+        (set-input-source-other))
+
+
+      (save-excursion
+        (goto-char -last-inline-overlay-end-position)
+        (let* ((tighten-back-detect (-back-detect-chars))
+               (tighten-back-to (back-detect-to tighten-back-detect)))
+          (when (and (< tighten-back-to -last-inline-overlay-end-position)
+                     (> tighten-back-to -last-inline-overlay-start-position))
+            (delete-char -1)
+            (setq -last-inline-overlay-end-position
+                  (1- -last-inline-overlay-end-position)))))
+
+      (save-excursion
+        (goto-char -last-inline-overlay-start-position)
+        (let* ((tighten-fore-detect (-fore-detect-chars))
+               (tighten-fore-to (fore-detect-to tighten-fore-detect)))
+          (when (and (< tighten-fore-to -last-inline-overlay-end-position)
+                     (> tighten-fore-to -last-inline-overlay-start-position))
+            (delete-char 1)
+            (setq -last-inline-overlay-end-position
+                  (1- -last-inline-overlay-end-position))))))))
 
 (define-minor-mode mode
   "Switch input source smartly.
