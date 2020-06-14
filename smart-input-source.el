@@ -497,17 +497,16 @@ input source to English, and then return ~t~."
       (setq -inline-overlay nil))
 
     ;; select input source
-    (let* ((start -last-inline-overlay-start-position)
-           (end -last-inline-overlay-end-position)
-           (back-detect (-back-detect-chars))
+    (let* ((back-detect (-back-detect-chars))
            (back-to (back-detect-to back-detect)))
 
       ;; [:blank inline overlay:]^
       ;; [:with trailing blank :]^
-      (when (and start end
-                 (or (= back-to start)
-                     (and (> back-to start)
-                          (< back-to end)
+      (when (and -last-inline-overlay-start-position
+                 -last-inline-overlay-end-position
+                 (or (= back-to -last-inline-overlay-start-position)
+                     (and (> back-to -last-inline-overlay-start-position)
+                          (< back-to -last-inline-overlay-end-position)
                           (< back-to (point)))))
         (set-input-source-other)))))
 
@@ -515,17 +514,22 @@ input source to English, and then return ~t~."
   "Check to delete blank between inline english and other lang puctuation."
   (remove-hook 'post-self-insert-hook
                #'smart-input-source-check-to-tighten-other-punctuation)
-  (when (and -last-inline-overlay-end-position
-             (= -last-inline-overlay-end-position (1- (point))))
-    (let ((char (char-before (point))))
-      (when (and (-string-match-p "[[:punct:]]" (string char))
-                 (-string-match-p other-pattern (string char)))
-        (save-excursion
-          (backward-char)
-          (let ((end (point)))
-            (skip-chars-backward blank-pattern)
-            (let ((start (point)))
-              (delete-region start end))))))))
+  
+  (let* ((last-end-position -last-inline-overlay-end-position)
+         (-last-inline-overlay-start-position nil)
+         (-last-inline-overlay-end-position nil))
+
+    (when (and last-end-position
+               (= last-end-position (1- (point))))
+      (let ((char (char-before (point))))
+        (when (and (-string-match-p "[[:punct:]]" (string char))
+                   (-string-match-p other-pattern (string char)))
+          (save-excursion
+            (backward-char)
+            (let ((end (point)))
+              (skip-chars-backward blank-pattern)
+              (let ((start (point)))
+                (delete-region start end)))))))))
 
 (define-minor-mode mode
   "Switch input source smartly.
