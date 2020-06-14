@@ -60,7 +60,7 @@ This package provide several modes to switch OS native input source smartly:
 7. Input source switching rules are designed carefully, for pure English
    editing, input source will never be switched to other languages.
 
-** Features (Chinese)
+**  In Chinese
 1. 使用操作系统的输入法，不改变使用习惯。
 2. 支持 GUI Emacs, 也支持 Terminal Emacs.
 3. 安装配置简单， GUI Emacs Mac Port 下使用搜狗拼音免配置。
