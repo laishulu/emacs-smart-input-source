@@ -73,6 +73,11 @@ Should accept a string which is the id of the input source.")
   "Aggressively detect context across blank lines.")
 (make-variable-buffer-local 'smart-input-source-aggressive-line)
 
+(defvar double-space-close-inline-english t
+  "Double space also trigger the close of inline English.")
+(make-variable-buffer-local
+ 'smart-input-source-double-space-close-inline-english)
+
 (defface inline-english-face
   '()
   "Face of the inline english region overlay."
@@ -281,15 +286,10 @@ meanings as `string-match-p'."
 
     (cond
 
-     ;; [other lang][^]
-     ;; [^][other lang]
-     ;; [other lang][blank][^][blank][other lang]
-     ((or (and (= back-to (point))
-               (-string-match-p other-pattern back-char))
-          (and (= fore-to (point))
-               (-string-match-p other-pattern fore-char))
-          (and (-string-match-p other-pattern back-char)
-               (-string-match-p other-pattern fore-char)))
+     ;; [other lang][blank or not][^]
+     ;; [^][blank or not][other lang]
+     ((or (-string-match-p other-pattern back-char)
+          (-string-match-p other-pattern fore-char))
       OTHER)
 
      ;; [line beginning][^][english]
@@ -426,9 +426,9 @@ input source to English."
            (back-to (back-detect-to back-detect))
            (back-char (back-detect-char back-detect)))
 
-      ;; [other lang][space][^]
+      ;; [other lang][blank][^]
       (when (and (> back-to (line-beginning-position))
-                 (= (1+ back-to) (point))
+                 (< back-to (point))
                  (-string-match-p other-pattern back-char))
         (activate-inline-overlay back-to)
         (set-input-source-english))
@@ -440,8 +440,10 @@ input source to English."
 
           ;; [not other lang][blank][^][blank or not][other lang]
           (when (and (< fore-to (line-end-position))
-                     (= (1- fore-to) (point))
-                     (-string-match-p other-pattern fore-char))
+                     (-string-match-p other-pattern fore-char)
+                     (>= back-to (line-beginning-position))
+                     (< back-to (point))
+                     (not (-string-match-p other-pattern back-char)))
             (activate-inline-overlay back-to)
             (set-input-source-english)))))))
 
@@ -465,12 +467,18 @@ input source to English."
 (defun fly-check-to-deactivate-inline-overlay ()
   "Check whether to deactivate the inline english region overlay."
   (when (and inline-english-mode
-             (overlayp -inline-overlay)
-             (or (= (-inline-overlay-start)
-                    (-inline-overlay-end))
-                 (or(< (point) (-inline-overlay-start))
-                    (> (point) (-inline-overlay-end)))))
-    (deactivate-inline-overlay)))
+             (overlayp -inline-overlay))
+    ;; select input source
+    (let* ((back-detect (-back-detect-chars))
+           (back-to (back-detect-to back-detect)))
+      (when (or (= (-inline-overlay-start)
+                   (-inline-overlay-end))
+                (or(< (point) (-inline-overlay-start))
+                   (> (point) (-inline-overlay-end)))
+                (and double-space-close-inline-english
+                     (> back-to (-inline-overlay-start))
+                     (< (1+ back-to) (-inline-overlay-end))))
+        (deactivate-inline-overlay)))))
 
 (defun ret-check-to-deactivate-inline-overlay ()
   "Deactivate the inline english region overlay."
