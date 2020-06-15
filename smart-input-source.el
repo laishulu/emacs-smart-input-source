@@ -238,6 +238,22 @@ meanings as `string-match-p'."
        (stringp str)
        (string-match-p regexp str start)))
 
+(defun -english-p (str)
+  "Predicate on str is English."
+  (-string-match-p english-pattern str))
+
+(defun -not-english-p (str)
+  "Predicate on str is not English."
+  (not (-string-match-p english-pattern str)))
+
+(defun -other-lang-p (str)
+  "Predicate on str is other language."
+  (-string-match-p other-pattern str))
+
+(defun -not-other-lang-p (str)
+  "Predicate on str is not other language."
+  (not (-string-match-p other-pattern str)))
+
 (cl-defstruct back-detect ; result of backward detect
   to ; point after first non-blank char in the same line
   char ; first non-blank char at the same line (just before position `to')
@@ -307,36 +323,36 @@ meanings as `string-match-p'."
      ;; [not english][blank][^][english]
      ((and (or (= back-to (line-beginning-position))
                (and (= back-to (point))
-                    (-string-match-p english-pattern back-char))
+                    (-english-p back-char))
                (and (< back-to (point))
-                    (not (-string-match-p english-pattern back-char))))
+                    (-not-english-p back-char)))
            (< fore-to (line-end-position))
            (= fore-to (point))
-           (-string-match-p english-pattern fore-char))
+           (-english-p fore-char))
       ENGLISH)
 
      ;; [english][^][blank][not english]
      ((and (and (> fore-to (point))
-                (not (-string-match-p english-pattern fore-char)))
+                (-not-english-p fore-char))
            (> back-to (line-beginning-position))
            (= back-to (point))
-           (-string-match-p english-pattern back-char))
+           (-english-p back-char))
       ENGLISH)
 
      ;; [:other lang:][^]
      ;; [^][:other lang:]
      ;; [:other lang:][:blank or not:][^][:blank or not:][:other lang:]
      ((or (and (= back-to (point))
-               (-string-match-p other-pattern back-char))
+               (-other-lang-p back-char))
           (and (= fore-to (point))
-               (-string-match-p other-pattern fore-char))
-          (and (-string-match-p other-pattern back-char)
-               (-string-match-p other-pattern fore-char)))
+               (-other-lang-p fore-char))
+          (and (-other-lang-p back-char)
+               (-other-lang-p fore-char)))
       OTHER)
 
      ;; [english][^][line end]
      ((and (= back-to (point))
-           (-string-match-p english-pattern back-char)
+           (-english-p back-char)
            (= fore-to (line-end-position)))
       ENGLISH)
 
@@ -344,28 +360,28 @@ meanings as `string-match-p'."
      ((and (or aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
-           (-string-match-p english-pattern cross-line-back-char))
+           (-english-p cross-line-back-char))
       ENGLISH)
 
      ;; [other lang: include the previous line][blank][^]
      ((and (or aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
-           (-string-match-p other-pattern cross-line-back-char))
+           (-other-lang-p cross-line-back-char))
       OTHER)
 
      ;; [^][blank][english: include the next line]
      ((and (or aggressive-line
                (< cross-line-fore-to (line-end-position 2)))
            (> cross-line-fore-to (line-end-position))
-           (-string-match-p english-pattern cross-line-fore-char))
+           (-english-p cross-line-fore-char))
       ENGLISH)
 
      ;; [^][blank][other lang: include the next line]
      ((and (or aggressive-line
                (< cross-line-fore-to (line-end-position 2)))
            (> cross-line-fore-to (line-end-position))
-           (-string-match-p other-pattern cross-line-fore-char))
+           (-other-lang-p cross-line-fore-char))
       OTHER))))
 
 
@@ -464,15 +480,15 @@ input source to English."
              ;; [other lang][:space:][^][:not none-english:]
              (and (> back-to (line-beginning-position))
                   (< back-to (point))
-                  (-string-match-p other-pattern back-char)
+                  (-other-lang-p back-char)
                   (not (and (< (1+ back-to) (point))
                             (= fore-to (point))
-                            (not (-string-match-p other-pattern back-char)))))
+                            (-not-other-p back-char))))
              ;; [:not none-english:][^][:space:][other lang]
              (and (< fore-to (line-end-position))
-                  (-string-match-p other-pattern fore-char)
+                  (-other-lang-p fore-char)
                   (not (and (> fore-to (point))
-                            (not (-string-match-p other-pattern back-char))))))
+                            (-not-other-p back-char)))))
         (activate-inline-overlay (1- (point)))
         (set-input-source-english)))))
 
@@ -536,7 +552,7 @@ input source to English."
     ;; [other lang][:blank inline overlay:]^
     ;; [:overlay with trailing blank :]^
     (when (or (and (= back-to (-inline-overlay-start))
-                   (-string-match-p other-pattern back-char))
+                   (-other-lang-p back-char))
               (and (> back-to (-inline-overlay-start))
                    (< back-to (-inline-overlay-end))
                    (< back-to (point))))
