@@ -57,7 +57,8 @@ This package provide several modes to switch OS native input source smartly:
 5. 如果在 Evil 下（没有 evil 也可以正常工作）:
    1) 从 insert 模式离开时，自动切换到英文输入法。
    2) 进入 insert 模式时, 根据上下文自动切换输入法。
-6. 记得缓冲区自己的输入法。从其他缓冲区切换回来，或者重新获得窗口焦点时，会恢复缓冲区自己的输入法
+6. 记得缓冲区自己的输入法。从其他缓冲区切换回来，或者重新获得窗口焦点时，
+   会恢复缓冲区自己的输入法
 7. 支持 inline English 区域：
    1) 在汉字前后插入空格触发 inline English 区域。
    2) 在 inline English 下，一直使用英文输入法。
