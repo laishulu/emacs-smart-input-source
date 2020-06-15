@@ -286,12 +286,6 @@ meanings as `string-match-p'."
 
     (cond
 
-     ;; [other lang][blank or not][^]
-     ;; [^][blank or not][other lang]
-     ((or (-string-match-p other-pattern back-char)
-          (-string-match-p other-pattern fore-char))
-      OTHER)
-
      ;; [line beginning][^][english]
      ;; [english][^][english]
      ;; [not english][blank][^][english]
@@ -304,6 +298,20 @@ meanings as `string-match-p'."
            (= fore-to (point))
            (-string-match-p english-pattern fore-char))
       ENGLISH)
+
+     ;; [english][^][blank][not english]
+     ((and (and (< fore-to (point))
+                (not (-string-match-p english-pattern fore-char)))
+           (< back-to (line-end-position))
+           (= back-to (point))
+           (-string-match-p english-pattern back-char))
+      ENGLISH)
+
+     ;; [:other lang:][:blank or not:][^]
+     ;; [^][:blank or not:][:other lang:]
+     ((or (-string-match-p other-pattern back-char)
+          (-string-match-p other-pattern fore-char))
+      OTHER)
 
      ;; [english][^][line end]
      ((and (= back-to (point))
