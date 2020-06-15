@@ -474,7 +474,7 @@ input source to English."
                   (-string-match-p other-pattern fore-char)
                   (not (and (> fore-to (point))
                             (not (-string-match-p other-pattern back-char))))))
-        (activate-inline-overlay back-to)
+        (activate-inline-overlay (1- (point)))
         (set-input-source-english)))))
 
 (defun activate-inline-overlay (start)
@@ -556,10 +556,9 @@ input source to English."
       (let* ((tighten-fore-detect (-fore-detect-chars))
              (tighten-fore-to (fore-detect-to tighten-fore-detect)))
         (when (> tighten-fore-to (-inline-overlay-start))
-          (delete-char 1))))
-
+          (delete-char 1)))))
     (delete-overlay -inline-overlay)
-    (setq -inline-overlay nil)))
+    (setq -inline-overlay nil))
 
 (define-minor-mode mode
   "Switch input source smartly.
