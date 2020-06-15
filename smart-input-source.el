@@ -429,31 +429,36 @@ input source to English."
                        (or (evil-normal-state-p)
                            (evil-visual-state-p)
                            (evil-motion-state-p)
-                           (evil-operator-state-p)))))
+                           (evil-operator-state-p))))
+             ;; around char is <spc>
+             (or (= (preceding-char) 32)
+                 (= (following-char) 32)))
     (let* ((back-detect (-back-detect-chars))
            (back-to (back-detect-to back-detect))
-           (back-char (back-detect-char back-detect)))
+           (back-char (back-detect-char back-detect))
+           (fore-detect (-fore-detect-chars))
+           (fore-to (fore-detect-to fore-detect))
+           (fore-char (fore-detect-char fore-detect)))
 
-      ;; [other lang][blank][^]
+      ;; [other lang][:space:][^][:not none-english:]
       (when (and (> back-to (line-beginning-position))
                  (< back-to (point))
-                 (-string-match-p other-pattern back-char))
+                 (-string-match-p other-pattern back-char)
+                 (not (and (< (1+ back-to) (point))
+                           (= fore-to (point))
+                           (not (-string-match-p other-pattern fore-char)))))
         (activate-inline-overlay back-to)
         (set-input-source-english))
 
       (when (not (overlayp -inline-overlay))
-        (let* ((fore-detect (-fore-detect-chars))
-               (fore-to (fore-detect-to fore-detect))
-               (fore-char (fore-detect-char fore-detect)))
-
-          ;; [not other lang][blank][^][blank or not][other lang]
-          (when (and (< fore-to (line-end-position))
-                     (-string-match-p other-pattern fore-char)
-                     (>= back-to (line-beginning-position))
-                     (< back-to (point))
-                     (not (-string-match-p other-pattern back-char)))
-            (activate-inline-overlay back-to)
-            (set-input-source-english)))))))
+        ;; [:not none-english:][^][space][other lang]
+        (when (and (< fore-to (line-end-position))
+                   (-string-match-p other-pattern fore-char)
+                   (not (and (> (1+ fore-to) (point))
+                             (= back-to (point))
+                             (not (-string-match-p other-pattern back-char)))))
+          (activate-inline-overlay back-to)
+          (set-input-source-english))))))
 
 (defun activate-inline-overlay (start)
   "Activate the inline english region overlay from START."
