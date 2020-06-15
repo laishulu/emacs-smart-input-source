@@ -440,25 +440,21 @@ input source to English."
            (fore-to (fore-detect-to fore-detect))
            (fore-char (fore-detect-char fore-detect)))
 
-      ;; [other lang][:space:][^][:not none-english:]
-      (when (and (> back-to (line-beginning-position))
-                 (< back-to (point))
-                 (-string-match-p other-pattern back-char)
-                 (not (and (< (1+ back-to) (point))
-                           (= fore-to (point))
-                           (not (-string-match-p other-pattern fore-char)))))
-        (activate-inline-overlay back-to)
-        (set-input-source-english))
-
-      (when (not (overlayp -inline-overlay))
-        ;; [:not none-english:][^][space][other lang]
-        (when (and (< fore-to (line-end-position))
-                   (-string-match-p other-pattern fore-char)
-                   (not (and (> (1+ fore-to) (point))
-                             (= back-to (point))
-                             (not (-string-match-p other-pattern back-char)))))
-          (activate-inline-overlay back-to)
-          (set-input-source-english))))))
+      (when (or
+             ;; [other lang][:space:][^][:not none-english:]
+             (and (> back-to (line-beginning-position))
+                  (< back-to (point))
+                  (-string-match-p other-pattern back-char)
+                  (not (and (< (1+ back-to) (point))
+                            (= fore-to (point))
+                            (-string-match-p other-pattern fore-char))))
+             ;; [:not none-english:][^][:space:][other lang]
+             (and (< fore-to (line-end-position))
+                  (-string-match-p other-pattern fore-char)
+                  (not (and (> (1+ fore-to) (point))
+                            (= back-to (point))
+                            (-string-match-p english-pattern back-char)))))
+        (set-input-source-english)))))
 
 (defun activate-inline-overlay (start)
   "Activate the inline english region overlay from START."
