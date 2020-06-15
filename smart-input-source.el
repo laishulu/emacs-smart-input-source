@@ -323,10 +323,15 @@ meanings as `string-match-p'."
            (-string-match-p english-pattern back-char))
       ENGLISH)
 
-     ;; [:other lang:][:blank or not:][^]
-     ;; [^][:blank or not:][:other lang:]
-     ((or (-string-match-p other-pattern back-char)
-          (-string-match-p other-pattern fore-char))
+     ;; [:other lang:][^]
+     ;; [^][:other lang:]
+     ;; [:other lang:][:blank or not:][^][:blank or not:][:other lang:]
+     ((or (and (= back-to (point))
+               (-string-match-p other-pattern back-char))
+          (and (= fore-to (point))
+               (-string-match-p other-pattern fore-char))
+          (and (-string-match-p other-pattern back-char)
+               (-string-match-p other-pattern fore-char)))
       OTHER)
 
      ;; [english][^][line end]
@@ -463,12 +468,12 @@ input source to English."
                   (-string-match-p other-pattern back-char)
                   (not (and (< (1+ back-to) (point))
                             (= fore-to (point))
-                            (-string-match-p other-pattern fore-char))))
+                            (not (-string-match-p other-pattern back-char)))))
              ;; [:not none-english:][^][:space:][other lang]
              (and (< fore-to (line-end-position))
                   (-string-match-p other-pattern fore-char)
                   (not (and (> fore-to (point))
-                            (-string-match-p english-pattern back-char)))))
+                            (not (-string-match-p other-pattern back-char))))))
         (activate-inline-overlay back-to)
         (set-input-source-english)))))
 
