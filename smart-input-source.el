@@ -452,8 +452,7 @@ input source to English."
                            (evil-motion-state-p)
                            (evil-operator-state-p))))
              ;; around char is <spc>
-             (or (= (preceding-char) 32)
-                 (= (following-char) 32)))
+             (= (preceding-char) 32))
     (let* ((back-detect (-back-detect-chars))
            (back-to (back-detect-to back-detect))
            (back-char (back-detect-char back-detect))
