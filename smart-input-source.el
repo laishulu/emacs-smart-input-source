@@ -467,8 +467,7 @@ input source to English."
              ;; [:not none-english:][^][:space:][other lang]
              (and (< fore-to (line-end-position))
                   (-string-match-p other-pattern fore-char)
-                  (not (and (> (1+ fore-to) (point))
-                            (= back-to (point))
+                  (not (and (> fore-to (point))
                             (-string-match-p english-pattern back-char)))))
         (activate-inline-overlay back-to)
         (set-input-source-english)))))
