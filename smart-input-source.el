@@ -300,9 +300,9 @@ meanings as `string-match-p'."
       ENGLISH)
 
      ;; [english][^][blank][not english]
-     ((and (and (< fore-to (point))
+     ((and (and (> fore-to (point))
                 (not (-string-match-p english-pattern fore-char)))
-           (< back-to (line-end-position))
+           (> back-to (line-beginning-position))
            (= back-to (point))
            (-string-match-p english-pattern back-char))
       ENGLISH)
