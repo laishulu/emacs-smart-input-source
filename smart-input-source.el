@@ -73,6 +73,20 @@ Should accept a string which is the id of the input source.")
   "Aggressively detect context across blank lines.")
 (make-variable-buffer-local 'smart-input-source-aggressive-line)
 
+(defvar remember-input-source-triggers
+  '(switch-to-buffer
+    other-window windmove-up windmove-down windmove-left windmove-right
+    next-buffer previous-buffer)
+  "A list of commands which would trigger the save/restore of input source.")
+
+(defvar save-input-source-hook-triggers
+  '(mouse-leave-buffer-hook focus-out-hook)
+  "A list of hooks which would trigger the save of input source.")
+
+(defvar restore-input-source-hook-triggers
+  '()
+  "A list of hooks which would trigger the restore of input source.")
+
 (defvar double-space-close-inline-english t
   "Double space also trigger the close of inline English.")
 (make-variable-buffer-local
@@ -157,15 +171,17 @@ Should accept a string which is the id of the input source.")
 
 (defun -set-input-source (lang)
   "Set the input source according to lang LANG, avoiding unnecessary switch."
-  (when (functionp do-set-input-source)
+  (when (and lang (functionp do-set-input-source))
     (let ((ENGLISH_SOURCE english-input-source)
           (OTHER_SOURCE other-input-source))
       (pcase (-get-input-source)
         ((pred (equal ENGLISH_SOURCE))
-         (when (equal lang OTHER)
+         (when (or (equal lang OTHER)
+                   (equal lang OTHER_SOURCE))
            (funcall do-set-input-source OTHER_SOURCE)))
         ((pred (equal OTHER_SOURCE))
-         (when (equal lang ENGLISH)
+         (when (or (equal lang ENGLISH)
+                   (equal lang ENGLISH_SOURCE))
            (funcall do-set-input-source ENGLISH_SOURCE)))))))
 
 (defun set-input-source-english ()
@@ -565,6 +581,84 @@ separatly instead of this all-in-one mode.
       ;; only turn off buffer local mode
       (inline-english-mode -1)
       (follow-context-mode -1))))
+
+;;
+;; Following codes are mainly about remember input source for buffer
+;;
+
+(defvar -saved-input-source nil
+  "Saved input source.")
+(make-variable-buffer-local 'smart-input-source--saved-input-source)
+
+(defvar -remember-input-source-inited nil
+  "Remember input source initialized.")
+
+(defun -save-input-source-advice (&rest _args)
+  "A simple wrapper around `-save-input-source' that's advice-friendly."
+  (-save-input-source))
+
+(defun -restore-input-source-advice (&rest _args)
+  "A simple wrapper around `-restore-input-source' that's advice-friendly."
+  (-restore-input-source))
+
+(defun -remember-input-source-advices-trigger-commands ()
+  "Apply advices to the commands listed in `remember-input-source-trigger'."
+  (mapc (lambda (command)
+          (advice-add command :before
+                      #'smart-input-source--save-input-source-advice)
+          (advice-add command :after
+                      #'smart-input-source--restore-input-source-advice))
+        remember-input-source-triggers))
+
+(defun -remember-input-source-remove-advice-from-trigger-commands ()
+  "Remove advices from the commands listed in `remember-input-source-triggers'."
+  (mapc (lambda (command)
+          (advice-remove command
+                         #'smart-input-source--save-input-source-advice)
+          (advice-remove command
+                         #'smart-input-source--restore-input-source-advice))
+        remember-input-source-triggers))
+
+(defun remember-input-source-init ()
+  "Setup remember-input-source's advices and hooks."
+  (unless -remember-input-source-inited
+    (-remember-input-source-advices-trigger-commands)
+    (dolist (hook save-input-source-hook-triggers)
+      (add-hook hook #'smart-input-source--save-input-source))
+    (dolist (hook restore-input-source-hook-triggers)
+      (add-hook hook #'smart-input-source--restore-input-source))
+    (setq -remember-input-source-inited t)))
+
+(defun remember-input-source-exit ()
+  "Remove remember-input-source's advices and hooks."
+  (when -remember-input-source-inited
+    (-remember-input-source-remove-advice-from-trigger-commands)
+    (dolist (hook save-input-source-hook-triggers)
+      (remove-hook hook #'smart-input-source--save-input-source))
+    (dolist (hook restore-input-source-hook-triggers)
+      (remove-hook hook #'smart-input-source--restore-input-source))
+    (setq -remember-input-source-inited nil)))
+
+(define-minor-mode remember-input-source-mode
+  "Remember input source for buffer."
+  :init-value nil
+  (unless -ism-inited
+    (-init-ism))
+  (remember-input-source-init))
+
+(defun -save-input-source ()
+  "Save buffer input source"
+  (unless -ism-inited
+    (-init-ism))
+  (when (and -ism remember-input-source-mode)
+    (setq -saved-input-source (-get-input-source))))
+
+(defun -restore-input-source ()
+  "Restore buffer input source"
+  (unless -ism-inited
+    (-init-ism))
+  (when (and -ism remember-input-source-mode)
+    (-set-input-source -saved-input-source)))
 
 ;; end of namespace
 )
