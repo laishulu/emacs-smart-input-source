@@ -470,6 +470,7 @@ input source to English."
                   (not (and (> (1+ fore-to) (point))
                             (= back-to (point))
                             (-string-match-p english-pattern back-char)))))
+        (activate-inline-overlay back-to)
         (set-input-source-english)))))
 
 (defun activate-inline-overlay (start)
