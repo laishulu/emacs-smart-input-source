@@ -589,9 +589,11 @@ separatly instead of this all-in-one mode.
         (progn
           (unless global-auto-english-mode
             (global-auto-english-mode t))
+          (remember-input-source-mode t)
           (inline-english-mode t)
           (follow-context-mode t))
       ;; only turn off buffer local mode
+      (remember-input-source-mode -1)
       (inline-english-mode -1)
       (follow-context-mode -1))))
 
