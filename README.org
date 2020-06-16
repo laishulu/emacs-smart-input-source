@@ -144,9 +144,11 @@ its all in English.
   (add-hook 'prog-mode-hook #'smart-input-source-inline-english-mode))
 #+END_SRC
 
-Quirks:
-1. For `spacemacs` user, if you config it with the `hybrid` mode, Some of the
-   ~evil~ related features may not work. Change it to `vim` mode instead.
+Tips:
+1. For ~spacemacs~ user, if you config it with the ~hybrid~ mode, Some of the
+   ~evil~ related features may not work. Change it to ~vim~ mode instead.
+2. If you want to init the value of a *buffer local* variable for all buffers,
+   you should use ~setq-local~ rather than ~setq~.
 
 **  How to get the input source id
 After /input source manager/ is configured, you can get your /current
