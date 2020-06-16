@@ -131,7 +131,7 @@ its all in English.
 #+BEGIN_SRC lisp
 (use-package smart-input-source
   :config
-  (setq-default smart-input-source-english-input-source
+  (setq smart-input-source-english-input-source
         "com.apple.keylayout.US")
   (setq-default smart-input-source-other-input-source
         "com.sogou.inputmethod.sogou.pinyin")
@@ -233,7 +233,7 @@ configuration is simpler than other input source managers.
 #+BEGIN_SRC lisp
 (setq smart-input-source-external-ism "im-select.exe")
 (setq smart-input-source-english-input-source "ENGLISH_INPUT_SOURCE")
-(setq smart-input-source-other-input-source "OTHER_INPUT_SOURCE")
+(setq-default smart-input-source-other-input-source "OTHER_INPUT_SOURCE")
 #+END_SRC
 
 However, because even though ~im-select~ supports switching different input
