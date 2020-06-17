@@ -462,8 +462,10 @@ input source to English."
                            (evil-visual-state-p)
                            (evil-motion-state-p)
                            (evil-operator-state-p))))
-             ;; around char is <spc>
-             (= (preceding-char) 32))
+             ;; around char is <spc> <DBC spc>
+             (or (= (preceding-char) ?\s)
+                 (= (preceding-char) 12288)
+                 ))
     (let* ((back-detect (-back-detect-chars))
            (back-to (back-detect-to back-detect))
            (back-char (back-detect-char back-detect))
