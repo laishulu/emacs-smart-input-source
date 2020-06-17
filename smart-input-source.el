@@ -491,12 +491,12 @@ input source to English."
                   (-other-lang-p back-char)
                   (not (and (< (1+ back-to) (point))
                             (= fore-to (point))
-                            (-not-other-p back-char))))
+                            (-not-other-lang-p back-char))))
              ;; [:not none-english:][^][:space:][other lang]
              (and (< fore-to (line-end-position))
                   (-other-lang-p fore-char)
                   (not (and (> fore-to (point))
-                            (-not-other-p back-char)))))
+                            (-not-other-lang-p back-char)))))
         (activate-inline-overlay (1- (point)))
         (set-input-source-english)))))
 
