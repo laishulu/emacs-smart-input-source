@@ -17,15 +17,15 @@ This package provide several modes to switch OS native input source smartly:
   function ~smart-input-source-follow-context~ is also provided to hook as your
   wish, regardless the presence of ~evil~.
 - A buffer local mode: ~smart-input-source-inline-english-mode~ to enable the
-  automatic triggerring of a temporary overlay to input English and then back to
+  automatic triggering of a temporary overlay to input English and then back to
   none-English without switching input sources manually.
 
 * Features
 **  In English
 1. Use OS native input source, no need to change use experience.
-2. Support GUI Emacs, as well as Terminial Emacs.
-3. Easy to install and config. No further config for ~GUI Emacs Mac Port~ with
-   ~Sogou Input~.
+2. Support GUI Emacs, as well as Terminal Emacs.
+3. Easy to install and configure. No further configuration for
+   ~GUI Emacs Mac Port~ with ~Sogou Input~.
 4. Automatically switch to English when Emacs start.
 5. Automatically switch to/from English when enter/exit ~minibuf~.
 6. Respect ~Evil~ (also works without evil):
@@ -33,19 +33,20 @@ This package provide several modes to switch OS native input source smartly:
    2) when enter ~insert~ model, switch input source automatically according to
       context.
 7. Remember input source for individual buffer, so when you switch back from
-   other buffer or fucos again from other window, the input source will be
+   other buffer or focus again from other window, the input source will be
    restored.
 8. Support ~inline English~ region:
    1) Inserting space around none-English characters triggers the region.
-   2) In this mode, Engligh will be sticked.
+   2) In this mode, English will be sticked.
    3) Region is closed when:
       a. Cursor leaves the region
       b. ~Return~ is pressed.
-      c. Two consequtive ~space~ are input.
+      c. Two consecutive ~space~ are input.
    4) If the region ends with space, none-English input source will be
       selected, otherwise English input source is retained.
    5) After the close of the region, one space in the head and one space in the
-      tail (if exists) of the region will be deleted.
+      tail (if exists) of the region will be deleted. But if the whole region is
+      blank, the no character will be deleted.
 9. Switch input source according to context: When entering ~evil~ insert mode,
    input source will be determined according to the context.
 10. Input source switching rules are designed carefully, for pure English
@@ -70,7 +71,8 @@ This package provide several modes to switch OS native input source smartly:
       b. 按回车键。
       c. 输入了连续两个空格。
    4) 区域如果是空格结尾，输入法切回非其它语言，否则输入法保持英文。
-   5) 区域关闭后，首尾各删除一个空格（如果有的话）。
+   5) 区域关闭后，首尾各删除一个空格（如果有的话）。如果整个区域是空白，则不删除
+      空格。
 9. 根据上下文切换输入法：当进入 ~evil~ 的 insert 模式时，根据上下文确定输入法。
 10. 可以安全地默认开启mode：编辑英文时，输入法永远不会自动切换到其它语言。
 
