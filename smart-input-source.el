@@ -578,8 +578,8 @@ input source to English."
              (tighten-fore-to (fore-detect-to tighten-fore-detect)))
         (when (> tighten-fore-to (-inline-overlay-start))
           (delete-char 1)))))
-    (delete-overlay -inline-overlay)
-    (setq -inline-overlay nil))
+  (delete-overlay -inline-overlay)
+  (setq -inline-overlay nil))
 
 (define-minor-mode mode
   "Switch input source smartly.
@@ -627,42 +627,34 @@ separatly instead of this all-in-one mode."
   "A simple wrapper around `-restore-input-source' that's advice-friendly."
   (-restore-input-source))
 
-(defun -remember-input-source-advices-trigger-commands ()
-  "Apply advices to the commands listed in `remember-input-source-trigger'."
-  (mapc (lambda (command)
-          (advice-add command :before
-                      #'smart-input-source--save-input-source-advice)
-          (advice-add command :after
-                      #'smart-input-source--restore-input-source-advice))
-        remember-input-source-triggers))
-
-(defun -remember-input-source-remove-advice-from-trigger-commands ()
-  "Remove advices from the commands listed in `remember-input-source-triggers'."
-  (mapc (lambda (command)
-          (advice-remove command
-                         #'smart-input-source--save-input-source-advice)
-          (advice-remove command
-                         #'smart-input-source--restore-input-source-advice))
-        remember-input-source-triggers))
-
 (defun remember-input-source-init ()
   "Setup remember-input-source's advices and hooks."
   (unless -remember-input-source-inited
-    (-remember-input-source-advices-trigger-commands)
+    (dolist (command remember-input-source-triggers)
+      (advice-add command :before
+                  #'smart-input-source--save-input-source-advice)
+      (advice-add command :after
+                  #'smart-input-source--restore-input-source-advice))
     (dolist (hook save-input-source-hook-triggers)
-      (add-hook hook #'smart-input-source--save-input-source))
+      (add-hook hook #'smart-input-source--save-input-source-advice))
     (dolist (hook restore-input-source-hook-triggers)
-      (add-hook hook #'smart-input-source--restore-input-source))
+      (add-hook hook #'smart-input-source--restore-input-source-advice))
+    (add-hook 'minibuffer-setup-hook
+              (lambda () (set-input-source-english)))
     (setq -remember-input-source-inited t)))
 
 (defun remember-input-source-exit ()
   "Remove remember-input-source's advices and hooks."
   (when -remember-input-source-inited
-    (-remember-input-source-remove-advice-from-trigger-commands)
+    (dolist (command remember-input-source-triggers)
+      (advice-remove command
+                     #'smart-input-source--save-input-source-advice)
+      (advice-remove command
+                     #'smart-input-source--restore-input-source-advice))
     (dolist (hook save-input-source-hook-triggers)
-      (remove-hook hook #'smart-input-source--save-input-source))
+      (remove-hook hook #'smart-input-source--save-input-source-advice))
     (dolist (hook restore-input-source-hook-triggers)
-      (remove-hook hook #'smart-input-source--restore-input-source))
+      (remove-hook hook #'smart-input-source--restore-input-source-advice))
     (setq -remember-input-source-inited nil)))
 
 (define-minor-mode remember-input-source-mode
