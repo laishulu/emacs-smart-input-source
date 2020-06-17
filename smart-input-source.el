@@ -54,6 +54,14 @@ Should accept a string which is the id of the input source.")
 (defvar english-input-source "com.apple.keylayout.US"
   "Input source for english.")
 
+(defvar fixed-context nil
+  "Context is fixed to a specific language."
+
+"Dynamic: nil"
+"English: `smart-input-source-ENGLISH'."
+"OTHER: `smart-input-source-OTHER'.")
+(make-variable-buffer-local 'smart-input-source-fixed-context)
+
 (defvar start-with-english t
   "Switch to english when `global-auto-english-mode' enabled.")
 
@@ -234,19 +242,19 @@ meanings as `string-match-p'."
        (string-match-p regexp str start)))
 
 (defun -english-p (str)
-  "Predicate on str is English."
+  "Predicate on STR is English."
   (-string-match-p english-pattern str))
 
 (defun -not-english-p (str)
-  "Predicate on str is not English."
+  "Predicate on STR is not English."
   (not (-string-match-p english-pattern str)))
 
 (defun -other-lang-p (str)
-  "Predicate on str is other language."
+  "Predicate on STR is other language."
   (-string-match-p other-pattern str))
 
 (defun -not-other-lang-p (str)
-  "Predicate on str is not other language."
+  "Predicate on STR is not other language."
   (not (-string-match-p other-pattern str)))
 
 (cl-defstruct back-detect ; result of backward detect
@@ -312,6 +320,8 @@ meanings as `string-match-p'."
          (cross-line-fore-char (fore-detect-cross-line-char fore-detect)))
 
     (cond
+     ;; context is fixed.
+     ((fixed-context) fixed-context)
 
      ;; [line beginning][^][english]
      ;; [english][^][english]
@@ -575,12 +585,11 @@ input source to English."
   "Switch input source smartly.
 
 Just for lazy user, at the cost of inconsistent logic on use of the global mode
-`global-auto-english-mode'. It's highly recommended to use 
+`global-auto-english-mode'. It's highly recommended to use
 `smart-input-source-global-auto-english-mode',
 `smart-input-source-inline-english-mode'
 `smart-input-source-follow-context-mode'
-separatly instead of this all-in-one mode.
-"
+separatly instead of this all-in-one mode."
   :init-value nil
 
   (unless -ism-inited
@@ -664,14 +673,14 @@ separatly instead of this all-in-one mode.
   (remember-input-source-init))
 
 (defun -save-input-source ()
-  "Save buffer input source"
+  "Save buffer input source."
   (unless -ism-inited
     (-init-ism))
   (when (and -ism remember-input-source-mode)
     (setq -saved-input-source (-get-input-source))))
 
 (defun -restore-input-source ()
-  "Restore buffer input source"
+  "Restore buffer input source."
   (unless -ism-inited
     (-init-ism))
   (when (and -ism remember-input-source-mode)
