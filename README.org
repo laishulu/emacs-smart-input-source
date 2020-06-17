@@ -4,10 +4,11 @@
 * About
 This package provide several modes to switch OS native input source smartly:
 
-- A global mode: ~smart-input-source-global-auto-english-mode~ to automatically
-  switch to English when leaving ~evil~ insert mode. It can also be used
-  regardless the presence of ~evil~, to optionally switched to English
-  immediately when the mode is turned on.
+- A global mode: ~smart-input-source-global-auto-english-mode~
+  1. Automatically switch to English when leaving ~evil~ insert mode.
+  2. Optionally switched to English immediately when the mode is turned on.
+  3. Automatically switch to English when ~minibuf~ is activated, and switch
+     back after exit ~minibuf~.
 - A buffer local mode: ~smart-input-source-remember-input-source-mode~ to
   remember the input source of a buffer even after buffer switch and losing
   focus.
@@ -26,14 +27,15 @@ This package provide several modes to switch OS native input source smartly:
 3. Easy to install and config. No further config for ~GUI Emacs Mac Port~ with
    ~Sogou Input~.
 4. Automatically switch to English when Emacs start.
-5. Respect ~Evil~ (also works without evil):
+5. Automatically switch to/from English when enter/exit ~minibuf~.
+6. Respect ~Evil~ (also works without evil):
    1) When leave ~insert~ mode, switch to English input source automatically.
    2) when enter ~insert~ model, switch input source automatically according to
       context.
-6. Remember input source for individual buffer, so when you switch back from
+7. Remember input source for individual buffer, so when you switch back from
    other buffer or fucos again from other window, the input source will be
    restored.
-7. Support ~inline English~ region:
+8. Support ~inline English~ region:
    1) Inserting space around none-English characters triggers the region.
    2) In this mode, Engligh will be sticked.
    3) Region is closed when:
@@ -44,22 +46,23 @@ This package provide several modes to switch OS native input source smartly:
       selected, otherwise English input source is retained.
    5) After the close of the region, one space in the head and one space in the
       tail (if exists) of the region will be deleted.
-8. Switch input source according to context: When entering ~evil~ insert mode,
+9. Switch input source according to context: When entering ~evil~ insert mode,
    input source will be determined according to the context.
-9. Input source switching rules are designed carefully, for pure English
-   editing, input source will never be switched to other languages.
+10. Input source switching rules are designed carefully, for pure English
+    editing, input source will never be switched to other languages.
 
 **  In Chinese
 1. 使用操作系统的输入法，不改变使用习惯。
 2. 支持 GUI Emacs, 也支持 Terminal Emacs.
 3. 安装配置简单， GUI Emacs Mac Port 下使用搜狗拼音免配置。
 4. Emacs 启动时自动切换到英文输入法。
-5. 如果在 Evil 下（没有 evil 也可以正常工作）:
+5. minibuf进入时自动切换到英文，退出时恢复原来的输入法。
+6. 如果在 Evil 下（没有 evil 也可以正常工作）:
    1) 从 insert 模式离开时，自动切换到英文输入法。
    2) 进入 insert 模式时, 根据上下文自动切换输入法。
-6. 记得缓冲区自己的输入法。从其他缓冲区切换回来，或者重新获得窗口焦点时，
+7. 记得缓冲区自己的输入法。从其他缓冲区切换回来，或者重新获得窗口焦点时，
    会恢复缓冲区自己的输入法
-7. 支持 inline English 区域：
+8. 支持 inline English 区域：
    1) 在汉字前后插入空格触发 inline English 区域。
    2) 在 inline English 下，一直使用英文输入法。
    3) 关闭 inline English 区域
@@ -68,8 +71,8 @@ This package provide several modes to switch OS native input source smartly:
       c. 输入了连续两个空格。
    4) 区域如果是空格结尾，输入法切回非其它语言，否则输入法保持英文。
    5) 区域关闭后，首尾各删除一个空格（如果有的话）。
-8. 根据上下文切换输入法：当进入 ~evil~ 的 insert 模式时，根据上下文确定输入法。
-9. 可以安全地默认开启mode：编辑英文时，输入法永远不会自动切换到其它语言。
+9. 根据上下文切换输入法：当进入 ~evil~ 的 insert 模式时，根据上下文确定输入法。
+10. 可以安全地默认开启mode：编辑英文时，输入法永远不会自动切换到其它语言。
 
 * Install
 Just install this package from ~melpa~, and then install *input source manager*

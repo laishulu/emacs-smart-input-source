@@ -66,9 +66,6 @@ smart-input-source-OTHER: other language context.")
 (defvar start-with-english t
   "Switch to english when `global-auto-english-mode' enabled.")
 
-(defvar minibuf-english t
-  "Switch to english when setup minibuf and restore when exit.")
-
 (defvar other-pattern "\\cc"
   "Pattern to identify a character as other lang.")
 (make-variable-buffer-local 'smart-input-source-other-pattern)
