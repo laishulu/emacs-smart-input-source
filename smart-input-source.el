@@ -592,7 +592,8 @@ input source to English."
       (set-input-source-other))
 
     ;; only tighten for none-blank inline english region
-    (when (> back-to (-inline-overlay-start))
+    (when (and (<= (point) (-inline-overlay-end))
+               (> back-to (-inline-overlay-start)))
 
       (save-excursion
         (goto-char (-inline-overlay-end))
