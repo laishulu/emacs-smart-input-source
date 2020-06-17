@@ -538,8 +538,7 @@ input source to English."
 
   (when (and inline-english-mode (overlayp -inline-overlay))
     ;; company
-    (if (and (featurep 'evil)
-             (company--active-p))
+    (if (company--active-p)
         (company-complete-selection)
       (deactivate-inline-overlay))))
 
