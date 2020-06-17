@@ -249,9 +249,9 @@ smart-input-source-OTHER: other language context.")
             (add-hook 'evil-insert-state-exit-hook
                       #'smart-input-source-set-input-source-english)))
       (remove-hook 'minibuffer-setup-hook
-                #'smart-input-source-save-global-input-source-set-english)
+                   #'smart-input-source-save-global-input-source-set-english)
       (remove-hook 'minibuffer-exit-hook
-                #'smart-input-source-restore-global-input-source)
+                   #'smart-input-source-restore-global-input-source)
       (when (featurep 'evil)
         (remove-hook 'evil-insert-state-exit-hook
                      #'smart-input-source-set-input-source-english)))))
@@ -591,20 +591,23 @@ input source to English."
                    (< back-to (point))))
       (set-input-source-other))
 
-    (save-excursion
-      (goto-char (-inline-overlay-end))
-      (let* ((tighten-back-detect (-back-detect-chars))
-             (tighten-back-to (back-detect-to tighten-back-detect)))
-        (when (and (< tighten-back-to (-inline-overlay-end))
-                   (> tighten-back-to (-inline-overlay-start)))
-          (delete-char -1))))
+    ;; only tighten for none-blank inline english region
+    (when (> back-to (-inline-overlay-start))
 
-    (save-excursion
-      (goto-char (-inline-overlay-start))
-      (let* ((tighten-fore-detect (-fore-detect-chars))
-             (tighten-fore-to (fore-detect-to tighten-fore-detect)))
-        (when (> tighten-fore-to (-inline-overlay-start))
-          (delete-char 1)))))
+      (save-excursion
+        (goto-char (-inline-overlay-end))
+        (let* ((tighten-back-detect (-back-detect-chars))
+               (tighten-back-to (back-detect-to tighten-back-detect)))
+          (when (and (< tighten-back-to (-inline-overlay-end))
+                     (> tighten-back-to (-inline-overlay-start)))
+            (delete-char -1))))
+
+      (save-excursion
+        (goto-char (-inline-overlay-start))
+        (let* ((tighten-fore-detect (-fore-detect-chars))
+               (tighten-fore-to (fore-detect-to tighten-fore-detect)))
+          (when (> tighten-fore-to (-inline-overlay-start))
+            (delete-char 1))))))
   (delete-overlay -inline-overlay)
   (setq -inline-overlay nil))
 
