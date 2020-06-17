@@ -55,9 +55,9 @@ Should accept a string which is the id of the input source.")
   "Input source for english.")
 
 (defvar fixed-context nil
-  "Context is fixed to a specific language."
+  "Context is fixed to a specific language.
 
-"Possible values:
+Possible values:
 nil: dynamic context
 'smart-input-source-ENGLISH: English context
 'smart-input-source-OTHER: other language context.")
