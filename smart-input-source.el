@@ -59,8 +59,8 @@ Should accept a string which is the id of the input source.")
 
 Possible values:
 nil: dynamic context
-'smart-input-source-ENGLISH: English context
-'smart-input-source-OTHER: other language context.")
+smart-input-source-ENGLISH: English context
+smart-input-source-OTHER: other language context.")
 (make-variable-buffer-local 'smart-input-source-fixed-context)
 
 (defvar start-with-english t
