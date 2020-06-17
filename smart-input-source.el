@@ -66,6 +66,9 @@ smart-input-source-OTHER: other language context.")
 (defvar start-with-english t
   "Switch to english when `global-auto-english-mode' enabled.")
 
+(defvar minibuf-english t
+  "Switch to english when setup minibuf and restore when exit.")
+
 (defvar other-pattern "\\cc"
   "Pattern to identify a character as other lang.")
 (make-variable-buffer-local 'smart-input-source-other-pattern)
@@ -204,6 +207,25 @@ smart-input-source-OTHER: other language context.")
   (when -ism
     (-set-input-source OTHER)))
 
+(defvar -global-input-source nil
+  "Saved global input source.")
+
+(defun save-global-input-source ()
+  "Save global input source."
+  (when -ism
+    (setq -global-input-source (-get-input-source))))
+
+(defun save-global-input-source-set-english ()
+  "Save to global input source and then set to english."
+  (when -ism
+    (save-global-input-source)
+    (set-input-source-english)))
+
+(defun restore-global-input-source ()
+  "Restore global input source."
+  (when -ism
+    (-set-input-source -global-input-source)))
+
 ;;;###autoload
 (define-minor-mode global-auto-english-mode
   "Automatically select english input source when startup or with evil.
@@ -222,9 +244,17 @@ smart-input-source-OTHER: other language context.")
     (if global-auto-english-mode
         (progn
           (when start-with-english (set-input-source-english))
+          (add-hook 'minibuffer-setup-hook
+                    #'smart-input-source-save-global-input-source-set-english)
+          (add-hook 'minibuffer-exit-hook
+                    #'smart-input-source-restore-global-input-source)
           (when (featurep 'evil)
             (add-hook 'evil-insert-state-exit-hook
                       #'smart-input-source-set-input-source-english)))
+      (remove-hook 'minibuffer-setup-hook
+                #'smart-input-source-save-global-input-source-set-english)
+      (remove-hook 'minibuffer-exit-hook
+                #'smart-input-source-restore-global-input-source)
       (when (featurep 'evil)
         (remove-hook 'evil-insert-state-exit-hook
                      #'smart-input-source-set-input-source-english)))))
@@ -612,9 +642,9 @@ separatly instead of this all-in-one mode."
 ;; Following codes are mainly about remember input source for buffer
 ;;
 
-(defvar -saved-input-source nil
-  "Saved input source.")
-(make-variable-buffer-local 'smart-input-source--saved-input-source)
+(defvar -buffer-input-source nil
+  "Saved buffer input source.")
+(make-variable-buffer-local 'smart-input-source--buffer-input-source)
 
 (defvar -remember-input-source-inited nil
   "Remember input source initialized.")
@@ -639,8 +669,6 @@ separatly instead of this all-in-one mode."
       (add-hook hook #'smart-input-source--save-input-source-advice))
     (dolist (hook restore-input-source-hook-triggers)
       (add-hook hook #'smart-input-source--restore-input-source-advice))
-    (add-hook 'minibuffer-setup-hook
-              (lambda () (set-input-source-english)))
     (setq -remember-input-source-inited t)))
 
 (defun remember-input-source-exit ()
@@ -669,14 +697,14 @@ separatly instead of this all-in-one mode."
   (unless -ism-inited
     (-init-ism))
   (when (and -ism remember-input-source-mode)
-    (setq -saved-input-source (-get-input-source))))
+    (setq -buffer-input-source (-get-input-source))))
 
 (defun -restore-input-source ()
   "Restore buffer input source."
   (unless -ism-inited
     (-init-ism))
   (when (and -ism remember-input-source-mode)
-    (-set-input-source -saved-input-source)))
+    (-set-input-source -buffer-input-source)))
 
 ;; end of namespace
 )
