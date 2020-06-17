@@ -322,7 +322,7 @@ meanings as `string-match-p'."
 
     (cond
      ;; context is fixed.
-     ((fixed-context) fixed-context)
+     (fixed-context fixed-context)
 
      ;; [line beginning][^][english]
      ;; [english][^][english]
