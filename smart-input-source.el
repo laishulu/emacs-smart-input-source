@@ -78,10 +78,9 @@ smart-input-source-OTHER: other language context.")
   "Aggressively detect context across blank lines.")
 
 (defvar preserve-triggers
-  '(switch-to-buffer
+  '(switch-to-buffer switch-to-prev-buffer switch-to-next-buffer
     pop-to-buffer
-    other-window windmove-up windmove-down windmove-left windmove-right
-    next-buffer previous-buffer)
+    other-window windmove-up windmove-down windmove-left windmove-right)
   "A list of commands which would trigger the save/restore of input source.")
 
 (defvar save-hook-triggers
