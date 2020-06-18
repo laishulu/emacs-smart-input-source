@@ -54,33 +54,28 @@ Should accept a string which is the id of the input source.")
 (defvar english-input-source "com.apple.keylayout.US"
   "Input source for english.")
 
-(defvar fixed-context nil
+(defvar-local fixed-context nil
   "Context is fixed to a specific language.
 
 Possible values:
 nil: dynamic context
 smart-input-source-ENGLISH: English context
 smart-input-source-OTHER: other language context.")
-(make-variable-buffer-local 'smart-input-source-fixed-context)
 
 (defvar start-with-english t
   "Switch to english when `global-auto-english-mode' enabled.")
 
-(defvar other-pattern "\\cc"
+(defvar-local other-pattern "\\cc"
   "Pattern to identify a character as other lang.")
-(make-variable-buffer-local 'smart-input-source-other-pattern)
 
-(defvar blank-pattern "[:blank:]"
+(defvar-local blank-pattern "[:blank:]"
   "Pattern to identify a character as blank.")
-(make-variable-buffer-local 'smart-input-source-blank-pattern)
 
-(defvar other-input-source "com.sogou.inputmethod.sogou.pinyin"
+(defvar-local other-input-source "com.sogou.inputmethod.sogou.pinyin"
   "Input source for other lang.")
-(make-variable-buffer-local 'smart-input-source-other-input-source)
 
-(defvar aggressive-line t
+(defvar-local aggressive-line t
   "Aggressively detect context across blank lines.")
-(make-variable-buffer-local 'smart-input-source-aggressive-line)
 
 (defvar remember-input-source-triggers
   '(switch-to-buffer
@@ -451,9 +446,8 @@ meanings as `string-match-p'."
 ;; Following codes are mainly about the inline english region overlay
 ;;
 
-(defvar -inline-overlay nil
+(defvar-local -inline-overlay nil
   "The active inline overlay.")
-(make-variable-buffer-local 'smart-input-source--inline-overlay)
 
 (defun -inline-overlay-start ()
   "Start position of the inline overlay."
@@ -644,9 +638,8 @@ separatly instead of this all-in-one mode."
 ;; Following codes are mainly about remember input source for buffer
 ;;
 
-(defvar -buffer-input-source nil
+(defvar-local -buffer-input-source nil
   "Saved buffer input source.")
-(make-variable-buffer-local 'smart-input-source--buffer-input-source)
 
 (defvar -remember-input-source-inited nil
   "Remember input source initialized.")
