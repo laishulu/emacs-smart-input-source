@@ -431,10 +431,13 @@ meanings as `string-match-p'."
     (if follow-context-mode
         (when (featurep 'evil)
           (add-hook 'evil-insert-state-entry-hook
-                    #'smart-input-source-follow-context))
+                    #'smart-input-source-follow-context
+                    nil t
+                    ))
       (when (featurep 'evil)
         (remove-hook 'evil-insert-state-entry-hook
-                     #'smart-input-source-follow-context)))))
+                     #'smart-input-source-follow-context
+                     t)))))
 
 (defun follow-context ()
   "Follow the context to switch input source."
@@ -476,9 +479,11 @@ meanings as `string-match-p'."
   (when -ism
     (if inline-english-mode
         (add-hook 'post-self-insert-hook
-                  #'smart-input-source-check-to-activate-overlay)
+                  #'smart-input-source-check-to-activate-overlay
+                  nil t)
       (remove-hook 'post-self-insert-hook
-                   #'smart-input-source-check-to-activate-overlay))))
+                   #'smart-input-source-check-to-activate-overlay
+                   t))))
 
 (defun check-to-activate-overlay()
   "Check whether to activate the inline english region overlay.
@@ -535,7 +540,8 @@ input source to English."
                    'smart-input-source-ret-check-to-deactivate-inline-overlay)
                  keymap))
   (add-hook 'post-command-hook
-            #'smart-input-source-fly-check-to-deactivate-inline-overlay)
+            #'smart-input-source-fly-check-to-deactivate-inline-overlay
+            nil t)
   (message "Press <RETURN> to close inline english region."))
 
 (defun fly-check-to-deactivate-inline-overlay ()
@@ -570,7 +576,8 @@ input source to English."
 
   ;; clean up
   (remove-hook 'post-command-hook
-               #'smart-input-source-fly-check-to-deactivate-inline-overlay)
+               #'smart-input-source-fly-check-to-deactivate-inline-overlay
+               t)
 
   ;; select input source
   (let* ((back-detect (-back-detect-chars))
