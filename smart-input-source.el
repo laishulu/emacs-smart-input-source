@@ -699,7 +699,7 @@ separatly instead of this all-in-one mode."
   (unless -ism-inited
     (-init-ism))
   (when (and -ism remember-input-source-mode)
-    (-set-input-source -buffer-input-source)))
+    (-set-input-source (or -buffer-input-source ENGLISH))))
 
 ;; end of namespace
 )
