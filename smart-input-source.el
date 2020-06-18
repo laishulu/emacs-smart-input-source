@@ -38,12 +38,12 @@
 (defvar external-ism "macism"
   "Path of external ism.")
 
-(defvar do-get-input-source nil
+(defvar do-get nil
   "Function to get the current input source.
 
 Should return a string which is the id of the input source.")
 
-(defvar do-set-input-source nil
+(defvar do-set nil
   "Function to set the input source.
 
 Should accept a string which is the id of the input source.")
@@ -51,7 +51,7 @@ Should accept a string which is the id of the input source.")
 (defvar english-pattern "[a-zA-Z]"
   "Pattern to identify a character as english.")
 
-(defvar english-input-source "com.apple.keylayout.US"
+(defvar english "com.apple.keylayout.US"
   "Input source for english.")
 
 (defvar-local fixed-context nil
@@ -71,23 +71,24 @@ smart-input-source-OTHER: other language context.")
 (defvar-local blank-pattern "[:blank:]"
   "Pattern to identify a character as blank.")
 
-(defvar-local other-input-source "com.sogou.inputmethod.sogou.pinyin"
+(defvar-local other "com.sogou.inputmethod.sogou.pinyin"
   "Input source for other lang.")
 
 (defvar-local aggressive-line t
   "Aggressively detect context across blank lines.")
 
-(defvar remember-input-source-triggers
+(defvar preserve-triggers
   '(switch-to-buffer
+    pop-to-buffer
     other-window windmove-up windmove-down windmove-left windmove-right
     next-buffer previous-buffer)
   "A list of commands which would trigger the save/restore of input source.")
 
-(defvar save-input-source-hook-triggers
+(defvar save-hook-triggers
   '(mouse-leave-buffer-hook focus-out-hook)
   "A list of hooks which would trigger the save of input source.")
 
-(defvar restore-input-source-hook-triggers
+(defvar restore-hook-triggers
   '()
   "A list of hooks which would trigger the restore of input source.")
 
@@ -138,24 +139,24 @@ smart-input-source-OTHER: other language context.")
       (setq -ism ism-path)))
 
   (when -ism
-    (unless (functionp do-get-input-source)
-      (setq do-get-input-source (-mk-get-input-source-fn)))
+    (unless (functionp do-get)
+      (setq do-get (-mk-get-fn)))
 
-    (unless (functionp do-set-input-source)
-      (setq do-set-input-source (-mk-set-input-source-fn))))
+    (unless (functionp do-set)
+      (setq do-set (-mk-set-fn))))
 
   (setq -ism-inited t))
 
-(defun -mk-get-input-source-fn ()
-  "Make a function to be bound to `do-get-input-source'."
+(defun -mk-get-fn ()
+  "Make a function to be bound to `do-get'."
   (when -ism
     (if (equal -ism ISM-EMP)
         #'mac-input-source
       (lambda ()
         (string-trim (shell-command-to-string -ism))))))
 
-(defun -mk-set-input-source-fn ()
-  "Make a function to be bound to `do-set-input-source'."
+(defun -mk-set-fn ()
+  "Make a function to be bound to `do-set'."
   (when -ism
     (if (equal -ism ISM-EMP)
         (lambda (source) (mac-select-input-source source))
@@ -163,60 +164,60 @@ smart-input-source-OTHER: other language context.")
         (string-trim
          (shell-command-to-string (concat -ism " " source)))))))
 
-(defun -get-input-source ()
+(defun -get ()
   "Get the input source id."
-  (when (functionp do-get-input-source)
-    (funcall do-get-input-source)))
+  (when (functionp do-get)
+    (funcall do-get)))
 
-(defun -set-input-source (lang)
+(defun -set (lang)
   "Set the input source according to lang LANG, avoiding unnecessary switch."
-  (when (and lang (functionp do-set-input-source))
-    (let ((ENGLISH_SOURCE english-input-source)
-          (OTHER_SOURCE other-input-source))
-      (pcase (-get-input-source)
+  (when (and lang (functionp do-set))
+    (let ((ENGLISH_SOURCE english)
+          (OTHER_SOURCE other))
+      (pcase (-get)
         ((pred (equal ENGLISH_SOURCE))
          (when (or (equal lang OTHER)
                    (equal lang OTHER_SOURCE))
-           (funcall do-set-input-source OTHER_SOURCE)))
+           (funcall do-set OTHER_SOURCE)))
         ((pred (equal OTHER_SOURCE))
          (when (or (equal lang ENGLISH)
                    (equal lang ENGLISH_SOURCE))
-           (funcall do-set-input-source ENGLISH_SOURCE)))))))
+           (funcall do-set ENGLISH_SOURCE)))))))
 
-(defun set-input-source-english ()
-  "Set input source to `english-input-source'."
+(defun set-english ()
+  "Set input source to `english'."
   (interactive)
   (unless -ism-inited
     (-init-ism))
   (when -ism
-    (-set-input-source ENGLISH)))
+    (-set ENGLISH)))
 
-(defun set-input-source-other ()
-  "Set input source to `other-input-source'."
+(defun set-other ()
+  "Set input source to `other'."
   (interactive)
   (unless -ism-inited
     (-init-ism))
   (when -ism
-    (-set-input-source OTHER)))
+    (-set OTHER)))
 
-(defvar -global-input-source nil
+(defvar -saved-in-global nil
   "Saved global input source.")
 
-(defun save-global-input-source ()
+(defun save-to-global ()
   "Save global input source."
   (when -ism
-    (setq -global-input-source (-get-input-source))))
+    (setq -saved-in-global (-get))))
 
-(defun save-global-input-source-set-english ()
+(defun save-to-global-set-english ()
   "Save to global input source and then set to english."
   (when -ism
-    (save-global-input-source)
-    (set-input-source-english)))
+    (save-to-global)
+    (set-english)))
 
-(defun restore-global-input-source ()
+(defun restore-from-global ()
   "Restore global input source."
   (when -ism
-    (-set-input-source -global-input-source)))
+    (-set -saved-in-global)))
 
 ;;;###autoload
 (define-minor-mode global-auto-english-mode
@@ -235,21 +236,21 @@ smart-input-source-OTHER: other language context.")
   (when -ism
     (if global-auto-english-mode
         (progn
-          (when start-with-english (set-input-source-english))
+          (when start-with-english (set-english))
           (add-hook 'minibuffer-setup-hook
-                    #'smart-input-source-save-global-input-source-set-english)
+                    #'smart-input-source-save-to-global-set-english)
           (add-hook 'minibuffer-exit-hook
-                    #'smart-input-source-restore-global-input-source)
+                    #'smart-input-source-restore-from-global)
           (when (featurep 'evil)
             (add-hook 'evil-insert-state-exit-hook
-                      #'smart-input-source-set-input-source-english)))
+                      #'smart-input-source-set-english)))
       (remove-hook 'minibuffer-setup-hook
-                   #'smart-input-source-save-global-input-source-set-english)
+                   #'smart-input-source-save-to-global-set-english)
       (remove-hook 'minibuffer-exit-hook
-                   #'smart-input-source-restore-global-input-source)
+                   #'smart-input-source-restore-from-global)
       (when (featurep 'evil)
         (remove-hook 'evil-insert-state-exit-hook
-                     #'smart-input-source-set-input-source-english)))))
+                     #'smart-input-source-set-english)))))
 
 ;;
 ;; Following codes are mainly about follow-context-mode
@@ -443,7 +444,7 @@ meanings as `string-match-p'."
   "Follow the context to switch input source."
   (let ((context (-guess-context)))
     (when context
-      (-set-input-source context))))
+      (-set context))))
 
 ;;
 ;; Following codes are mainly about the inline english region overlay
@@ -524,7 +525,7 @@ input source to English."
                   (not (and (> fore-to (point))
                             (-not-other-lang-p back-char)))))
         (activate-inline-overlay (1- (point)))
-        (set-input-source-english)))))
+        (set-english)))))
 
 (defun activate-inline-overlay (start)
   "Activate the inline english region overlay from START."
@@ -591,7 +592,7 @@ input source to English."
               (and (> back-to (-inline-overlay-start))
                    (< back-to (-inline-overlay-end))
                    (< back-to (point))))
-      (set-input-source-other))
+      (set-other))
 
     ;; only tighten for none-blank inline english region
     (when (and (<= (point) (-inline-overlay-end))
@@ -614,99 +615,63 @@ input source to English."
   (delete-overlay -inline-overlay)
   (setq -inline-overlay nil))
 
-(define-minor-mode mode
-  "Switch input source smartly.
-
-Just for lazy user, at the cost of inconsistent logic on use of the global mode
-`global-auto-english-mode'. It's highly recommended to use
-`smart-input-source-global-auto-english-mode',
-`smart-input-source-inline-english-mode'
-`smart-input-source-follow-context-mode'
-separatly instead of this all-in-one mode."
-  :init-value nil
-
-  (unless -ism-inited
-    (-init-ism))
-
-  (when -ism
-    (if mode
-        (progn
-          (unless global-auto-english-mode
-            (global-auto-english-mode t))
-          (remember-input-source-mode t)
-          (inline-english-mode t)
-          (follow-context-mode t))
-      ;; only turn off buffer local mode
-      (remember-input-source-mode -1)
-      (inline-english-mode -1)
-      (follow-context-mode -1))))
-
 ;;
-;; Following codes are mainly about remember input source for buffer
+;; Following codes are mainly about preserve input source for buffer
 ;;
 
-(defvar-local -buffer-input-source nil
+(defvar-local -saved-in-buffer nil
   "Saved buffer input source.")
 
-(defvar -remember-input-source-inited nil
-  "Remember input source initialized.")
+(defvar -preserve-inited nil
+  "Preserve input source initialized.")
 
-(defun -save-input-source-advice (&rest _args)
-  "A simple wrapper around `-save-input-source' that's advice-friendly."
-  (-save-input-source))
+(defun -save-to-buffer-advice (&rest _args)
+  "A simple wrapper around `-save-to-buffer' that's advice-friendly."
+  (-save-to-buffer))
 
-(defun -restore-input-source-advice (&rest _args)
-  "A simple wrapper around `-restore-input-source' that's advice-friendly."
-  (-restore-input-source))
+(defun -restore-from-buffer-advice (&rest _args)
+  "A simple wrapper around `-restore-from-buffer' that's advice-friendly."
+  (-restore-from-buffer))
 
-(defun remember-input-source-init ()
-  "Setup remember-input-source's advices and hooks."
-  (unless -remember-input-source-inited
-    (dolist (command remember-input-source-triggers)
-      (advice-add command :before
-                  #'smart-input-source--save-input-source-advice)
-      (advice-add command :after
-                  #'smart-input-source--restore-input-source-advice))
-    (dolist (hook save-input-source-hook-triggers)
-      (add-hook hook #'smart-input-source--save-input-source-advice))
-    (dolist (hook restore-input-source-hook-triggers)
-      (add-hook hook #'smart-input-source--restore-input-source-advice))
-    (setq -remember-input-source-inited t)))
-
-(defun remember-input-source-exit ()
-  "Remove remember-input-source's advices and hooks."
-  (when -remember-input-source-inited
-    (dolist (command remember-input-source-triggers)
-      (advice-remove command
-                     #'smart-input-source--save-input-source-advice)
-      (advice-remove command
-                     #'smart-input-source--restore-input-source-advice))
-    (dolist (hook save-input-source-hook-triggers)
-      (remove-hook hook #'smart-input-source--save-input-source-advice))
-    (dolist (hook restore-input-source-hook-triggers)
-      (remove-hook hook #'smart-input-source--restore-input-source-advice))
-    (setq -remember-input-source-inited nil)))
-
-(define-minor-mode remember-input-source-mode
-  "Remember input source for buffer."
+(define-minor-mode global-preserve-mode
+  "Preserve input source for buffer."
+  :global t
   :init-value nil
-  (unless -ism-inited
-    (-init-ism))
-  (remember-input-source-init))
+  (if global-preserve-mode
+      (progn
+        (unless -ism-inited
+          (-init-ism))
+        (unless -preserve-inited
+          (dolist (command preserve-triggers)
+            (advice-add command :before
+                        #'smart-input-source--save-to-buffer-advice)
+            (advice-add command :after
+                        #'smart-input-source--restore-from-buffer-advice))
+          (dolist (hook save-hook-triggers)
+            (add-hook hook #'smart-input-source--save-to-buffer-advice))
+          (dolist (hook restore-hook-triggers)
+            (add-hook hook #'smart-input-source--restore-from-buffer-advice))
+          (setq -preserve-inited t))
+        )
+    (when -preserve-inited
+      (dolist (command preserve-triggers)
+        (advice-remove command
+                       #'smart-input-source--save-to-buffer-advice)
+        (advice-remove command
+                       #'smart-input-source--restore-from-buffer-advice))
+      (dolist (hook save-hook-triggers)
+        (remove-hook hook #'smart-input-source--save-to-buffer-advice))
+      (dolist (hook restore-hook-triggers)
+        (remove-hook hook #'smart-input-source--restore-from-buffer-advice))
+      (setq -preserve-inited nil))))
 
-(defun -save-input-source ()
+(defun -save-to-buffer ()
   "Save buffer input source."
-  (unless -ism-inited
-    (-init-ism))
-  (when (and -ism remember-input-source-mode)
-    (setq -buffer-input-source (-get-input-source))))
+  (setq -saved-in-buffer (-get)))
 
-(defun -restore-input-source ()
+(defun -restore-from-buffer ()
   "Restore buffer input source."
-  (unless -ism-inited
-    (-init-ism))
-  (when (and -ism remember-input-source-mode)
-    (-set-input-source (or -buffer-input-source ENGLISH))))
+  (-set (or -saved-in-buffer ENGLISH)))
 
 ;; end of namespace
 )

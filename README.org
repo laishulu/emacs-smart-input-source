@@ -9,9 +9,8 @@ This package provide several modes to switch OS native input source smartly:
   2. Optionally switched to English immediately when the mode is turned on.
   3. Automatically switch to English when ~minibuf~ is activated, and switch
      back after exit ~minibuf~.
-- A buffer local mode: ~smart-input-source-remember-input-source-mode~ to
-  remember the input source of a buffer even after buffer switch and losing
-  focus.
+- A global mode: ~smart-input-source-global-preserve-mode~ to save and restore
+  the input source for each buffer even after buffer switch and losing focus.
 - A buffer local mode: ~smart-input-source-follow-context-mode~ to switch input
   source smarted according to context when entering ~evil~ insert mode. A
   function ~smart-input-source-follow-context~ is also provided to hook as your
@@ -32,9 +31,8 @@ This package provide several modes to switch OS native input source smartly:
    1) When leave ~insert~ mode, switch to English input source automatically.
    2) when enter ~insert~ model, switch input source automatically according to
       context.
-7. Remember input source for individual buffer, so when you switch back from
-   other buffer or focus again from other window, the input source will be
-   restored.
+7. Preserve input source for each buffer, so when you switch back from other
+   buffer or focus again from other window, the input source will be restored.
 8. Support ~inline English~ region:
    1) Inserting space around none-English characters triggers the region.
    2) In this mode, English will be sticked.
@@ -121,9 +119,9 @@ by any of the following ways:
 
   you should also configure the following:
   #+BEGIN_SRC lisp
-  (setq smart-input-source-do-get-input-source
+  (setq smart-input-source-do-get
         #'YOUR_DO_GET_INPUT_SOURCE_FUNCTION)
-  (setq smart-input-source-do-set-input-source
+  (setq smart-input-source-do-set
         #'YOUR_DO_SET_INPUT_SOURCE_FUNCTION)
   #+END_SRC
   Refer to the section of /Configurations for other input source managers/
@@ -136,13 +134,12 @@ its all in English.
 #+BEGIN_SRC lisp
 (use-package smart-input-source
   :config
-  (setq smart-input-source-english-input-source
+  (setq smart-input-source-english
         "com.apple.keylayout.US")
-  (setq-default smart-input-source-other-input-source
+  (setq-default smart-input-source-other
         "com.sogou.inputmethod.sogou.pinyin")
   (smart-input-source-global-auto-english-mode t)
-  (add-hook 'text-mode-hook #'smart-input-source-remember-input-source-mode)
-  (add-hook 'prog-mode-hook #'smart-input-source-remember-input-source-mode)
+  (smart-input-source-global-preserve-mode t)
   (add-hook 'text-mode-hook #'smart-input-source-follow-context-mode)
   (add-hook 'prog-mode-hook #'smart-input-source-follow-context-mode)
   (add-hook 'text-mode-hook #'smart-input-source-inline-english-mode)
@@ -159,7 +156,7 @@ Tips:
 After /input source manager/ is configured, you can get your /current
 input source id/ by runing the following command in Emacs:
 #+BEGIN_SRC lisp
-(smart-input-source--get-input-source)
+(smart-input-source--get)
 #+END_SRC
 
 **  Input examples
@@ -168,23 +165,23 @@ input source id/ by runing the following command in Emacs:
 
 * Configure
 
-| Variable                                                | Buffer | Description                                    | Default                              |
-|---------------------------------------------------------+--------+------------------------------------------------+--------------------------------------|
-| ~smart-input-source-english-input-source~               | no     | Input source for English                       | ~com.apple.keylayout.US~             |
-| ~smart-input-source-other-input-source~                 | yes    | Input source for other language                | ~com.sogou.inputmethod.sogou.pinyin~ |
-| ~smart-input-source-fixed-context~                      | yes    | Context is fixed to a specific language        | ~nil~                                |
-| ~smart-input-source-english-pattern~                    | no     | Pattern to identify a character as English     | ~[a-zA-Z]~                           |
-| ~smart-input-source-other-pattern~                      | yes    | Pattern to identify a character as other       | ~\cc~ , see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]]             |
-| ~smart-input-source-blank-pattern~                      | yes    | Pattern to identify a character as blank       | ~[:blank:]~                          |
-| ~smart-input-source-aggressive-line~                    | yes    | Aggressively detect context across blank lines | ~t~                                  |
-| ~smart-input-source-external-ism~                       | no     | input resource manager                         | ~macism~                             |
-| ~smart-input-source-do-get-input-source~                | no     | Function to get the current input source       | determined from the environment      |
-| ~smart-input-source-do-set-input-source~                | no     | Function to set the input source               | determined from the environment      |
-| ~smart-input-source-start-with-english~                 | no     | Switch to english for `auto-english-mode'      | ~t~                                  |
-| ~smart-input-source-remember-input-source-triggers~     | no     | Commands that trigger the save/restore.        | see variable doc                     |
-| ~smart-input-source-save-input-source-hook-triggers~    | no     | Hooks which trigger the save                   | see variable doc                     |
-| ~smart-input-source-restore-input-source-hook-triggers~ | no     | Hooks which trigger the restore                | see variable doc                     |
-|---------------------------------------------------------+--------+------------------------------------------------+--------------------------------------|
+| Variable                                               | Buffer | Description                                    | Default                              |
+|--------------------------------------------------------+--------+------------------------------------------------+--------------------------------------|
+| ~smart-input-source-english~                           | no     | Input source for English                       | ~com.apple.keylayout.US~             |
+| ~smart-input-source-other~                             | yes    | Input source for other language                | ~com.sogou.inputmethod.sogou.pinyin~ |
+| ~smart-input-source-fixed-context~                     | yes    | Context is fixed to a specific language        | ~nil~                                |
+| ~smart-input-source-english-pattern~                   | no     | Pattern to identify a character as English     | ~[a-zA-Z]~                           |
+| ~smart-input-source-other-pattern~                     | yes    | Pattern to identify a character as other       | ~\cc~ , see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]]             |
+| ~smart-input-source-blank-pattern~                     | yes    | Pattern to identify a character as blank       | ~[:blank:]~                          |
+| ~smart-input-source-aggressive-line~                   | yes    | Aggressively detect context across blank lines | ~t~                                  |
+| ~smart-input-source-external-ism~                      | no     | input resource manager                         | ~macism~                             |
+| ~smart-input-source-do-get~                            | no     | Function to get the current input source       | determined from the environment      |
+| ~smart-input-source-do-set~                            | no     | Function to set the input source               | determined from the environment      |
+| ~smart-input-source-start-with-english~                | no     | Switch to english for `auto-english-mode'      | ~t~                                  |
+| ~smart-input-source-preserve-triggers~                 | no     | Commands that trigger the save/restore.        | see variable doc                     |
+| ~smart-input-source-save-to-buffer-hook-triggers~      | no     | Hooks which trigger the save                   | see variable doc                     |
+| ~smart-input-source-restore-from-buffer-hook-triggers~ | no     | Hooks which trigger the restore                | see variable doc                     |
+|--------------------------------------------------------+--------+------------------------------------------------+--------------------------------------|
 
 
 | Face Name                                | Description                                |
@@ -200,14 +197,14 @@ configure as following:
 #+BEGIN_SRC lisp
 (require 'subr-x)
 (setq smart-input-source-external-ism "fcitx-remote")
-(setq smart-input-source-english-input-source "1")
-(setq-default smart-input-source-other-input-source "2")
-(setq smart-input-source-do-get-input-source
+(setq smart-input-source-english "1")
+(setq-default smart-input-source-other "2")
+(setq smart-input-source-do-get
       (lambda()
         (string-trim
          (shell-command-to-string
           smart-input-source-external-ism))))
-(setq smart-input-source-do-set-input-source
+(setq smart-input-source-do-set
       (lambda(source)
         (pcase source
           ("1" (string-trim (shell-command-to-string
@@ -222,13 +219,13 @@ You can configure as following:
 #+BEGIN_SRC lisp
 (require 'subr-x)
 (setq smart-input-source-external-ism "ibus")
-(setq smart-input-source-english-input-source "xkb:us::eng")
-(setq-default smart-input-source-other-input-source "OTHER_INPUT_SOURCE")
-(setq smart-input-source-do-get-input-source
+(setq smart-input-source-english "xkb:us::eng")
+(setq-default smart-input-source-other "OTHER_INPUT_SOURCE")
+(setq smart-input-source-do-get
       (lambda()
         (string-trim (shell-command-to-string
           (concat smart-input-source-external-ism " engine")))))
-(setq smart-input-source-do-set-input-source
+(setq smart-input-source-do-set
       (lambda(source)
         (string-trim (shell-command-to-string
           (concat smart-input-source-external-ism " engine " source)))))
@@ -240,8 +237,8 @@ It fulfills the requirements as a drop-in replacement of ~macism~, thus its
 configuration is simpler than other input source managers.
 #+BEGIN_SRC lisp
 (setq smart-input-source-external-ism "im-select.exe")
-(setq smart-input-source-english-input-source "ENGLISH_INPUT_SOURCE")
-(setq-default smart-input-source-other-input-source "OTHER_INPUT_SOURCE")
+(setq smart-input-source-english "ENGLISH_INPUT_SOURCE")
+(setq-default smart-input-source-other "OTHER_INPUT_SOURCE")
 #+END_SRC
 
 However, because even though ~im-select~ supports switching different input
