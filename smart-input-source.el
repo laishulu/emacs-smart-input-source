@@ -565,7 +565,8 @@ input source to English."
 
   (when (and inline-english-mode (overlayp -inline-overlay))
     ;; company
-    (if (company--active-p)
+    (if (and (featurep 'company)
+             (company--active-p))
         (company-complete-selection)
       (deactivate-inline-overlay))))
 
