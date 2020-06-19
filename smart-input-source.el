@@ -54,28 +54,33 @@ Should accept a string which is the id of the input source.")
 (defvar english "com.apple.keylayout.US"
   "Input source for english.")
 
-(defvar-local fixed-context nil
+(defvar fixed-context nil
   "Context is fixed to a specific language.
 
 Possible values:
 nil: dynamic context
 smart-input-source-ENGLISH: English context
 smart-input-source-OTHER: other language context.")
+(make-variable-buffer-local 'smart-input-source-fixed-context)
 
 (defvar start-with-english t
   "Switch to english when `global-auto-english-mode' enabled.")
 
-(defvar-local other-pattern "\\cc"
+(defvar other-pattern "\\cc"
   "Pattern to identify a character as other lang.")
+(make-variable-buffer-local 'smart-input-source-other-pattern)
 
-(defvar-local blank-pattern "[:blank:]"
+(defvar blank-pattern "[:blank:]"
   "Pattern to identify a character as blank.")
+(make-variable-buffer-local 'smart-input-source-blank-pattern)
 
-(defvar-local other "com.sogou.inputmethod.sogou.pinyin"
+(defvar other "com.sogou.inputmethod.sogou.pinyin"
   "Input source for other lang.")
+(make-variable-buffer-local 'smart-input-source-other)
 
-(defvar-local aggressive-line t
+(defvar aggressive-line t
   "Aggressively detect context across blank lines.")
+(make-variable-buffer-local 'smart-input-source-aggressive-line)
 
 (defvar preserve-triggers
   '(switch-to-buffer switch-to-prev-buffer switch-to-next-buffer
@@ -171,17 +176,15 @@ smart-input-source-OTHER: other language context.")
 (defun -set (lang)
   "Set the input source according to lang LANG, avoiding unnecessary switch."
   (when (and lang (functionp do-set))
-    (let ((ENGLISH_SOURCE english)
-          (OTHER_SOURCE other))
-      (pcase (-get)
-        ((pred (equal ENGLISH_SOURCE))
-         (when (or (equal lang OTHER)
-                   (equal lang OTHER_SOURCE))
-           (funcall do-set OTHER_SOURCE)))
-        ((pred (equal OTHER_SOURCE))
-         (when (or (equal lang ENGLISH)
-                   (equal lang ENGLISH_SOURCE))
-           (funcall do-set ENGLISH_SOURCE)))))))
+    (pcase (-get)
+      ((pred (equal english))
+       (when (or (equal lang OTHER)
+                 (equal lang other))
+         (funcall do-set other)))
+      ((pred (equal other))
+       (when (or (equal lang ENGLISH)
+                 (equal lang english))
+         (funcall do-set english))))))
 
 (defun set-english ()
   "Set input source to `english'."
@@ -198,6 +201,20 @@ smart-input-source-OTHER: other language context.")
     (-init-ism))
   (when -ism
     (-set OTHER)))
+
+(defun switch ()
+  "Switch input source between english and other."
+  (interactive)
+  (unless -ism-inited
+    (-init-ism))
+  (when -ism
+    (pcase (-get)
+      ((pred (equal english))
+       (funcall do-set other)
+       other)
+      ((pred (equal other))
+       (funcall do-set english)
+       other))))
 
 (defvar -saved-in-global nil
   "Saved global input source.")
@@ -449,8 +466,9 @@ meanings as `string-match-p'."
 ;; Following codes are mainly about the inline english region overlay
 ;;
 
-(defvar-local -inline-overlay nil
+(defvar -inline-overlay nil
   "The active inline overlay.")
+(make-variable-buffer-local 'smart-input-source--inline-overlay)
 
 (defun -inline-overlay-start ()
   "Start position of the inline overlay."
@@ -618,8 +636,10 @@ input source to English."
 ;; Following codes are mainly about preserve input source for buffer
 ;;
 
-(defvar-local -saved-in-buffer nil
+(defvar -saved-in-buffer nil
   "Saved buffer input source.")
+(make-variable-buffer-local 'smart-input-source--saved-in-buffer)
+
 
 (defvar -preserve-inited nil
   "Preserve input source initialized.")
