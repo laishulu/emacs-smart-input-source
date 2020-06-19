@@ -151,22 +151,29 @@ smart-input-source-OTHER: other language context.")
 
   (setq -ism-inited t))
 
+(defmacro -ensure-ism (&rest body)
+  "Only run ARGS with valid ism"
+  `(progn
+     (unless smart-input-source--ism-inited
+       (print "initing...")
+       (smart-input-source--init-ism))
+     (when smart-input-source--ism
+       ,@body)))
+
 (defun -mk-get-fn ()
   "Make a function to be bound to `do-get'."
-  (when -ism
-    (if (equal -ism ISM-EMP)
-        #'mac-input-source
-      (lambda ()
-        (string-trim (shell-command-to-string -ism))))))
+  (if (equal -ism ISM-EMP)
+      #'mac-input-source
+    (lambda ()
+      (string-trim (shell-command-to-string -ism)))))
 
 (defun -mk-set-fn ()
   "Make a function to be bound to `do-set'."
-  (when -ism
-    (if (equal -ism ISM-EMP)
-        (lambda (source) (mac-select-input-source source))
-      (lambda (source)
-        (string-trim
-         (shell-command-to-string (concat -ism " " source)))))))
+  (if (equal -ism ISM-EMP)
+      (lambda (source) (mac-select-input-source source))
+    (lambda (source)
+      (string-trim
+       (shell-command-to-string (concat -ism " " source))))))
 
 (defun -get ()
   "Get the input source id."
@@ -190,27 +197,19 @@ smart-input-source-OTHER: other language context.")
 (defun set-english ()
   "Set input source to `english'."
   (interactive)
-  (unless -ism-inited
-    (-init-ism))
-  (when -ism
-    (-set ENGLISH)))
+  (-ensure-ism (-set ENGLISH)))
 
 ;;;###autoload
 (defun set-other ()
   "Set input source to `other'."
   (interactive)
-  (unless -ism-inited
-    (-init-ism))
-  (when -ism
-    (-set OTHER)))
+  (-ensure-ism (-set OTHER)))
 
 ;;;###autoload
 (defun switch ()
   "Switch input source between english and other."
   (interactive)
-  (unless -ism-inited
-    (-init-ism))
-  (when -ism
+  (-ensure-ism
     (pcase (-get)
       ((pred (equal english))
        (funcall do-set other)
@@ -225,21 +224,19 @@ smart-input-source-OTHER: other language context.")
 ;;;###autoload
 (defun save-to-global ()
   "Save global input source."
-  (when -ism
-    (setq -saved-in-global (-get))))
+  (-ensure-ism (setq -saved-in-global (-get))))
 
 ;;;###autoload
 (defun save-to-global-set-english ()
   "Save to global input source and then set to english."
-  (when -ism
+  (-ensure-ism
     (save-to-global)
     (set-english)))
 
 ;;;###autoload
 (defun restore-from-global ()
   "Restore global input source."
-  (when -ism
-    (-set -saved-in-global)))
+  (-ensure-ism (-set -saved-in-global)))
 
 ;;;###autoload
 (define-minor-mode global-auto-english-mode
@@ -252,10 +249,7 @@ smart-input-source-OTHER: other language context.")
 - If no ism found, then do nothing."
   :global t
   :init-value nil
-  (unless -ism-inited
-    (-init-ism))
-
-  (when -ism
+  (-ensure-ism
     (if global-auto-english-mode
         (progn
           (when start-with-english (set-english))
@@ -446,11 +440,7 @@ meanings as `string-match-p'."
   tool to select input source.
 - If no ism found, then do nothing."
   :init-value nil
-
-  (unless -ism-inited
-    (-init-ism))
-
-  (when -ism
+  (-ensure-ism
     (if follow-context-mode
         (when (featurep 'evil)
           (add-hook 'evil-insert-state-entry-hook
@@ -496,11 +486,7 @@ meanings as `string-match-p'."
   tool to select input source.
 - If no ism found, then do nothing."
   :init-value nil
-
-  (unless -ism-inited
-    (-init-ism))
-
-  (when -ism
+  (-ensure-ism
     (if inline-english-mode
         (add-hook 'post-self-insert-hook
                   #'smart-input-source-check-to-activate-overlay
@@ -552,10 +538,8 @@ input source to English."
 ;;;###autoload
 (defun activate-inline-overlay (start)
   "Activate the inline english region overlay from START."
-  (unless -ism-inited
-    (-init-ism))
-
-  (when -ism
+  (interactive)
+  (-ensure-ism
     (when (overlayp -inline-overlay)
       (delete-overlay -inline-overlay))
 
@@ -576,6 +560,7 @@ input source to English."
 
 (defun fly-check-to-deactivate-inline-overlay ()
   "Check whether to deactivate the inline english region overlay."
+  (interactive)
   (when (and inline-english-mode
              (overlayp -inline-overlay))
     ;; select input source
@@ -592,7 +577,6 @@ input source to English."
 (defun ret-check-to-deactivate-inline-overlay ()
   "Deactivate the inline english region overlay."
   (interactive)
-
   (when (and inline-english-mode (overlayp -inline-overlay))
     ;; company
     (if (and (featurep 'company)
@@ -603,7 +587,6 @@ input source to English."
 (defun deactivate-inline-overlay ()
   "Deactivate the inline english region overlay."
   (interactive)
-
   ;; clean up
   (remove-hook 'post-command-hook
                #'smart-input-source-fly-check-to-deactivate-inline-overlay
@@ -671,20 +654,18 @@ input source to English."
   :init-value nil
   (if global-preserve-mode
       (progn
-        (unless -ism-inited
-          (-init-ism))
-        (unless -preserve-inited
-          (dolist (command preserve-triggers)
-            (advice-add command :before
-                        #'smart-input-source--save-to-buffer-advice)
-            (advice-add command :after
-                        #'smart-input-source--restore-from-buffer-advice))
-          (dolist (hook save-hook-triggers)
-            (add-hook hook #'smart-input-source--save-to-buffer-advice))
-          (dolist (hook restore-hook-triggers)
-            (add-hook hook #'smart-input-source--restore-from-buffer-advice))
-          (setq -preserve-inited t))
-        )
+        (-ensure-ism 
+         (unless -preserve-inited
+           (dolist (command preserve-triggers)
+             (advice-add command :before
+                         #'smart-input-source--save-to-buffer-advice)
+             (advice-add command :after
+                         #'smart-input-source--restore-from-buffer-advice))
+           (dolist (hook save-hook-triggers)
+             (add-hook hook #'smart-input-source--save-to-buffer-advice))
+           (dolist (hook restore-hook-triggers)
+             (add-hook hook #'smart-input-source--restore-from-buffer-advice))
+           (setq -preserve-inited t))))
     (when -preserve-inited
       (dolist (command preserve-triggers)
         (advice-remove command
