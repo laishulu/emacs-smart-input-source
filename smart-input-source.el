@@ -84,15 +84,19 @@ smart-input-source-OTHER: other language context.")
 
 (defvar preserve-triggers
   '(switch-to-buffer switch-to-prev-buffer switch-to-next-buffer
-    pop-to-buffer
-    other-window windmove-up windmove-down windmove-left windmove-right)
+    other-window
+    windmove-up windmove-down windmove-left windmove-right)
   "A list of commands which would trigger the save/restore of input source.")
 
-(defvar save-hook-triggers
+(defvar restore-triggers
+  '(pop-to-buffer other-window)
+  "A list of commands which would trigger the save/restore of input source.")
+
+(defvar save-hooks
   '(mouse-leave-buffer-hook focus-out-hook)
   "A list of hooks which would trigger the save of input source.")
 
-(defvar restore-hook-triggers
+(defvar restore-hooks
   '()
   "A list of hooks which would trigger the restore of input source.")
 
@@ -217,25 +221,102 @@ smart-input-source-OTHER: other language context.")
        (funcall do-set english)
        other))))
 
-(defvar -saved-in-global nil
-  "Saved global input source.")
+;;
+;; Following codes are mainly about tracking buffer
+;;
 
-;;;###autoload
-(defun save-to-global ()
-  "Save global input source."
-  (-ensure-ism (setq -saved-in-global (-get))))
+(defvar -saved-in-buffer nil
+  "Saved buffer input source.")
+(make-variable-buffer-local 'smart-input-source--saved-in-buffer)
 
-;;;###autoload
-(defun save-to-global-set-english ()
-  "Save to global input source and then set to english."
+(defun -save-to-buffer-advice (&rest _args)
+  "A simple wrapper around `-save-to-buffer' that's advice-friendly."
+  (-save-to-buffer))
+
+(defun -restore-from-buffer-advice (&rest _args)
+  "A simple wrapper around `-restore-from-buffer' that's advice-friendly."
+  (-restore-from-buffer))
+
+(defun -save-to-buffer ()
+  "Save buffer input source."
+  (setq -saved-in-buffer (-get)))
+
+(defun -restore-from-buffer ()
+  "Restore buffer input source."
+  (-set (or -saved-in-buffer ENGLISH)))
+
+(defun -save-to-buffer-set-english ()
+  "Save to buffer input source and then set to english."
   (-ensure-ism
-    (save-to-global)
+    (-save-to-buffer)
     (set-english)))
 
-;;;###autoload
-(defun restore-from-global ()
-  "Restore global input source."
-  (-ensure-ism (-set -saved-in-global)))
+(defun -minibuffer-setup-handler ()
+  (with-current-buffer (window-buffer (minibuffer-selected-window))
+    (-save-to-buffer-set-english)))
+
+(defun -minibuffer-exit-handler ()
+  (with-current-buffer (window-buffer (minibuffer-selected-window))
+    (-restore-from-buffer)))
+
+(defvar -prefix-override-state 'normal
+  "State of previx override.
+
+Possible values are 'normal, 'prefix and 'sequence.")
+
+(defvar -prefix-override-map
+  (let ((keymap (make-sparse-keymap)))
+    (define-key keymap
+      (kbd "C-x") 'smart-input-source--prefix-override-handler)
+    (define-key keymap
+      (kbd "C-c") 'smart-input-source--prefix-override-handler)
+    (define-key keymap
+      (kbd "C-h") 'smart-input-source--prefix-override-handler)
+    keymap)
+  "Keymap for prefix key")
+
+(defvar -prefix-override-map-enable nil
+  "Enabe the override keymap")
+
+(defvar -prefix-override-map-alist
+  `((smart-input-source--prefix-override-map-enable
+     . ,smart-input-source--prefix-override-map))
+  "Map alist for override")
+
+(defun -prefix-override-handler (arg)
+  "Prefix key handler"
+  (interactive "P")
+  (let* ((keys (this-command-keys))
+          (n (length keys))
+          (key (aref keys (1- n))))
+    (-save-to-buffer-set-english)
+    (add-hook 'post-command-hook
+              'smart-input-source--prefix-post-command-handler)
+    (setq -prefix-override-state 'prefix)
+    (setq -prefix-override-map-enable nil)
+
+    ;; Don't record this command
+    (setq this-command last-command)
+    ;; Restore the prefix arg
+    (setq prefix-arg arg)
+    (prefix-command-preserve-state)
+    ;; Push the key back on the event queue
+    (setq unread-command-events
+          (cons key unread-command-events))))
+
+(defun -prefix-post-command-handler ()
+  (cond
+   ((eq -prefix-override-state 'prefix)
+    (setq -prefix-override-state 'sequence))
+   ((or (eq -prefix-override-state 'sequence)
+        (eq -prefix-override-state 'normal))
+    (-restore-from-buffer)
+    (remove-hook 'post-command-hook
+                 'smart-input-source--prefix-post-command-handler)
+    (setq -prefix-override-map-enable t)
+    (setq -prefix-override-state 'normal))
+   (t (error "error state"))))
+
 
 ;;;###autoload
 (define-minor-mode global-auto-english-mode
@@ -251,21 +332,73 @@ smart-input-source-OTHER: other language context.")
   (-ensure-ism
     (if global-auto-english-mode
         (progn
+          ;; set english when mode enabled
           (when start-with-english (set-english))
+
+          ;; preserve buffer input source
+          (dolist (command preserve-triggers)
+            (advice-add command :before
+                        #'smart-input-source--save-to-buffer-advice)
+            (advice-add command :after
+                        #'smart-input-source--restore-from-buffer-advice))
+
+          (dolist (command restore-triggers)
+            (advice-add command :after
+                        #'smart-input-source--restore-from-buffer-advice))
+
+          (dolist (hook save-hooks)
+            (add-hook hook
+                      #'smart-input-source--save-to-buffer-advice))
+
+          (dolist (hook restore-hooks)
+            (add-hook hook
+                      #'smart-input-source--restore-from-buffer-advice))
+
+          ;; set english when enter minibuf, restore when exit
           (add-hook 'minibuffer-setup-hook
-                    #'smart-input-source-save-to-global-set-english)
+                    #'smart-input-source--minibuffer-setup-handler)
           (add-hook 'minibuffer-exit-hook
-                    #'smart-input-source-restore-from-global)
+                    #'smart-input-source--minibuffer-exit-handler)
+
+          ;; set english when exit evil insert state
           (when (featurep 'evil)
             (add-hook 'evil-insert-state-exit-hook
-                      #'smart-input-source-set-english)))
+                      #'smart-input-source-set-english))
+
+          ;; set english when prefix key pressed
+          (add-to-ordered-list 'emulation-mode-map-alists
+                               'smart-input-source--prefix-override-map-alist
+                               400)
+          (setq -prefix-override-map-enable t))
+
+      ;; for preserving buffer input source
+      (dolist (command preserve-triggers)
+        (advice-remove command
+                       #'smart-input-source--save-to-buffer-set-english)
+        (advice-remove command
+                       #'smart-input-source--restore-from-buffer-advice))
+      (dolist (hook save-hooks)
+        (remove-hook hook #'smart-input-source--save-to-buffer-advice))
+      (dolist (hook restore-hooks)
+        (remove-hook hook #'smart-input-source--restore-from-buffer-advice))
+
+      for minibuf
       (remove-hook 'minibuffer-setup-hook
-                   #'smart-input-source-save-to-global-set-english)
+                   #'smart-input-source--minibuffer-setup-handler)
       (remove-hook 'minibuffer-exit-hook
-                   #'smart-input-source-restore-from-global)
+                   #'smart-input-source--minibuffer-exit-handler)
+
+      ;; for evil
       (when (featurep 'evil)
         (remove-hook 'evil-insert-state-exit-hook
-                     #'smart-input-source-set-english)))))
+                     #'smart-input-source-set-english))
+
+      ;; for prefix key
+      (remove-hook 'post-command-hook
+                   'smart-input-source--prefix-post-command-handler)
+      (setq emulation-mode-map-alists
+            (delq 'smart-input-source--prefix-override-map-alist
+                  emulation-mode-map-alists)))))
 
 ;;
 ;; Following codes are mainly about follow-context-mode
@@ -625,65 +758,6 @@ input source to English."
             (delete-char 1))))))
   (delete-overlay -inline-overlay)
   (setq -inline-overlay nil))
-
-;;
-;; Following codes are mainly about preserve input source for buffer
-;;
-
-(defvar -saved-in-buffer nil
-  "Saved buffer input source.")
-(make-variable-buffer-local 'smart-input-source--saved-in-buffer)
-
-
-(defvar -preserve-inited nil
-  "Preserve input source initialized.")
-
-(defun -save-to-buffer-advice (&rest _args)
-  "A simple wrapper around `-save-to-buffer' that's advice-friendly."
-  (-save-to-buffer))
-
-(defun -restore-from-buffer-advice (&rest _args)
-  "A simple wrapper around `-restore-from-buffer' that's advice-friendly."
-  (-restore-from-buffer))
-
-;;;###autoload
-(define-minor-mode global-preserve-mode
-  "Preserve input source for buffer."
-  :global t
-  :init-value nil
-  (if global-preserve-mode
-      (progn
-        (-ensure-ism 
-         (unless -preserve-inited
-           (dolist (command preserve-triggers)
-             (advice-add command :before
-                         #'smart-input-source--save-to-buffer-advice)
-             (advice-add command :after
-                         #'smart-input-source--restore-from-buffer-advice))
-           (dolist (hook save-hook-triggers)
-             (add-hook hook #'smart-input-source--save-to-buffer-advice))
-           (dolist (hook restore-hook-triggers)
-             (add-hook hook #'smart-input-source--restore-from-buffer-advice))
-           (setq -preserve-inited t))))
-    (when -preserve-inited
-      (dolist (command preserve-triggers)
-        (advice-remove command
-                       #'smart-input-source--save-to-buffer-advice)
-        (advice-remove command
-                       #'smart-input-source--restore-from-buffer-advice))
-      (dolist (hook save-hook-triggers)
-        (remove-hook hook #'smart-input-source--save-to-buffer-advice))
-      (dolist (hook restore-hook-triggers)
-        (remove-hook hook #'smart-input-source--restore-from-buffer-advice))
-      (setq -preserve-inited nil))))
-
-(defun -save-to-buffer ()
-  "Save buffer input source."
-  (setq -saved-in-buffer (-get)))
-
-(defun -restore-from-buffer ()
-  "Restore buffer input source."
-  (-set (or -saved-in-buffer ENGLISH)))
 
 ;; end of namespace
 )
