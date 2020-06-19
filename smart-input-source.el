@@ -155,7 +155,6 @@ smart-input-source-OTHER: other language context.")
   "Only run ARGS with valid ism"
   `(progn
      (unless smart-input-source--ism-inited
-       (print "initing...")
        (smart-input-source--init-ism))
      (when smart-input-source--ism
        ,@body)))
