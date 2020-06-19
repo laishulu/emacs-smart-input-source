@@ -186,6 +186,7 @@ smart-input-source-OTHER: other language context.")
                  (equal lang english))
          (funcall do-set english))))))
 
+;;;###autoload
 (defun set-english ()
   "Set input source to `english'."
   (interactive)
@@ -194,6 +195,7 @@ smart-input-source-OTHER: other language context.")
   (when -ism
     (-set ENGLISH)))
 
+;;;###autoload
 (defun set-other ()
   "Set input source to `other'."
   (interactive)
@@ -202,6 +204,7 @@ smart-input-source-OTHER: other language context.")
   (when -ism
     (-set OTHER)))
 
+;;;###autoload
 (defun switch ()
   "Switch input source between english and other."
   (interactive)
@@ -219,17 +222,20 @@ smart-input-source-OTHER: other language context.")
 (defvar -saved-in-global nil
   "Saved global input source.")
 
+;;;###autoload
 (defun save-to-global ()
   "Save global input source."
   (when -ism
     (setq -saved-in-global (-get))))
 
+;;;###autoload
 (defun save-to-global-set-english ()
   "Save to global input source and then set to english."
   (when -ism
     (save-to-global)
     (set-english)))
 
+;;;###autoload
 (defun restore-from-global ()
   "Restore global input source."
   (when -ism
@@ -541,26 +547,32 @@ input source to English."
                   (-other-lang-p fore-char)
                   (not (and (> fore-to (point))
                             (-not-other-lang-p back-char)))))
-        (activate-inline-overlay (1- (point)))
-        (set-english)))))
+        (activate-inline-overlay (1- (point)))))))
 
+;;;###autoload
 (defun activate-inline-overlay (start)
   "Activate the inline english region overlay from START."
-  (when (overlayp -inline-overlay)
-    (delete-overlay -inline-overlay))
-  (setq -inline-overlay (make-overlay start (point) nil t t ))
-  (overlay-put -inline-overlay 'face 'smart-input-source-inline-english-face)
-  (overlay-put -inline-overlay 'keymap
-               (let ((keymap (make-sparse-keymap)))
-                 (define-key keymap (kbd "RET")
-                   'smart-input-source-ret-check-to-deactivate-inline-overlay)
-                 (define-key keymap (kbd "<return>")
-                   'smart-input-source-ret-check-to-deactivate-inline-overlay)
-                 keymap))
-  (add-hook 'post-command-hook
-            #'smart-input-source-fly-check-to-deactivate-inline-overlay
-            nil t)
-  (message "Press <RETURN> to close inline english region."))
+  (unless -ism-inited
+    (-init-ism))
+
+  (when -ism
+    (when (overlayp -inline-overlay)
+      (delete-overlay -inline-overlay))
+
+    (setq -inline-overlay (make-overlay start (point) nil t t ))
+    (overlay-put -inline-overlay 'face 'smart-input-source-inline-english-face)
+    (overlay-put -inline-overlay 'keymap
+                 (let ((keymap (make-sparse-keymap)))
+                   (define-key keymap (kbd "RET")
+                     'smart-input-source-ret-check-to-deactivate-inline-overlay)
+                   (define-key keymap (kbd "<return>")
+                     'smart-input-source-ret-check-to-deactivate-inline-overlay)
+                   keymap))
+    (add-hook 'post-command-hook
+              #'smart-input-source-fly-check-to-deactivate-inline-overlay
+              nil t)
+    (set-english)
+    (message "Press <RETURN> to close inline english region.")))
 
 (defun fly-check-to-deactivate-inline-overlay ()
   "Check whether to deactivate the inline english region overlay."
@@ -652,6 +664,7 @@ input source to English."
   "A simple wrapper around `-restore-from-buffer' that's advice-friendly."
   (-restore-from-buffer))
 
+;;;###autoload
 (define-minor-mode global-preserve-mode
   "Preserve input source for buffer."
   :global t
