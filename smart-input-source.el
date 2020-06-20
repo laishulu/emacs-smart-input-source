@@ -104,7 +104,7 @@ smart-input-source-OTHER: other language context.")
   "A list of hooks which would trigger the save of input source.")
 
 (defvar prefix-override-recap-triggers
-  '(evil-local-mode)
+  '(evil-local-mode yas-minor-mode)
   "A list of commands which would trigger the recap of the prefix override.
 
 Some functions take precedence of the override, need to recap after.")
