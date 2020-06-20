@@ -33,7 +33,9 @@
 (eval-when-compile (require 'names))
 (require 'subr-x)
 
+;;;###autoload
 (define-namespace smart-input-source-
+
 
 (defvar external-ism "macism"
   "Path of external ism.")
@@ -197,19 +199,19 @@ smart-input-source-OTHER: other language context.")
                  (equal lang english))
          (funcall do-set english))))))
 
-;;;###autoload
+:autoload
 (defun set-english ()
   "Set input source to `english'."
   (interactive)
   (-ensure-ism (-set ENGLISH)))
 
-;;;###autoload
+:autoload
 (defun set-other ()
   "Set input source to `other'."
   (interactive)
   (-ensure-ism (-set OTHER)))
 
-;;;###autoload
+:autoload
 (defun switch ()
   "Switch input source between english and other."
   (interactive)
@@ -270,11 +272,11 @@ Possible values are 'normal, 'prefix and 'sequence.")
 (defvar -prefix-override-map
   (let ((keymap (make-sparse-keymap)))
     (define-key keymap
-      (kbd "C-x") 'smart-input-source--prefix-override-handler)
+      (kbd "C-x") #'-prefix-override-handler)
     (define-key keymap
-      (kbd "C-c") 'smart-input-source--prefix-override-handler)
+      (kbd "C-c") #'-prefix-override-handler)
     (define-key keymap
-      (kbd "C-h") 'smart-input-source--prefix-override-handler)
+      (kbd "C-h") #'-prefix-override-handler)
     keymap)
   "Keymap for prefix key")
 
@@ -294,7 +296,7 @@ Possible values are 'normal, 'prefix and 'sequence.")
          (key (aref keys (1- n))))
     (-save-to-buffer-set-english)
     (add-hook 'post-command-hook
-              'smart-input-source--prefix-post-command-handler)
+              #'-prefix-post-command-handler)
     (setq -prefix-override-state 'prefix)
     (setq -prefix-override-map-enable nil)
 
@@ -315,13 +317,13 @@ Possible values are 'normal, 'prefix and 'sequence.")
         (eq -prefix-override-state 'normal))
     (-restore-from-buffer)
     (remove-hook 'post-command-hook
-                 'smart-input-source--prefix-post-command-handler)
+                 #'-prefix-post-command-handler)
     (setq -prefix-override-map-enable t)
     (setq -prefix-override-state 'normal))
    (t (error "error state"))))
 
 
-;;;###autoload
+:autoload
 (define-minor-mode global-respect-mode
   "Respect buffer/mode by proper input source.
 
@@ -341,26 +343,26 @@ Possible values are 'normal, 'prefix and 'sequence.")
          ;; preserve buffer input source
          (dolist (command preserve-triggers)
            (advice-add command :before
-                       #'smart-input-source--save-to-buffer-advice)
+                       #'-save-to-buffer-advice)
            (advice-add command :after
-                       #'smart-input-source--restore-from-buffer-advice))
+                       #'-restore-from-buffer-advice))
          (dolist (command restore-triggers)
            (advice-add command :after
-                       #'smart-input-source--restore-from-buffer-advice))
+                       #'-restore-from-buffer-advice))
          (dolist (hook save-hooks)
            (add-hook hook
-                     #'smart-input-source--save-to-buffer-advice))
+                     #'-save-to-buffer-advice))
 
          ;; set english when enter minibuf, restore when exit
          (add-hook 'minibuffer-setup-hook
-                   #'smart-input-source--minibuffer-setup-handler)
+                   #'-minibuffer-setup-handler)
          (add-hook 'minibuffer-exit-hook
-                   #'smart-input-source--minibuffer-exit-handler)
+                   #'-minibuffer-exit-handler)
 
          ;; set english when exit evil insert state
          (when (featurep 'evil)
            (add-hook 'evil-insert-state-exit-hook
-                     #'smart-input-source-set-english))
+                     #'set-english))
 
          ;; set english when prefix key pressed
          (add-to-ordered-list 'emulation-mode-map-alists
@@ -371,29 +373,29 @@ Possible values are 'normal, 'prefix and 'sequence.")
      ;; for preserving buffer input source
      (dolist (command preserve-triggers)
        (advice-remove command
-                      #'smart-input-source--save-to-buffer-set-english)
+                      #'-save-to-buffer-set-english)
        (advice-remove command
-                      #'smart-input-source--restore-from-buffer-advice))
+                      #'-restore-from-buffer-advice))
      (dolist (command restore-triggers)
        (advice-remove command
-                      #'smart-input-source--restore-from-buffer-advice))
+                      #'-restore-from-buffer-advice))
      (dolist (hook save-hooks)
-       (remove-hook hook #'smart-input-source--save-to-buffer-advice))
+       (remove-hook hook #'-save-to-buffer-advice))
 
      ;; for minibuf
      (remove-hook 'minibuffer-setup-hook
-                  #'smart-input-source--minibuffer-setup-handler)
+                  #'-minibuffer-setup-handler)
      (remove-hook 'minibuffer-exit-hook
-                  #'smart-input-source--minibuffer-exit-handler)
+                  #'-minibuffer-exit-handler)
 
      ;; for evil
      (when (featurep 'evil)
        (remove-hook 'evil-insert-state-exit-hook
-                    #'smart-input-source-set-english))
+                    #'set-english))
 
      ;; for prefix key
      (remove-hook 'post-command-hook
-                  'smart-input-source--prefix-post-command-handler)
+                  #'-prefix-post-command-handler)
      (setq emulation-mode-map-alists
            (delq 'smart-input-source--prefix-override-map-alist
                  emulation-mode-map-alists)))))
@@ -568,13 +570,19 @@ meanings as `string-match-p'."
    (if follow-context-mode
        (when (featurep 'evil)
          (add-hook 'evil-insert-state-entry-hook
-                   #'smart-input-source-follow-context
+                   #'follow-context
                    nil t
                    ))
      (when (featurep 'evil)
        (remove-hook 'evil-insert-state-entry-hook
-                    #'smart-input-source-follow-context
+                    #'follow-context
                     t)))))
+
+:autoload
+(define-globalized-minor-mode
+  global-follow-context-mode
+  follow-context-mode
+  follow-context-mode)
 
 (defun follow-context ()
   "Follow the context to switch input source."
@@ -600,18 +608,24 @@ meanings as `string-match-p'."
   (when -inline-overlay
     (overlay-end -inline-overlay)))
 
-;;;###autoload
+:autoload
 (define-minor-mode inline-english-mode
   "English overlay mode for mixed language editing."
   :init-value nil
   (-ensure-ism
    (if inline-english-mode
        (add-hook 'post-self-insert-hook
-                 #'smart-input-source-check-to-activate-overlay
+                 #'check-to-activate-overlay
                  nil t)
      (remove-hook 'post-self-insert-hook
-                  #'smart-input-source-check-to-activate-overlay
+                  #'check-to-activate-overlay
                   t))))
+
+:autoload
+(define-globalized-minor-mode
+  global-inline-english-mode
+  inline-english-mode
+  inline-english-mode)
 
 (defun check-to-activate-overlay()
   "Check whether to activate the inline english region overlay.
@@ -653,7 +667,7 @@ input source to English."
                             (-not-other-lang-p back-char)))))
         (activate-inline-overlay (1- (point)))))))
 
-;;;###autoload
+:autoload
 (defun activate-inline-overlay (start)
   "Activate the inline english region overlay from START."
   (interactive)
@@ -666,12 +680,12 @@ input source to English."
    (overlay-put -inline-overlay 'keymap
                 (let ((keymap (make-sparse-keymap)))
                   (define-key keymap (kbd "RET")
-                    'smart-input-source-ret-check-to-deactivate-inline-overlay)
+                    #'ret-check-to-deactivate-inline-overlay)
                   (define-key keymap (kbd "<return>")
-                    'smart-input-source-ret-check-to-deactivate-inline-overlay)
+                    #'ret-check-to-deactivate-inline-overlay)
                   keymap))
    (add-hook 'post-command-hook
-             #'smart-input-source-fly-check-to-deactivate-inline-overlay
+             #'fly-check-to-deactivate-inline-overlay
              nil t)
    (set-english)
    (message "Press <RETURN> to close inline english region.")))
@@ -707,7 +721,7 @@ input source to English."
   (interactive)
   ;; clean up
   (remove-hook 'post-command-hook
-               #'smart-input-source-fly-check-to-deactivate-inline-overlay
+               #'fly-check-to-deactivate-inline-overlay
                t)
 
   ;; select input source
@@ -745,20 +759,9 @@ input source to English."
   (delete-overlay -inline-overlay)
   (setq -inline-overlay nil))
 
+
 ;; end of namespace
 )
-
-;;;###autoload
-(define-globalized-minor-mode
-  smart-input-source-global-follow-context-mode
-  smart-input-source-follow-context-mode
-  (lambda() (smart-input-source-follow-context-mode t)))
-
-;;;###autoload
-(define-globalized-minor-mode
-  smart-input-source-global-inline-english-mode
-  smart-input-source-inline-english-mode
-  (lambda() (smart-input-source-inline-english-mode t)))
 
 (provide 'smart-input-source)
 ;;; smart-input-source.el ends here
