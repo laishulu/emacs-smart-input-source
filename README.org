@@ -4,20 +4,24 @@
 * About
 This package provide several modes to switch OS native input source smartly:
 
-- A global mode: ~smart-input-source-global-auto-english-mode~
-  1. Automatically switch to English when leaving ~evil~ insert mode.
-  2. Optionally switched to English immediately when the mode is turned on.
-  3. Automatically switch to English when ~minibuf~ is activated, and switch
-     back after exit ~minibuf~.
-- A global mode: ~smart-input-source-global-preserve-mode~ to save and restore
-  the input source for each buffer even after buffer switch and losing focus.
+- A global mode: ~smart-input-source-global-respect-mode~ to respect buffer/mode
+  by proper input source
+  1. Respect self: optional start this mode with English
+  2. Respect ~evil~: switch to English when leaving ~evil~ ~insert~ mode.
+  3. Respect ~minibuffer~: switch to English when enter ~minibuffer~.
+  4. Respect prefix key: switch to English for ~"C-c"~/ ~"C-x"~/ ~"C-h"~.
+  5. Respect buffer: recover buffer input source when it regain focus.
 - A buffer local mode: ~smart-input-source-follow-context-mode~ to switch input
   source smarted according to context when entering ~evil~ insert mode. A
   function ~smart-input-source-follow-context~ is also provided to hook as your
-  wish, regardless the presence of ~evil~.
+  wish, regardless the presence of ~evil~. It also has a global version
+  ~smart-input-source-global-follow-context-mode~ to enable the mode for all
+  buffers.
 - A buffer local mode: ~smart-input-source-inline-english-mode~ to enable the
   automatic triggering of a temporary overlay to input English and then back to
-  none-English without switching input sources manually.
+  none-English without switching input sources manually. It also has a global
+  version ~smart-input-source-global-follow-context-mode~ to enable the mode for
+  all buffers.
 
 * Features
 **  In English
@@ -25,15 +29,13 @@ This package provide several modes to switch OS native input source smartly:
 2. Support GUI Emacs, as well as Terminal Emacs.
 3. Easy to install and configure. No further configuration for
    ~GUI Emacs Mac Port~ with ~Sogou Input~.
-4. Automatically switch to English when Emacs start.
-5. Automatically switch to/from English when enter/exit ~minibuf~.
-6. Respect ~Evil~ (also works without evil):
-   1) When leave ~insert~ mode, switch to English input source automatically.
-   2) when enter ~insert~ model, switch input source automatically according to
-      context.
-7. Preserve input source for each buffer, so when you switch back from other
-   buffer or focus again from other window, the input source will be restored.
-8. Support ~inline English~ region:
+4. Respect buffer/mode by proper input source:
+   1) Respect self: optional start this mode with English
+   2) Respect ~evil~: switch to English when leaving ~evil~ ~insert~ mode.
+   3) Respect ~minibuffer~: switch to English when enter ~minibuffer~.
+   4) Respect prefix key: switch to English for ~"C-c"~/ ~"C-x"~/ ~"C-h"~.
+   5) Respect buffer: recover buffer input source when it regain focus.
+5. Support ~inline English~ region:
    1) Inserting space around none-English characters triggers the region.
    2) In this mode, English will be sticked.
    3) Region is closed when:
@@ -45,34 +47,10 @@ This package provide several modes to switch OS native input source smartly:
    5) After the close of the region, one space in the head and one space in the
       tail (if exists) of the region will be deleted. But if the whole region is
       blank, the no character will be deleted.
-9. Switch input source according to context: When entering ~evil~ insert mode,
+6. Switch input source according to context: When entering ~evil~ insert mode,
    input source will be determined according to the context.
-10. Input source switching rules are designed carefully, for pure English
-    editing, input source will never be switched to other languages.
-
-**  In Chinese
-1. 使用操作系统的输入法，不改变使用习惯。
-2. 支持 GUI Emacs, 也支持 Terminal Emacs.
-3. 安装配置简单， GUI Emacs Mac Port 下使用搜狗拼音免配置。
-4. Emacs 启动时自动切换到英文输入法。
-5. minibuf进入时自动切换到英文，退出时恢复原来的输入法。
-6. 如果在 Evil 下（没有 evil 也可以正常工作）:
-   1) 从 insert 模式离开时，自动切换到英文输入法。
-   2) 进入 insert 模式时, 根据上下文自动切换输入法。
-7. 记得缓冲区自己的输入法。从其他缓冲区切换回来，或者重新获得窗口焦点时，
-   会恢复缓冲区自己的输入法
-8. 支持 inline English 区域：
-   1) 在汉字前后插入空格触发 inline English 区域。
-   2) 在 inline English 下，一直使用英文输入法。
-   3) 关闭 inline English 区域
-      a. 光标离开区域。
-      b. 按回车键。
-      c. 输入了连续两个空格。
-   4) 区域如果是空格结尾，输入法切回非其它语言，否则输入法保持英文。
-   5) 区域关闭后，首尾各删除一个空格（如果有的话）。如果整个区域是空白，则不删除
-      空格。
-9. 根据上下文切换输入法：当进入 ~evil~ 的 insert 模式时，根据上下文确定输入法。
-10. 可以安全地默认开启mode：编辑英文时，输入法永远不会自动切换到其它语言。
+7. Input source switching rules are designed carefully, for pure English
+   editing, input source will never be switched to other languages.
 
 * Install
 Just install this package from ~melpa~, and then install *input source manager*
@@ -134,16 +112,27 @@ its all in English.
 #+BEGIN_SRC lisp
 (use-package smart-input-source
   :config
+  ;; set the english input source
   (setq smart-input-source-english
         "com.apple.keylayout.US")
+
+  ;; set the default other language input source for all buffer
   (setq-default smart-input-source-other
         "com.sogou.inputmethod.sogou.pinyin")
-  (smart-input-source-global-auto-english-mode t)
-  (smart-input-source-global-preserve-mode t)
-  (add-hook 'text-mode-hook #'smart-input-source-follow-context-mode)
-  (add-hook 'prog-mode-hook #'smart-input-source-follow-context-mode)
-  (add-hook 'text-mode-hook #'smart-input-source-inline-english-mode)
-  (add-hook 'prog-mode-hook #'smart-input-source-inline-english-mode))
+
+  ;; enable the /respect/ mode
+  (smart-input-source-global-respect-mode t)
+
+  ;; enable the /follow context/ and /inline english/ mode for all buffers
+  (smart-input-source-global-follow-context-mode t)
+  (smart-input-source-global-inline-english-mode t)
+
+  ;; enable the /follow context/ and /inline english/ mode for specific buffers
+  ;; (add-hook 'text-mode-hook #'smart-input-source-follow-context-mode)
+  ;; (add-hook 'prog-mode-hook #'smart-input-source-follow-context-mode)
+  ;; (add-hook 'text-mode-hook #'smart-input-source-inline-english-mode)
+  ;; (add-hook 'prog-mode-hook #'smart-input-source-inline-english-mode)
+  )
 #+END_SRC
 
 Tips:
@@ -165,28 +154,28 @@ input source id/ by runing the following command in Emacs:
 
 * Configure
 
-| Variable                                               | Buffer | Description                                    | Default                              |
-|--------------------------------------------------------+--------+------------------------------------------------+--------------------------------------|
-| ~smart-input-source-english~                           | no     | Input source for English                       | ~com.apple.keylayout.US~             |
-| ~smart-input-source-other~                             | yes    | Input source for other language                | ~com.sogou.inputmethod.sogou.pinyin~ |
-| ~smart-input-source-fixed-context~                     | yes    | Context is fixed to a specific language        | ~nil~                                |
-| ~smart-input-source-english-pattern~                   | no     | Pattern to identify a character as English     | ~[a-zA-Z]~                           |
-| ~smart-input-source-other-pattern~                     | yes    | Pattern to identify a character as other       | ~\cc~ , see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]]             |
-| ~smart-input-source-blank-pattern~                     | yes    | Pattern to identify a character as blank       | ~[:blank:]~                          |
-| ~smart-input-source-aggressive-line~                   | yes    | Aggressively detect context across blank lines | ~t~                                  |
-| ~smart-input-source-external-ism~                      | no     | input resource manager                         | ~macism~                             |
-| ~smart-input-source-do-get~                            | no     | Function to get the current input source       | determined from the environment      |
-| ~smart-input-source-do-set~                            | no     | Function to set the input source               | determined from the environment      |
-| ~smart-input-source-start-with-english~                | no     | Switch to english for `auto-english-mode'      | ~t~                                  |
-| ~smart-input-source-preserve-triggers~                 | no     | Commands that trigger the save/restore.        | see variable doc                     |
-| ~smart-input-source-save-to-buffer-hook-triggers~      | no     | Hooks which trigger the save                   | see variable doc                     |
-| ~smart-input-source-restore-from-buffer-hook-triggers~ | no     | Hooks which trigger the restore                | see variable doc                     |
-|--------------------------------------------------------+--------+------------------------------------------------+--------------------------------------|
+| Variable                                | Buffer | Description                                    | Default                              |
+|-----------------------------------------+--------+------------------------------------------------+--------------------------------------|
+| ~smart-input-source-english~            | no     | Input source for English                       | ~com.apple.keylayout.US~             |
+| ~smart-input-source-other~              | yes    | Input source for other language                | ~com.sogou.inputmethod.sogou.pinyin~ |
+| ~smart-input-source-fixed-context~      | yes    | Context is fixed to a specific language        | ~nil~                                |
+| ~smart-input-source-english-pattern~    | no     | Pattern to identify a character as English     | ~[a-zA-Z]~                           |
+| ~smart-input-source-other-pattern~      | yes    | Pattern to identify a character as other       | ~\cc~ , see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]]             |
+| ~smart-input-source-blank-pattern~      | yes    | Pattern to identify a character as blank       | ~[:blank:]~                          |
+| ~smart-input-source-aggressive-line~    | yes    | Aggressively detect context across blank lines | ~t~                                  |
+| ~smart-input-source-external-ism~       | no     | input resource manager                         | ~macism~                             |
+| ~smart-input-source-do-get~             | no     | Function to get the current input source       | determined from the environment      |
+| ~smart-input-source-do-set~             | no     | Function to set the input source               | determined from the environment      |
+| ~smart-input-source-start-with-english~ | no     | Switch to English for `respect-mode'           | ~t~                                  |
+| ~smart-input-source-preserve-triggers~  | no     | Commands trigger the before-save/after-restore | see variable doc                     |
+| ~smart-input-source-restore-triggers~   | no     | Commands trigger the after-restore             | see variable doc                     |
+| ~smart-input-source-restore-hooks~      | no     | Hooks trigger the restore                      | see variable doc                     |
+|-----------------------------------------+--------+------------------------------------------------+--------------------------------------|
 
 
 | Face Name                                | Description                                |
 |------------------------------------------+--------------------------------------------|
-| ~smart-input-source-inline-english-face~ | Face for the online english region overlay |
+| ~smart-input-source-inline-english-face~ | Face for the online English region overlay |
 |------------------------------------------+--------------------------------------------|
 
 * Configurations for other input source managers
