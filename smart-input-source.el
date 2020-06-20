@@ -103,6 +103,13 @@ smart-input-source-OTHER: other language context.")
   '(mouse-leave-buffer-hook focus-out-hook)
   "A list of hooks which would trigger the save of input source.")
 
+(defvar prefix-override-recap-triggers
+  '(evil-local-mode)
+  "A list of commands which would trigger the recap of the prefix override.
+
+Some functions take precedence of the override, need to recap after.")
+
+
 (defface inline-english-face
   '()
   "Face of the inline english region overlay."
@@ -279,6 +286,12 @@ Possible values are 'normal, 'prefix and 'sequence.")
 (defvar -prefix-override-map-alist nil
   "Map alist for override")
 
+(defun -prefix-override-recap-advice (&rest args)
+  (add-to-ordered-list
+   'emulation-mode-map-alists
+   'smart-input-source--prefix-override-map-alist
+   1))
+
 (defun -prefix-override-handler (arg)
   "Prefix key handler"
   (interactive "P")
@@ -354,10 +367,10 @@ Possible values are 'normal, 'prefix and 'sequence.")
                          (kbd prefix) #'-prefix-override-handler))
                      keymap))))
 
-         (add-to-ordered-list 'emulation-mode-map-alists
-                              'smart-input-source--prefix-override-map-alist
-                              400)
-         (setq -prefix-override-map-enable t))
+         (setq -prefix-override-map-enable t)
+         (-prefix-override-recap-advice)
+         (dolist (fn prefix-override-recap-triggers)
+           (advice-add fn :after #'-prefix-override-recap-advice)))
 
      ;; for preserving buffer input source
      (dolist (command preserve-triggers)
