@@ -273,19 +273,10 @@ smart-input-source-OTHER: other language context.")
 
 Possible values are 'normal, 'prefix and 'sequence.")
 
-(defvar -prefix-override-map
-  (let ((keymap (make-sparse-keymap)))
-    (dolist (prefix -prefix-override-keys)
-      (define-key keymap (kbd prefix) #'-prefix-override-handler))
-    keymap)
-  "Keymap for prefix key")
-
 (defvar -prefix-override-map-enable nil
   "Enabe the override keymap")
 
-(defvar -prefix-override-map-alist
-  `((smart-input-source--prefix-override-map-enable
-     . ,smart-input-source--prefix-override-map))
+(defvar -prefix-override-map-alist nil
   "Map alist for override")
 
 (defun -prefix-override-handler (arg)
@@ -354,6 +345,15 @@ Possible values are 'normal, 'prefix and 'sequence.")
            (add-hook 'evil-insert-state-exit-hook #'set-english))
 
          ;; set english when prefix key pressed
+         (setq -prefix-override-map-alist
+               `((smart-input-source--prefix-override-map-enable
+                  .
+                  ,(let ((keymap (make-sparse-keymap)))
+                     (dolist (prefix -prefix-override-keys)
+                       (define-key keymap
+                         (kbd prefix) #'-prefix-override-handler))
+                     keymap))))
+
          (add-to-ordered-list 'emulation-mode-map-alists
                               'smart-input-source--prefix-override-map-alist
                               400)
@@ -380,7 +380,8 @@ Possible values are 'normal, 'prefix and 'sequence.")
      (remove-hook 'post-command-hook #'-prefix-post-command-handler)
      (setq emulation-mode-map-alists
            (delq 'smart-input-source--prefix-override-map-alist
-                 emulation-mode-map-alists)))))
+                 emulation-mode-map-alists))
+     (setq -prefix-override-map-enable nil))))
 
 ;;
 ;; Following codes are mainly about follow-context-mode
