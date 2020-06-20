@@ -20,7 +20,7 @@ This package provide several modes to switch OS native input source smartly:
 - A buffer local mode: ~smart-input-source-inline-english-mode~ to enable the
   automatic triggering of a temporary overlay to input English and then back to
   none-English without switching input sources manually. It also has a global
-  version ~smart-input-source-global-follow-context-mode~ to enable the mode for
+  version ~smart-input-source-global-inline-english-mode~ to enable the mode for
   all buffers.
 
 * Features
