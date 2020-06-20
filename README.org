@@ -111,7 +111,7 @@ its all in English.
 
 #+BEGIN_SRC lisp
 (use-package smart-input-source
-  :config
+  :init
   ;; set the english input source
   (setq smart-input-source-english
         "com.apple.keylayout.US")
@@ -120,6 +120,7 @@ its all in English.
   (setq-default smart-input-source-other
         "com.sogou.inputmethod.sogou.pinyin")
 
+  :config
   ;; enable the /respect/ mode
   (smart-input-source-global-respect-mode t)
 
@@ -128,10 +129,9 @@ its all in English.
   (smart-input-source-global-inline-english-mode t)
 
   ;; enable the /follow context/ and /inline english/ mode for specific buffers
-  ;; (add-hook 'text-mode-hook #'smart-input-source-follow-context-mode)
-  ;; (add-hook 'prog-mode-hook #'smart-input-source-follow-context-mode)
-  ;; (add-hook 'text-mode-hook #'smart-input-source-inline-english-mode)
-  ;; (add-hook 'prog-mode-hook #'smart-input-source-inline-english-mode)
+  ;; :hook
+  ;; (((text-mode prog-mode) . smart-input-source-follow-context-mode)
+  ;;  ((text-mode prog-mode) . smart-input-source-inline-english-mode))
   )
 #+END_SRC
 
