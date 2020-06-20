@@ -580,7 +580,7 @@ meanings as `string-match-p'."
 
 :autoload
 (define-globalized-minor-mode
-  global-follow-context-mode
+  smart-input-source-global-follow-context-mode
   follow-context-mode
   follow-context-mode)
 
@@ -623,7 +623,7 @@ meanings as `string-match-p'."
 
 :autoload
 (define-globalized-minor-mode
-  global-inline-english-mode
+  smart-input-source-global-inline-english-mode
   inline-english-mode
   inline-english-mode)
 
@@ -687,8 +687,7 @@ input source to English."
    (add-hook 'post-command-hook
              #'fly-check-to-deactivate-inline-overlay
              nil t)
-   (set-english)
-   (message "Press <RETURN> to close inline english region.")))
+   (set-english)))
 
 (defun fly-check-to-deactivate-inline-overlay ()
   "Check whether to deactivate the inline english region overlay."
