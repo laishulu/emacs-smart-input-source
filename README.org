@@ -167,7 +167,7 @@ input source id/ by runing the following command in Emacs:
 | ~smart-input-source-do-get~               | no     | Function to get the current input source       | determined from the environment      |
 | ~smart-input-source-do-set~               | no     | Function to set the input source               | determined from the environment      |
 | ~smart-input-source-start-with-english~   | no     | Switch to English for `respect-mode'           | ~t~                                  |
-| ~smart-input-source-prefix-override-keys~ | no     | Prefix keys to be respected                    | ~C-c~ ~C-x~ ~C-h~                    |
+| ~smart-input-source-prefix-override-keys~ | no     | Prefix keys to be respected                    | '("C-c" "C-x" "C-h")                 |
 | ~smart-input-source-preserve-triggers~    | no     | Commands trigger the before-save/after-restore | see variable doc                     |
 | ~smart-input-source-restore-triggers~     | no     | Commands trigger the after-restore             | see variable doc                     |
 | ~smart-input-source-restore-hooks~        | no     | Hooks trigger the restore                      | see variable doc                     |
