@@ -295,9 +295,9 @@ Possible values are 'normal, 'prefix and 'sequence.")
          (n (length keys))
          (key (aref keys (1- n))))
     (-save-to-buffer-set-english)
-    (add-hook 'post-command-hook #'-prefix-post-command-handler)
     (setq -prefix-override-state 'prefix)
     (setq -prefix-override-map-enable nil)
+    (add-hook 'post-command-hook #'-prefix-post-command-handler)
 
     ;; Don't record this command
     (setq this-command last-command)
@@ -309,15 +309,14 @@ Possible values are 'normal, 'prefix and 'sequence.")
 
 (defun -prefix-post-command-handler ()
   (cond
+   ((eq -prefix-override-state 'normal) t)
    ((eq -prefix-override-state 'prefix)
     (setq -prefix-override-state 'sequence))
-   ((or (eq -prefix-override-state 'sequence)
-        (eq -prefix-override-state 'normal))
+   ((eq -prefix-override-state 'sequence)
     (-restore-from-buffer)
     (remove-hook 'post-command-hook #'-prefix-post-command-handler)
     (setq -prefix-override-map-enable t)
-    (setq -prefix-override-state 'normal))
-   (t (error "error state"))))
+    (setq -prefix-override-state 'normal))))
 
 
 :autoload
