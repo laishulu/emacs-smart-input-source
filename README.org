@@ -33,7 +33,7 @@ This package provide several modes to switch OS native input source smartly:
    1) Respect self: optional start this mode with English
    2) Respect ~evil~: switch to English when leaving ~evil~ ~insert~ mode.
    3) Respect ~minibuffer~: switch to English when enter ~minibuffer~.
-   4) Respect prefix key: switch to English for ~"C-c"~/ ~"C-x"~/ ~"C-h"~.
+   4) Respect prefix key: switch to English for ~C-c~ / ~C-x~ / ~C-h~.
    5) Respect buffer: recover buffer input source when it regain focus.
 5. Support ~inline English~ region:
    1) Inserting space around none-English characters triggers the region.
