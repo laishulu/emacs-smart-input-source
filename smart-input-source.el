@@ -89,7 +89,7 @@ smart-input-source-OTHER: other language context.")
   "A list of commands which would trigger the save/restore of input source.")
 
 (defvar restore-triggers
-  '(pop-to-buffer other-window)
+  '(pop-to-buffer delete-window)
   "A list of commands which would trigger the save/restore of input source.")
 
 (defvar save-hooks
@@ -252,12 +252,14 @@ smart-input-source-OTHER: other language context.")
     (set-english)))
 
 (defun -minibuffer-setup-handler ()
-  (with-current-buffer (window-buffer (minibuffer-selected-window))
-    (-save-to-buffer-set-english)))
+  (let ((prev (previous-window)))
+    (with-current-buffer (window-buffer (minibuffer-selected-window))
+      (-save-to-buffer-set-english))))
 
 (defun -minibuffer-exit-handler ()
-  (with-current-buffer (window-buffer (minibuffer-selected-window))
-    (-restore-from-buffer)))
+  (let ((prev (previous-window)))
+    (with-current-buffer (window-buffer (minibuffer-selected-window))
+      (-restore-from-buffer))))
 
 (defvar -prefix-override-state 'normal
   "State of previx override.
