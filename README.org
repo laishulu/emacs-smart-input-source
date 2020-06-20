@@ -154,23 +154,24 @@ input source id/ by runing the following command in Emacs:
 
 * Configure
 
-| Variable                                | Buffer | Description                                    | Default                              |
-|-----------------------------------------+--------+------------------------------------------------+--------------------------------------|
-| ~smart-input-source-english~            | no     | Input source for English                       | ~com.apple.keylayout.US~             |
-| ~smart-input-source-other~              | yes    | Input source for other language                | ~com.sogou.inputmethod.sogou.pinyin~ |
-| ~smart-input-source-fixed-context~      | yes    | Context is fixed to a specific language        | ~nil~                                |
-| ~smart-input-source-english-pattern~    | no     | Pattern to identify a character as English     | ~[a-zA-Z]~                           |
-| ~smart-input-source-other-pattern~      | yes    | Pattern to identify a character as other       | ~\cc~ , see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]]             |
-| ~smart-input-source-blank-pattern~      | yes    | Pattern to identify a character as blank       | ~[:blank:]~                          |
-| ~smart-input-source-aggressive-line~    | yes    | Aggressively detect context across blank lines | ~t~                                  |
-| ~smart-input-source-external-ism~       | no     | input resource manager                         | ~macism~                             |
-| ~smart-input-source-do-get~             | no     | Function to get the current input source       | determined from the environment      |
-| ~smart-input-source-do-set~             | no     | Function to set the input source               | determined from the environment      |
-| ~smart-input-source-start-with-english~ | no     | Switch to English for `respect-mode'           | ~t~                                  |
-| ~smart-input-source-preserve-triggers~  | no     | Commands trigger the before-save/after-restore | see variable doc                     |
-| ~smart-input-source-restore-triggers~   | no     | Commands trigger the after-restore             | see variable doc                     |
-| ~smart-input-source-restore-hooks~      | no     | Hooks trigger the restore                      | see variable doc                     |
-|-----------------------------------------+--------+------------------------------------------------+--------------------------------------|
+| Variable                                  | Buffer | Description                                    | Default                              |
+|-------------------------------------------+--------+------------------------------------------------+--------------------------------------|
+| ~smart-input-source-english~              | no     | Input source for English                       | ~com.apple.keylayout.US~             |
+| ~smart-input-source-other~                | yes    | Input source for other language                | ~com.sogou.inputmethod.sogou.pinyin~ |
+| ~smart-input-source-fixed-context~        | yes    | Context is fixed to a specific language        | ~nil~                                |
+| ~smart-input-source-english-pattern~      | no     | Pattern to identify a character as English     | ~[a-zA-Z]~                           |
+| ~smart-input-source-other-pattern~        | yes    | Pattern to identify a character as other       | ~\cc~ , see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]]             |
+| ~smart-input-source-blank-pattern~        | yes    | Pattern to identify a character as blank       | ~[:blank:]~                          |
+| ~smart-input-source-aggressive-line~      | yes    | Aggressively detect context across blank lines | ~t~                                  |
+| ~smart-input-source-external-ism~         | no     | input resource manager                         | ~macism~                             |
+| ~smart-input-source-do-get~               | no     | Function to get the current input source       | determined from the environment      |
+| ~smart-input-source-do-set~               | no     | Function to set the input source               | determined from the environment      |
+| ~smart-input-source-start-with-english~   | no     | Switch to English for `respect-mode'           | ~t~                                  |
+| ~smart-input-source-prefix-override-keys~ | no     | Prefix keys to be respected                    | ~C-c~ ~C-x~ ~C-h~                    |
+| ~smart-input-source-preserve-triggers~    | no     | Commands trigger the before-save/after-restore | see variable doc                     |
+| ~smart-input-source-restore-triggers~     | no     | Commands trigger the after-restore             | see variable doc                     |
+| ~smart-input-source-restore-hooks~        | no     | Hooks trigger the restore                      | see variable doc                     |
+|-------------------------------------------+--------+------------------------------------------------+--------------------------------------|
 
 
 | Face Name                                | Description                                |

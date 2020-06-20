@@ -264,6 +264,10 @@ smart-input-source-OTHER: other language context.")
     (with-current-buffer (window-buffer (minibuffer-selected-window))
       (-restore-from-buffer))))
 
+(defvar -prefix-override-keys
+  '("C-c" "C-x" "C-h")
+  "Prefix keys to be overrided.")
+
 (defvar -prefix-override-state 'normal
   "State of previx override.
 
@@ -271,12 +275,9 @@ Possible values are 'normal, 'prefix and 'sequence.")
 
 (defvar -prefix-override-map
   (let ((keymap (make-sparse-keymap)))
-    (define-key keymap
-      (kbd "C-x") #'-prefix-override-handler)
-    (define-key keymap
-      (kbd "C-c") #'-prefix-override-handler)
-    (define-key keymap
-      (kbd "C-h") #'-prefix-override-handler)
+    (dolist (prefix -prefix-override-keys)
+      (define-key keymap
+        (kbd prefix) #'-prefix-override-handler))
     keymap)
   "Keymap for prefix key")
 
