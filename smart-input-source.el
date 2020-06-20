@@ -276,8 +276,7 @@ Possible values are 'normal, 'prefix and 'sequence.")
 (defvar -prefix-override-map
   (let ((keymap (make-sparse-keymap)))
     (dolist (prefix -prefix-override-keys)
-      (define-key keymap
-        (kbd prefix) #'-prefix-override-handler))
+      (define-key keymap (kbd prefix) #'-prefix-override-handler))
     keymap)
   "Keymap for prefix key")
 
@@ -296,8 +295,7 @@ Possible values are 'normal, 'prefix and 'sequence.")
          (n (length keys))
          (key (aref keys (1- n))))
     (-save-to-buffer-set-english)
-    (add-hook 'post-command-hook
-              #'-prefix-post-command-handler)
+    (add-hook 'post-command-hook #'-prefix-post-command-handler)
     (setq -prefix-override-state 'prefix)
     (setq -prefix-override-map-enable nil)
 
@@ -307,8 +305,7 @@ Possible values are 'normal, 'prefix and 'sequence.")
     (setq prefix-arg arg)
     (prefix-command-preserve-state)
     ;; Push the key back on the event queue
-    (setq unread-command-events
-          (cons key unread-command-events))))
+    (setq unread-command-events (cons key unread-command-events))))
 
 (defun -prefix-post-command-handler ()
   (cond
@@ -317,8 +314,7 @@ Possible values are 'normal, 'prefix and 'sequence.")
    ((or (eq -prefix-override-state 'sequence)
         (eq -prefix-override-state 'normal))
     (-restore-from-buffer)
-    (remove-hook 'post-command-hook
-                 #'-prefix-post-command-handler)
+    (remove-hook 'post-command-hook #'-prefix-post-command-handler)
     (setq -prefix-override-map-enable t)
     (setq -prefix-override-state 'normal))
    (t (error "error state"))))
@@ -343,27 +339,20 @@ Possible values are 'normal, 'prefix and 'sequence.")
 
          ;; preserve buffer input source
          (dolist (command preserve-triggers)
-           (advice-add command :before
-                       #'-save-to-buffer-advice)
-           (advice-add command :after
-                       #'-restore-from-buffer-advice))
+           (advice-add command :before #'-save-to-buffer-advice)
+           (advice-add command :after #'-restore-from-buffer-advice))
          (dolist (command restore-triggers)
-           (advice-add command :after
-                       #'-restore-from-buffer-advice))
+           (advice-add command :after #'-restore-from-buffer-advice))
          (dolist (hook save-hooks)
-           (add-hook hook
-                     #'-save-to-buffer-advice))
+           (add-hook hook #'-save-to-buffer-advice))
 
          ;; set english when enter minibuf, restore when exit
-         (add-hook 'minibuffer-setup-hook
-                   #'-minibuffer-setup-handler)
-         (add-hook 'minibuffer-exit-hook
-                   #'-minibuffer-exit-handler)
+         (add-hook 'minibuffer-setup-hook #'-minibuffer-setup-handler)
+         (add-hook 'minibuffer-exit-hook #'-minibuffer-exit-handler)
 
          ;; set english when exit evil insert state
          (when (featurep 'evil)
-           (add-hook 'evil-insert-state-exit-hook
-                     #'set-english))
+           (add-hook 'evil-insert-state-exit-hook #'set-english))
 
          ;; set english when prefix key pressed
          (add-to-ordered-list 'emulation-mode-map-alists
@@ -373,30 +362,23 @@ Possible values are 'normal, 'prefix and 'sequence.")
 
      ;; for preserving buffer input source
      (dolist (command preserve-triggers)
-       (advice-remove command
-                      #'-save-to-buffer-set-english)
-       (advice-remove command
-                      #'-restore-from-buffer-advice))
+       (advice-remove command #'-save-to-buffer-set-english)
+       (advice-remove command #'-restore-from-buffer-advice))
      (dolist (command restore-triggers)
-       (advice-remove command
-                      #'-restore-from-buffer-advice))
+       (advice-remove command #'-restore-from-buffer-advice))
      (dolist (hook save-hooks)
        (remove-hook hook #'-save-to-buffer-advice))
 
      ;; for minibuf
-     (remove-hook 'minibuffer-setup-hook
-                  #'-minibuffer-setup-handler)
-     (remove-hook 'minibuffer-exit-hook
-                  #'-minibuffer-exit-handler)
+     (remove-hook 'minibuffer-setup-hook #'-minibuffer-setup-handler)
+     (remove-hook 'minibuffer-exit-hook #'-minibuffer-exit-handler)
 
      ;; for evil
      (when (featurep 'evil)
-       (remove-hook 'evil-insert-state-exit-hook
-                    #'set-english))
+       (remove-hook 'evil-insert-state-exit-hook #'set-english))
 
      ;; for prefix key
-     (remove-hook 'post-command-hook
-                  #'-prefix-post-command-handler)
+     (remove-hook 'post-command-hook #'-prefix-post-command-handler)
      (setq emulation-mode-map-alists
            (delq 'smart-input-source--prefix-override-map-alist
                  emulation-mode-map-alists)))))
@@ -570,14 +552,9 @@ meanings as `string-match-p'."
   (-ensure-ism
    (if follow-context-mode
        (when (featurep 'evil)
-         (add-hook 'evil-insert-state-entry-hook
-                   #'follow-context
-                   nil t
-                   ))
+         (add-hook 'evil-insert-state-entry-hook #'follow-context nil t))
      (when (featurep 'evil)
-       (remove-hook 'evil-insert-state-entry-hook
-                    #'follow-context
-                    t)))))
+       (remove-hook 'evil-insert-state-entry-hook #'follow-context t)))))
 
 :autoload
 (define-globalized-minor-mode
@@ -615,12 +592,8 @@ meanings as `string-match-p'."
   :init-value nil
   (-ensure-ism
    (if inline-english-mode
-       (add-hook 'post-self-insert-hook
-                 #'check-to-activate-overlay
-                 nil t)
-     (remove-hook 'post-self-insert-hook
-                  #'check-to-activate-overlay
-                  t))))
+       (add-hook 'post-self-insert-hook #'check-to-activate-overlay nil t)
+     (remove-hook 'post-self-insert-hook #'check-to-activate-overlay t))))
 
 :autoload
 (define-globalized-minor-mode
@@ -685,9 +658,7 @@ input source to English."
                   (define-key keymap (kbd "<return>")
                     #'ret-check-to-deactivate-inline-overlay)
                   keymap))
-   (add-hook 'post-command-hook
-             #'fly-check-to-deactivate-inline-overlay
-             nil t)
+   (add-hook 'post-command-hook #'fly-check-to-deactivate-inline-overlay nil t)
    (set-english)))
 
 (defun fly-check-to-deactivate-inline-overlay ()
@@ -720,9 +691,7 @@ input source to English."
   "Deactivate the inline english region overlay."
   (interactive)
   ;; clean up
-  (remove-hook 'post-command-hook
-               #'fly-check-to-deactivate-inline-overlay
-               t)
+  (remove-hook 'post-command-hook #'fly-check-to-deactivate-inline-overlay t)
 
   ;; select input source
   (let* ((back-detect (-back-detect-chars))
