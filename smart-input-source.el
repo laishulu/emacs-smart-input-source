@@ -235,9 +235,11 @@ Some functions take precedence of the override, need to recap after.")
    (pcase (-get)
      ((pred (equal english))
       (funcall do-set other)
+      (run-hooks 'smart-input-source-set-other-hook)
       other)
      ((pred (equal other))
       (funcall do-set english)
+      (run-hooks 'smart-input-source-set-english-hook)
       other))))
 
 ;;
