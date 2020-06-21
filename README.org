@@ -269,7 +269,7 @@ method, just like the following screenshot.
             (set-face-background 'cursor "orange"))))
 #+END_SRC
 
-Note: Cursor face won't chagne if the input source is switched through OS,
+Note: Cursor face won't change if the input source is switched through OS,
 rather than:
 1. Switched by this package automatically.
 2. Switched by ~smart-input-source-switch~.
