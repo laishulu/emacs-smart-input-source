@@ -201,17 +201,22 @@ Some functions take precedence of the override, need to recap after.")
 (defun -set (lang)
   "Set the input source according to lang LANG, avoiding unnecessary switch."
   (when (and lang (functionp do-set))
+    ;; swith only when required
     (pcase (-get)
       ((pred (equal english))
        (when (or (equal lang OTHER)
                  (equal lang other))
-         (funcall do-set other))
-       (run-hooks 'smart-input-source-set-other-hook))
+         (funcall do-set other)))
       ((pred (equal other))
        (when (or (equal lang ENGLISH)
                  (equal lang english))
-         (funcall do-set english))
-       (run-hooks 'smart-input-source-set-english-hook)))))
+         (funcall do-set english))))
+
+    ;; run hook whether switched or not
+    (if (or (equal lang OTHER)
+            (equal lang other))
+        (run-hooks 'smart-input-source-set-english-hook)
+      (run-hooks 'smart-input-source-set-other-hook))))
 
 :autoload
 (defun set-english ()
