@@ -215,8 +215,8 @@ Some functions take precedence of the override, need to recap after.")
     ;; run hook whether switched or not
     (if (or (equal lang OTHER)
             (equal lang other))
-        (run-hooks 'smart-input-source-set-english-hook)
-      (run-hooks 'smart-input-source-set-other-hook))))
+        (run-hooks 'smart-input-source-set-other-hook)
+      (run-hooks 'smart-input-source-set-english-hook))))
 
 :autoload
 (defun set-english ()
