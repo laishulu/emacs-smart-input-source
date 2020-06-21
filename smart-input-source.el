@@ -80,10 +80,10 @@ smart-input-source-OTHER: other language context.")
   "Input source for other lang.")
 (make-variable-buffer-local 'smart-input-source-other)
 
-(defvar after-set-english-hook nil
+(defvar set-english-hook nil
   "Hook to run after set input source to English.")
 
-(defvar after-set-other-hook nil
+(defvar set-other-hook nil
   "Hook to run after set input source to other language.")
 
 (defvar aggressive-line t
@@ -212,8 +212,8 @@ Some functions take precedence of the override, need to recap after.")
          (funcall do-set english))))
     (if (or (equal lang ENGLISH)
             (equal lang english))
-        (run-hooks 'smart-input-source-after-set-english-hook)
-      (run-hooks 'smart-input-source-after-set-other-hook))))
+        (run-hooks 'smart-input-source-set-english-hook)
+      (run-hooks 'smart-input-source-set-other-hook))))
 
 :autoload
 (defun set-english ()

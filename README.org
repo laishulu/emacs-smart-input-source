@@ -123,11 +123,11 @@ its all in English.
   :config
   ;; Input source specific cursor color
   (defvar original-cursor-background nil)
-  (add-hook 'smart-input-source-after-set-english-hook
+  (add-hook 'smart-input-source-set-english-hook
             (lambda ()
               (when original-cursor-background
                 (set-face-background 'cursor original-cursor-background))))
-  (add-hook 'smart-input-source-after-set-other-hook
+  (add-hook 'smart-input-source-set-other-hook
             (lambda ()
               (unless original-cursor-background
                 (setq original-cursor-background (face-background 'cursor)))
@@ -178,8 +178,8 @@ input source id/ by runing the following command in Emacs:
 | ~smart-input-source-external-ism~                   | no     | input resource manager                             | ~macism~                             |
 | ~smart-input-source-do-get~                         | no     | Function to get the current input source           | determined from the environment      |
 | ~smart-input-source-do-set~                         | no     | Function to set the input source                   | determined from the environment      |
-| ~smart-inpu-source-after-set-english-hook~          | no     | Hook to run after set input source to English      | nil                                  |
-| ~smart-inpu-source-after-set-other-hook~            | no     | Hook to run after set input source to other        | nil                                  |
+| ~smart-inpu-source-set-english-hook~                | no     | Hook to run after set input source to English      | nil                                  |
+| ~smart-inpu-source-set-other-hook~                  | no     | Hook to run after set input source to other        | nil                                  |
 | ~smart-input-source-start-with-english~             | no     | Switch to English for `respect-mode'               | ~t~                                  |
 | ~smart-input-source-prefix-override-keys~           | no     | Prefix keys to be respected                        | '("C-c" "C-x" "C-h")                 |
 | ~smart-input-source-prefix-override-recap-triggers~ | no     | Functions trigger the recap of the prefix override | '(evil-local-mode yas-minor-mode)    |
@@ -258,11 +258,11 @@ method, just like the following screenshot.
 ** Input source specific cursor color
 #+BEGIN_SRC lisp
 (defvar original-cursor-background nil)
-(add-hook 'smart-input-source-after-set-english-hook
+(add-hook 'smart-input-source-set-english-hook
           (lambda ()
             (when original-cursor-background
               (set-face-background 'cursor original-cursor-background))))
-(add-hook 'smart-input-source-after-set-other-hook
+(add-hook 'smart-input-source-set-other-hook
           (lambda ()
             (unless original-cursor-background
               (setq original-cursor-background (face-background 'cursor)))
