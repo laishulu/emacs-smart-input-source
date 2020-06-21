@@ -121,6 +121,13 @@ its all in English.
         "com.sogou.inputmethod.sogou.pinyin")
 
   :config
+
+ ;; Input source specific cursor color
+ (add-hook 'smart-input-source-after-set-english-hook
+            (lambda () (set-face-background 'cursor "white")))
+ (add-hook 'smart-input-source-after-set-other-hook
+            (lambda () (set-face-background 'cursor "orange")))
+
   ;; enable the /respect/ mode
   (smart-input-source-global-respect-mode t)
 
@@ -166,6 +173,8 @@ input source id/ by runing the following command in Emacs:
 | ~smart-input-source-external-ism~                   | no     | input resource manager                             | ~macism~                             |
 | ~smart-input-source-do-get~                         | no     | Function to get the current input source           | determined from the environment      |
 | ~smart-input-source-do-set~                         | no     | Function to set the input source                   | determined from the environment      |
+| ~smart-inpu-source-after-set-english-hook~          | no     | Hook to run after set input source to English      | nil                                  |
+| ~smart-inpu-source-after-set-other-hook~            | no     | Hook to run after set input source to other        | nil                                  |
 | ~smart-input-source-start-with-english~             | no     | Switch to English for `respect-mode'               | ~t~                                  |
 | ~smart-input-source-prefix-override-keys~           | no     | Prefix keys to be respected                        | '("C-c" "C-x" "C-h")                 |
 | ~smart-input-source-prefix-override-recap-triggers~ | no     | Functions trigger the recap of the prefix override | '(evil-local-mode yas-minor-mode)    |
@@ -180,8 +189,9 @@ input source id/ by runing the following command in Emacs:
 | ~smart-input-source-inline-english-face~ | Face for the online English region overlay |
 |------------------------------------------+--------------------------------------------|
 
-* Configurations for other input source managers
-** Example: ~fcitx~
+* How to
+** Configure other input source managers
+*** Example: ~fcitx~
 ~fcitx~ is a input method framework popular among Chinese Linux users.
 ~fcitx-remote~ can serve as an input source manager for `fcitx`, and you can
 configure as following:
@@ -204,7 +214,7 @@ configure as following:
                              (concat smart-input-source-external-ism " -o")))))))
 #+END_SRC
 
-** Example: ~ibus~
+*** Example: ~ibus~
 ~ibus~ is another popular input method framework in the Linux world.
 You can configure as following:
 #+BEGIN_SRC lisp
@@ -222,7 +232,7 @@ You can configure as following:
           (concat smart-input-source-external-ism " engine " source)))))
 #+END_SRC
 
-** Example: ~im-select~
+*** Example: ~im-select~
 [[https://github.com/daipeihust/im-select][im-select]] can be used as input source manager in Microsoft Windows.
 It fulfills the requirements as a drop-in replacement of ~macism~, thus its
 configuration is simpler than other input source managers.
@@ -239,3 +249,12 @@ method, just like the following screenshot.
 
 #+CAPTION: Smart input source
 [[./screenshots/windows-im-select.jpg]]
+
+** Input source specific cursor color
+#+BEGIN_SRC lisp
+(add-hook 'smart-input-source-after-set-english-hook
+          (lambda () (set-face-background 'cursor "white")))
+
+(add-hook 'smart-input-source-after-set-other-hook
+          (lambda () (set-face-background 'cursor "orange")))
+#+END_SRC
