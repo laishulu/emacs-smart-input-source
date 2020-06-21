@@ -118,15 +118,20 @@ its all in English.
 
   ;; set the default other language input source for all buffer
   (setq-default smart-input-source-other
-        "com.sogou.inputmethod.sogou.pinyin")
+                "com.sogou.inputmethod.sogou.pinyin")
 
   :config
-
- ;; Input source specific cursor color
- (add-hook 'smart-input-source-after-set-english-hook
-            (lambda () (set-face-background 'cursor "white")))
- (add-hook 'smart-input-source-after-set-other-hook
-            (lambda () (set-face-background 'cursor "orange")))
+  ;; Input source specific cursor color
+  (defvar original-cursor-background nil)
+  (add-hook 'smart-input-source-after-set-english-hook
+            (lambda ()
+              (when original-cursor-background
+                (set-face-background 'cursor original-cursor-background))))
+  (add-hook 'smart-input-source-after-set-other-hook
+            (lambda ()
+              (unless original-cursor-background
+                (setq original-cursor-background (face-background 'cursor)))
+              (set-face-background 'cursor "orange")))
 
   ;; enable the /respect/ mode
   (smart-input-source-global-respect-mode t)
@@ -252,9 +257,14 @@ method, just like the following screenshot.
 
 ** Input source specific cursor color
 #+BEGIN_SRC lisp
+(defvar original-cursor-background nil)
 (add-hook 'smart-input-source-after-set-english-hook
-          (lambda () (set-face-background 'cursor "white")))
-
+          (lambda ()
+            (when original-cursor-background
+              (set-face-background 'cursor original-cursor-background))))
 (add-hook 'smart-input-source-after-set-other-hook
-          (lambda () (set-face-background 'cursor "orange")))
+          (lambda ()
+            (unless original-cursor-background
+              (setq original-cursor-background (face-background 'cursor)))
+            (set-face-background 'cursor "orange"))))
 #+END_SRC
