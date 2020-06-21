@@ -272,6 +272,6 @@ method, just like the following screenshot.
 Note: Cursor face won't chagne if the input source is switched through OS,
 rather than:
 1. Switched by this package automatically.
-2. Switched by `smart-input-source-switch`
-3. Set directly by `smart-input-source-set-english`
-4. Set directly by `smart-input-source-set-other`
+2. Switched by ~smart-input-source-switch~.
+3. Set directly by ~smart-input-source-set-english~.
+4. Set directly by ~smart-input-source-set-other~.
