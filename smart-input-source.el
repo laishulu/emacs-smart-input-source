@@ -287,9 +287,9 @@ Possible values are 'normal, 'prefix and 'sequence.")
 (defvar -prefix-override-map-alist nil
   "Map alist for override")
 
-(defvar -saved-before-prefix-in-buffer nil
+(defvar -saved-in-buffer-before-prefix nil
   "Saved buffer input source before prefix.")
-(make-variable-buffer-local 'smart-input-source--saved-before-prefix-in-buffer)
+(make-variable-buffer-local 'smart-input-source--saved-in-buffer-before-prefix)
 
 (defvar -saved-buffer-before-prefix nil
   "Saved buffer before prefix.")
@@ -324,14 +324,14 @@ Possible values are 'normal, 'prefix and 'sequence.")
   (cond
    ((eq -prefix-override-state 'normal) t)
    ((eq -prefix-override-state 'prefix)
-    (setq -saved-before-prefix-in-buffer (-get))
+    (setq -saved-in-buffer-before-prefix (-get))
     (setq -saved-buffer-before-prefix (current-buffer))
     (set-english)
     (setq -prefix-override-state 'sequence))
    ((eq -prefix-override-state 'sequence)
     (with-current-buffer -saved-buffer-before-prefix
-      (setq -saved-in-buffer -saved-before-prefix-in-buffer)
-      (setq -saved-before-prefix-in-buffer nil))
+      (setq -saved-in-buffer -saved-in-buffer-before-prefix)
+      (setq -saved-in-buffer-before-prefix nil))
     (remove-hook 'post-command-hook #'-prefix-post-command-handler)
     (setq -prefix-override-map-enable t)
     (setq -prefix-override-state 'normal))))
