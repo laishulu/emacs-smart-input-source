@@ -94,15 +94,9 @@ smart-input-source-OTHER: other language context.")
   '(switch-to-buffer
     switch-to-prev-buffer
     switch-to-next-buffer
+    pop-to-buffer
     other-window
-    windmove-up
-    windmove-down
-    windmove-left
-    windmove-right)
-  "A list of commands which would trigger the save/restore of input source.")
-
-(defvar restore-triggers
-  '(pop-to-buffer delete-window)
+    windmove-do-window-select)
   "A list of commands which would trigger the save/restore of input source.")
 
 (defvar save-hooks
@@ -204,17 +198,14 @@ Some functions take precedence of the override, need to recap after.")
     ;; swith only when required
     (pcase (-get)
       ((pred (equal english))
-       (when (or (equal lang OTHER)
-                 (equal lang other))
+       (when (member lang (list OTHER other))
          (funcall do-set other)))
       ((pred (equal other))
-       (when (or (equal lang ENGLISH)
-                 (equal lang english))
+       (when (member lang (list ENGLISH english))
          (funcall do-set english))))
 
     ;; run hook whether switched or not
-    (if (or (equal lang OTHER)
-            (equal lang other))
+    (if (member lang (list OTHER other))
         (run-hooks 'smart-input-source-set-other-hook)
       (run-hooks 'smart-input-source-set-english-hook))))
 
@@ -253,13 +244,12 @@ Some functions take precedence of the override, need to recap after.")
   "Saved buffer input source.")
 (make-variable-buffer-local 'smart-input-source--saved-in-buffer)
 
-(defun -save-to-buffer-advice (&rest _args)
-  "A simple wrapper around `-save-to-buffer' that's advice-friendly."
-  (-save-to-buffer))
-
-(defun -restore-from-buffer-advice (&rest _args)
-  "A simple wrapper around `-restore-from-buffer' that's advice-friendly."
-  (-restore-from-buffer))
+(defun -preserve-trigger-advice (fn &rest _args)
+  "Advice for preserve trigger FN."
+  (-save-to-buffer)
+  (let ((res (apply fn _args)))
+    (-restore-from-buffer)
+    res))
 
 (defun -save-to-buffer ()
   "Save buffer input source."
@@ -269,21 +259,16 @@ Some functions take precedence of the override, need to recap after.")
   "Restore buffer input source."
   (-set (or -saved-in-buffer ENGLISH)))
 
-(defun -save-to-buffer-set-english ()
-  "Save to buffer input source and then set to english."
-  (-ensure-ism
-   (-save-to-buffer)
-   (set-english)))
-
 (defun -minibuffer-setup-handler ()
-  (let ((prev (previous-window)))
-    (with-current-buffer (window-buffer (minibuffer-selected-window))
-      (-save-to-buffer-set-english))))
+
+    ;; (u -prefix-override-state 'prefix)
+  (with-current-buffer (window-buffer (minibuffer-selected-window))
+      (-save-to-buffer))
+  (set-english))
 
 (defun -minibuffer-exit-handler ()
-  (let ((prev (previous-window)))
-    (with-current-buffer (window-buffer (minibuffer-selected-window))
-      (-restore-from-buffer))))
+  (with-current-buffer (window-buffer (minibuffer-selected-window))
+    (-restore-from-buffer)))
 
 (defvar -prefix-override-keys
   '("C-c" "C-x" "C-h")
@@ -312,7 +297,7 @@ Possible values are 'normal, 'prefix and 'sequence.")
   (let* ((keys (this-command-keys))
          (n (length keys))
          (key (aref keys (1- n))))
-    (-save-to-buffer-set-english)
+    (-save-to-buffer)
     (setq -prefix-override-state 'prefix)
     (setq -prefix-override-map-enable nil)
     (add-hook 'post-command-hook #'-prefix-post-command-handler)
@@ -329,6 +314,7 @@ Possible values are 'normal, 'prefix and 'sequence.")
   (cond
    ((eq -prefix-override-state 'normal) t)
    ((eq -prefix-override-state 'prefix)
+    (set-english)
     (setq -prefix-override-state 'sequence))
    ((eq -prefix-override-state 'sequence)
     (-restore-from-buffer)
@@ -355,13 +341,10 @@ Possible values are 'normal, 'prefix and 'sequence.")
          (when start-with-english (set-english))
 
          ;; preserve buffer input source
-         (dolist (command preserve-triggers)
-           (advice-add command :before #'-save-to-buffer-advice)
-           (advice-add command :after #'-restore-from-buffer-advice))
-         (dolist (command restore-triggers)
-           (advice-add command :after #'-restore-from-buffer-advice))
+         (dolist (trigger preserve-triggers)
+           (advice-add trigger :around #'-preserve-trigger-advice))
          (dolist (hook save-hooks)
-           (add-hook hook #'-save-to-buffer-advice))
+           (add-hook hook #'-save-to-buffer))
 
          ;; set english when enter minibuf, restore when exit
          (add-hook 'minibuffer-setup-hook #'-minibuffer-setup-handler)
@@ -387,13 +370,10 @@ Possible values are 'normal, 'prefix and 'sequence.")
            (advice-add fn :after #'-prefix-override-recap-advice)))
 
      ;; for preserving buffer input source
-     (dolist (command preserve-triggers)
-       (advice-remove command #'-save-to-buffer-set-english)
-       (advice-remove command #'-restore-from-buffer-advice))
-     (dolist (command restore-triggers)
-       (advice-remove command #'-restore-from-buffer-advice))
+     (dolist (trigger preserve-triggers)
+       (advice-remove trigger #'-preserve-trigger-advice))
      (dolist (hook save-hooks)
-       (remove-hook hook #'-save-to-buffer-advice))
+       (remove-hook hook #'-save-to-buffer))
 
      ;; for minibuf
      (remove-hook 'minibuffer-setup-hook #'-minibuffer-setup-handler)
@@ -643,9 +623,7 @@ input source to English."
                            (evil-motion-state-p)
                            (evil-operator-state-p))))
              ;; around char is <spc> <DBC spc>
-             (or (= (preceding-char) ?\s)
-                 (= (preceding-char) 12288)
-                 ))
+             (memq (preceding-char) (list ?\s 12288)))
     (let* ((back-detect (-back-detect-chars))
            (back-to (back-detect-to back-detect))
            (back-char (back-detect-char back-detect))
