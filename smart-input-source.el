@@ -260,8 +260,6 @@ Some functions take precedence of the override, need to recap after.")
   (-set (or -saved-in-buffer ENGLISH)))
 
 (defun -minibuffer-setup-handler ()
-
-    ;; (u -prefix-override-state 'prefix)
   (with-current-buffer (window-buffer (minibuffer-selected-window))
       (-save-to-buffer))
   (set-english))
@@ -285,11 +283,20 @@ Possible values are 'normal, 'prefix and 'sequence.")
 (defvar -prefix-override-map-alist nil
   "Map alist for override")
 
-(defun -prefix-override-recap-advice (&rest args)
+(defvar -saved-before-prefix-in-buffer nil
+  "Saved buffer input source before prefix.")
+(make-variable-buffer-local 'smart-input-source--saved-before-prefix-in-buffer)
+
+(defvar -saved-buffer-before-prefix nil
+  "Saved buffer before prefix.")
+
+(defun -prefix-override-recap-advice (&rest res)
+  "Advice for `prefix-override-recap-triggers' with RES res"
   (add-to-ordered-list
    'emulation-mode-map-alists
    'smart-input-source--prefix-override-map-alist
-   1))
+   1)
+  res)
 
 (defun -prefix-override-handler (arg)
   "Prefix key handler"
@@ -297,7 +304,6 @@ Possible values are 'normal, 'prefix and 'sequence.")
   (let* ((keys (this-command-keys))
          (n (length keys))
          (key (aref keys (1- n))))
-    (-save-to-buffer)
     (setq -prefix-override-state 'prefix)
     (setq -prefix-override-map-enable nil)
     (add-hook 'post-command-hook #'-prefix-post-command-handler)
@@ -314,10 +320,14 @@ Possible values are 'normal, 'prefix and 'sequence.")
   (cond
    ((eq -prefix-override-state 'normal) t)
    ((eq -prefix-override-state 'prefix)
+    (setq -saved-before-prefix-in-buffer (-get))
+    (setq -saved-buffer-before-prefix (current-buffer))
     (set-english)
     (setq -prefix-override-state 'sequence))
    ((eq -prefix-override-state 'sequence)
-    (-restore-from-buffer)
+    (with-current-buffer -saved-buffer-before-prefix
+      (setq -saved-in-buffer -saved-before-prefix-in-buffer)
+      (setq -saved-before-prefix-in-buffer nil))
     (remove-hook 'post-command-hook #'-prefix-post-command-handler)
     (setq -prefix-override-map-enable t)
     (setq -prefix-override-state 'normal))))
@@ -366,8 +376,8 @@ Possible values are 'normal, 'prefix and 'sequence.")
 
          (setq -prefix-override-map-enable t)
          (-prefix-override-recap-advice)
-         (dolist (fn prefix-override-recap-triggers)
-           (advice-add fn :after #'-prefix-override-recap-advice)))
+         (dolist (trigger prefix-override-recap-triggers)
+           (advice-add trigger :after #'-prefix-override-recap-advice)))
 
      ;; for preserving buffer input source
      (dolist (trigger preserve-triggers)
