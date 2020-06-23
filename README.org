@@ -12,11 +12,11 @@ This package provide several modes to switch OS native input source smartly:
   4. Respect prefix key: switch to English for ~C-c~ / ~C-x~ / ~C-h~.
   5. Respect buffer: recover buffer input source when it regain focus.
 - A buffer local mode: ~smart-input-source-follow-context-mode~ to switch input
-  source smarted according to context when entering ~evil~ insert mode. A
-  function ~smart-input-source-follow-context~ is also provided to hook as your
-  wish, regardless the presence of ~evil~. It also has a global version
+  source smarted according to context. It also has a global version
   ~smart-input-source-global-follow-context-mode~ to enable the mode for all
-  buffers.
+  buffers. When to switch input source by following context can be configured
+  easily by a variable, whose default value indicates when entering evil insert
+  mode.
 - A buffer local mode: ~smart-input-source-inline-english-mode~ to enable the
   automatic triggering of a temporary overlay to input English and then back to
   none-English without switching input sources manually. It also has a global
@@ -47,8 +47,9 @@ This package provide several modes to switch OS native input source smartly:
    5) After the close of the region, one space in the head and one space in the
       tail (if exists) of the region will be deleted. But if the whole region is
       blank, the no character will be deleted.
-6. Switch input source according to context: When entering ~evil~ insert mode,
-   input source will be determined according to the context.
+6. Switch input source according to context:
+   1) Preconfigured for entering evil insert mode.
+   2) For native emacs user, you can configure by easily set a variable.
 7. Input source switching rules are designed carefully, for pure English
    editing, input source will never be switched to other languages.
 
@@ -185,8 +186,9 @@ input source id/ by runing the following command in Emacs:
 | ~smart-inpu-source-set-other-hook~                  | no     | Hook to run after set input source to other        | nil                                  |
 | ~smart-input-source-start-with-english~             | no     | Switch to English for `respect-mode'               | ~t~                                  |
 | ~smart-input-source-prefix-override-keys~           | no     | Prefix keys to be respected                        | '("C-c" "C-x" "C-h")                 |
-| ~smart-input-source-prefix-override-recap-triggers~ | no     | Functions trigger the recap of the prefix override | '(evil-local-mode yas-minor-mode)    |
+| ~smart-input-source-prefix-override-recap-triggers~ | no     | Functions trigger the recap of the prefix override | see variable                         |
 | ~smart-input-source-preserve-triggers~              | no     | Functions trigger the before-save/after-restore    | see variable doc                     |
+| ~smart-input-source-follow-context-hooks~           | no     | Hooks trigger the context following                | see variable doc                     |
 | ~smart-input-source-save-hooks~                     | no     | Hooks trigger the save of the input source         | see variable doc                     |
 |-----------------------------------------------------+--------+----------------------------------------------------+--------------------------------------|
 
