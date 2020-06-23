@@ -674,12 +674,18 @@ input source to English."
     ;; select input source
     (let* ((back-detect (-back-detect-chars))
            (back-to (back-detect-to back-detect)))
-      (when (or (= (-inline-overlay-start)
-                   (-inline-overlay-end))
-                (or(< (point) (-inline-overlay-start))
-                   (> (point) (-inline-overlay-end)))
-                (and (> back-to (-inline-overlay-start))
-                     (< (1+ back-to) (-inline-overlay-end))))
+      (when (or
+             ;; zero length overlay
+             (= (-inline-overlay-start)
+                (-inline-overlay-end))
+             ;; out of range
+             (or(< (point) (-inline-overlay-start))
+                (> (point) (-inline-overlay-end)))
+             ;; " inline english  ^"
+             ;; but not "           ^"
+             (and (= (point) (-inline-overlay-end))
+                  (> back-to (-inline-overlay-start))
+                  (= (+ 2 back-to) (point))))
         (deactivate-inline-overlay)))))
 
 (defun ret-check-to-deactivate-inline-overlay ()
