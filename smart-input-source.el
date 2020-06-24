@@ -96,7 +96,7 @@ smart-input-source-OTHER: other language context.")
         'next-buffer 'previous-buffer
         'other-window 'windmove-last
         'windmove-up 'windmove-down 'windmove-left 'windmove-right
-        'centaur-tabs-forward 'centaur-tabs-backward)
+        'centaur-tabs-forward 'centaur-tabs-backward 'centaur-tabs-do-select)
   "Triggers to save the input source for buffer.")
 
 (defvar preserve-M-x-commands
@@ -289,12 +289,16 @@ Some commands such as `counsel-M-x' overwrite it.")
 (defun -prefix-override-handler (arg)
   "Prefix key handler."
   (interactive "P")
+  (when trace-mode
+    (print (format "prefix: [%s]" (this-command-keys))))
   (let* ((keys (this-command-keys))
          (n (length keys))
          (key (aref keys (1- n))))
     (setq -prefix-override-map-enable nil)
     (setq -buffer-before-prefix (current-buffer))
     (setq -before-prefix (-get))
+    (when trace-mode
+      (print (format "set: english @ [%s]" (current-buffer))))
     (set-english)
 
     ;; Don't record this command
@@ -321,7 +325,7 @@ Some commands such as `counsel-M-x' overwrite it.")
   (setq -real-this-command this-command)
 
   (when trace-mode
-    (print (format "pre : [%s]@key [%s]@command [%s]@buffer"
+    (print (format "pre : [%s]@key [%s]@cmd [%s]@buf"
                    (this-command-keys)
                    -real-this-command
                    (current-buffer))))
@@ -332,7 +336,7 @@ Some commands such as `counsel-M-x' overwrite it.")
         (setq -for-buffer -before-prefix)
         (setq -before-prefix nil)
         (when trace-mode
-          (print (format "save: [%s]@[%s]" (-get) (current-buffer))))
+          (print (format "save: [%s]@[%s]" -for-buffer (current-buffer))))
         (setq -prefix-override-map-enable t))
 
     (when (and (not (minibufferp))
@@ -342,7 +346,7 @@ Some commands such as `counsel-M-x' overwrite it.")
       (-save-to-buffer)
       (when (memq -real-this-command preserve-M-x-commands)
         (when trace-mode
-          (print (format "set: english @ [%s]" (-get) (current-buffer))))
+          (print (format "set: english @ [%s]" (current-buffer))))
         (set-english)))))
 
 (defun -preserve-hint-ignore-p (&optional buffer)
@@ -372,12 +376,11 @@ Some commands such as `counsel-M-x' overwrite it.")
         -real-this-command -buffer-before-command (current-buffer)))))
 
   (when trace-mode
-    (print (format "post: [%s]@key [%s]@command [%s]@buffer"
+    (print (format "post: [%s]@key [%s]@cmd [%s]@buf"
                    (this-command-keys)
                    -real-this-command
                    (current-buffer))))
 
-  (setq -buffer-before-prefix nil)
   (unless (or (eq -buffer-before-command (current-buffer))
               (minibufferp))
     (when trace-mode
@@ -395,34 +398,34 @@ Some commands such as `counsel-M-x' overwrite it.")
   :global t
   :init-value nil
   (-ensure-ism
-   (if global-respect-mode
-       (progn
-         ;; set english when mode enabled
-         (when start-with-english (set-english))
+   (when global-respect-mode
+     ;; set english when mode enabled
+     (when start-with-english (set-english))
 
-         ;; preserve buffer input source
-         (add-hook 'pre-command-hook #'-preserve-pre-command-handler)
-         (add-hook 'post-command-hook #'-preserve-post-command-handler)
+     ;; preserve buffer input source
+     (add-hook 'pre-command-hook #'-preserve-pre-command-handler)
+     (add-hook 'post-command-hook #'-preserve-post-command-handler)
 
-         ;; set english when exit evil insert state
-         (when (featurep 'evil)
-           (add-hook 'evil-insert-state-exit-hook #'set-english))
+     ;; set english when exit evil insert state
+     (when (featurep 'evil)
+       (add-hook 'evil-insert-state-exit-hook #'set-english))
 
-         ;; set english when prefix key pressed
-         (setq -prefix-override-map-alist
-               `((smart-input-source--prefix-override-map-enable
-                  .
-                  ,(let ((keymap (make-sparse-keymap)))
-                     (dolist (prefix prefix-override-keys)
-                       (define-key keymap
-                         (kbd prefix) #'-prefix-override-handler))
-                     keymap))))
+     ;; set english when prefix key pressed
+     (setq -prefix-override-map-alist
+           `((smart-input-source--prefix-override-map-enable
+              .
+              ,(let ((keymap (make-sparse-keymap)))
+                 (dolist (prefix prefix-override-keys)
+                   (define-key keymap
+                     (kbd prefix) #'-prefix-override-handler))
+                 keymap))))
 
-         (setq -prefix-override-map-enable t)
-         (-prefix-override-recap-advice)
-         (dolist (trigger prefix-override-recap-triggers)
-           (advice-add trigger :after #'-prefix-override-recap-advice)))
+     (setq -prefix-override-map-enable t)
+     (-prefix-override-recap-advice)
+     (dolist (trigger prefix-override-recap-triggers)
+       (advice-add trigger :after #'-prefix-override-recap-advice)))
 
+   (unless global-respect-mode
      ;; for preserving buffer input source
      (remove-hook 'pre-command-hook #'-preserve-pre-command-handler)
      (remove-hook 'post-command-hook #'-preserve-post-command-handler)
