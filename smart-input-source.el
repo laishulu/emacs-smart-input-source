@@ -94,12 +94,15 @@ smart-input-source-OTHER: other language context.")
   (list 'mouse-leave-buffer-hook 'focus-out-hook
         'counsel-M-x
         'next-buffer 'previous-buffer
-        'other-window)
-  "Triggers to save input source.")
+        'other-window 'windmove-last
+        'windmove-up 'windmove-down 'windmove-left 'windmove-right
+        'centaur-tabs-forward 'centaur-tabs-backward)
+  "Triggers to save the input source for buffer.")
 
-(defvar preserve-minibuf-triggers
-  (list 'counsel-M-x)
-  "Triggers to set english.")
+(defvar preserve-M-x-commands
+  '()
+  ;; (list 'counsel-M-x 'execute-extended-command)
+  " M-x-commands to open minibuffer.")
 
 (defvar prefix-override-recap-triggers
   '(evil-local-mode yas-minor-mode)
@@ -138,12 +141,9 @@ Some functions take precedence of the override, need to recap after.")
 ;;
 ;; Following codes are mainly about input source manager
 ;;
-(defconst ENGLISH 1)
-(defconst OTHER 2)
-
-;; Emacs mac port builtin input source manager
-(defconst ISM-EMP 1)
-
+(defconst ENGLISH 1 "Just for english input source.")
+(defconst OTHER 2 "Just for other input source.")
+(defconst ISM-EMP 1 "Emacs mac port builtin input source manager.")
 (defvar -ism nil "The input source manager.")
 (defvar -ism-inited nil "Input source manager initialized.")
 
@@ -239,7 +239,7 @@ Some functions take precedence of the override, need to recap after.")
       other))))
 
 ;;
-;; Following codes are mainly about tracking buffer
+;; Following codes are mainly about respect mode
 ;;
 
 (defvar -for-buffer nil
@@ -280,7 +280,7 @@ Possible values are 'normal, 'prefix and 'sequence.")
   "Current buffer before prefix.")
 
 (defun -prefix-override-recap-advice (&rest res)
-  "Advice for `prefix-override-recap-triggers' with RES res"
+  "Advice for `prefix-override-recap-triggers' with RES res."
   (add-to-ordered-list
    'emulation-mode-map-alists
    'smart-input-source--prefix-override-map-alist
@@ -288,7 +288,7 @@ Possible values are 'normal, 'prefix and 'sequence.")
   res)
 
 (defun -prefix-override-handler (arg)
-  "Prefix key handler"
+  "Prefix key handler."
   (interactive "P")
   (let* ((keys (this-command-keys))
          (n (length keys))
@@ -307,14 +307,17 @@ Possible values are 'normal, 'prefix and 'sequence.")
     (setq unread-command-events (cons key unread-command-events))))
 
 (define-minor-mode preserve-hint-mode
+  "Hint to add command to related variables."
   :global t
   :init-value nil)
 
 (define-minor-mode trace-mode
+  "Trace the execution of this package."
   :global t
   :init-value nil)
 
 (defun -preserve-pre-command-handler ()
+  "Handler for `pre-command-hook' to preserve input source."
   (when trace-mode
     (print (format "pre : [%s]@key [%s]@command [%s]@buffer"
                    (this-command-keys)
@@ -331,21 +334,25 @@ Possible values are 'normal, 'prefix and 'sequence.")
     (when (and (not (minibufferp))
                (memq this-command preserve-save-triggers))
       (-save-to-buffer)
-      (when (memq this-command preserve-minibuf-triggers)
+      (when (memq this-command preserve-M-x-commands)
         (set-english)))))
 
-(defun -preserve-ignore-buffer-p (&optional buffer)
-  (-string-match-p "\*" (buffer-name buffer)))
+(defun -preserve-hint-ignore-p (&optional buffer)
+  "BUFFER does not need input source preservation."
+  (and (-string-match-p "\*" (buffer-name buffer))
+       (not (-string-match-p "\*New" (buffer-name buffer)))
+       (not (-string-match-p "\*Scratch" (buffer-name buffer)))))
 
 (defun -preserve-post-command-handler ()
+  "Handler for `post-command-hook' to preserve input source."
   (when preserve-hint-mode
     (when (and (minibufferp)
                (not (minibufferp -buffer-before-command))
-               (not (memq this-command preserve-minibuf-triggers)))
-        (print (format "!!! command [%s] opened minibuffer")))
+               (not (memq this-command preserve-M-x-commands)))
+        (print (format "!!! command [%s] opened minibuffer" this-command)))
     (when (not (or -buffer-before-prefix
                    (eq -buffer-before-command (current-buffer))
-                   (-preserve-ignore-buffer-p -buffer-before-command)
+                   (-preserve-hint-ignore-p -buffer-before-command)
                    (memq this-command preserve-save-triggers)))
       (print (format "!!! command [%s] shift from buffer %s to %s"
                      this-command -buffer-before-command (current-buffer)))))
@@ -409,7 +416,6 @@ Possible values are 'normal, 'prefix and 'sequence.")
        (remove-hook 'evil-insert-state-exit-hook #'set-english))
 
      ;; for prefix key
-     (remove-hook 'post-command-hook #'-prefix-post-command-handler)
      (setq emulation-mode-map-alists
            (delq 'smart-input-source--prefix-override-map-alist
                  emulation-mode-map-alists))

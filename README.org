@@ -9,7 +9,7 @@ This package provide several modes to switch OS native input source smartly:
   1. Respect self: optional start this mode with English
   2. Respect ~evil~: switch to English when leaving ~evil~ ~insert~ mode.
   3. Respect ~minibuffer~: switch to English when enter ~minibuffer~.
-  4. Respect prefix key: switch to English for ~C-c~ / ~C-x~ / ~C-h~.
+  4. Respect prefix key: switch to English for ~C-c~ / ~C-x~ / ~C-h~ and more.
   5. Respect buffer: recover buffer input source when it regain focus.
 - A buffer local mode: ~smart-input-source-follow-context-mode~ to switch input
   source smarted according to context. It also has a global version
@@ -33,7 +33,7 @@ This package provide several modes to switch OS native input source smartly:
    1) Respect self: optional start this mode with English
    2) Respect ~evil~: switch to English when leaving ~evil~ ~insert~ mode.
    3) Respect ~minibuffer~: switch to English when enter ~minibuffer~.
-   4) Respect prefix key: switch to English for ~C-c~ / ~C-x~ / ~C-h~.
+   4) Respect prefix key: switch to English for ~C-c~ / ~C-x~ / ~C-h~ and more.
    5) Respect buffer: recover buffer input source when it regain focus.
 5. Support ~inline English~ region:
    1) Inserting space around none-English characters triggers the region.
@@ -137,6 +137,9 @@ its all in English.
                           "Red")))
               (set-cursor-color "green")))
 
+  ;; (push 'YOUR-COMMAND smart-input-source-preserve-save-triggers)
+  ;; (push 'YOUR-COMMAND smart-input-source-preserve-M-x-commands)
+
   ;; enable the /respect/ mode
   (smart-input-source-global-respect-mode t)
 
@@ -164,6 +167,13 @@ input source id/ by runing the following command in Emacs:
 (smart-input-source--get)
 #+END_SRC
 
+**  How to preserve input source
+Turn on ~smart-input-source-preserve-hint-mode~, replay the actions that the
+input resources are not preserved, and and check message buffer for hints.
+
+Turn on ~smart-input-source-preserve-trace-mode~ to trace and analysis by
+yourself, or reach the author for help.
+
 **  Input examples
 #+CAPTION: Smart Input Source 
 [[./screenshots/smart-input-source.png]]
@@ -186,8 +196,9 @@ input source id/ by runing the following command in Emacs:
 | ~smart-inpu-source-set-other-hook~                  | no     | Hook to run after set input source to other        | nil                                  |
 | ~smart-input-source-start-with-english~             | no     | Switch to English for `respect-mode'               | ~t~                                  |
 | ~smart-input-source-prefix-override-keys~           | no     | Prefix keys to be respected                        | '("C-c" "C-x" "C-h")                 |
-| ~smart-input-source-prefix-override-recap-triggers~ | no     | Functions trigger the recap of the prefix override | see variable                         |
-| ~smart-input-source-preserve-triggers~              | no     | Functions trigger the before-save/after-restore    | see variable doc                     |
+| ~smart-input-source-prefix-override-recap-triggers~ | no     | Functions trigger the recap of the prefix override | see variable doc                     |
+| ~smart-input-source-preserve-save-triggers~         | no     | Commands trigger the save of input source          | see variable doc                     |
+| ~smart-input-source-preserve-preserve-M-x-commands~ | no     | Commands execute extended command                  | see variable doc                     |
 | ~smart-input-source-follow-context-hooks~           | no     | Hooks trigger the context following                | see variable doc                     |
 | ~smart-input-source-save-hooks~                     | no     | Hooks trigger the save of the input source         | see variable doc                     |
 |-----------------------------------------------------+--------+----------------------------------------------------+--------------------------------------|
