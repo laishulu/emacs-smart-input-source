@@ -329,12 +329,18 @@ Possible values are 'normal, 'prefix and 'sequence.")
   (if -buffer-before-prefix
     (with-current-buffer -buffer-before-prefix
       (setq -for-buffer -before-prefix)
+      (when trace-mode
+        (print (format "save: [%s]@[%s]" (-get) (current-buffer))))
       (setq -before-prefix nil)
       (setq -prefix-override-map-enable t))
     (when (and (not (minibufferp))
                (memq this-command preserve-save-triggers))
+      (when trace-mode
+        (print (format "save: [%s]@[%s]" (-get) (current-buffer))))
       (-save-to-buffer)
       (when (memq this-command preserve-M-x-commands)
+        (when trace-mode
+          (print (format "set: english @ [%s]" (-get) (current-buffer))))
         (set-english)))))
 
 (defun -preserve-hint-ignore-p (&optional buffer)
@@ -366,6 +372,8 @@ Possible values are 'normal, 'prefix and 'sequence.")
   (setq -buffer-before-prefix nil)
   (unless (or (eq -buffer-before-command (current-buffer))
               (minibufferp))
+  (when trace-mode
+    (print (format "restore: [%s]@[%s]" -for-buffer (current-buffer))))
     (-restore-from-buffer)))
 
 :autoload
