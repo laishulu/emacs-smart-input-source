@@ -90,18 +90,16 @@ smart-input-source-OTHER: other language context.")
   "Aggressively detect context across blank lines.")
 (make-variable-buffer-local 'smart-input-source-aggressive-line)
 
-(defvar preserve-triggers
-  '(switch-to-buffer
-    switch-to-prev-buffer
-    switch-to-next-buffer
-    pop-to-buffer
-    other-window
-    windmove-do-window-select)
-  "Commands trigger the save/restore of input source.")
+(defvar preserve-save-triggers
+  (list 'mouse-leave-buffer-hook 'focus-out-hook
+        'counsel-M-x
+        'next-buffer 'previous-buffer
+        'other-window)
+  "Triggers to save input source.")
 
-(defvar save-hooks
-  '(mouse-leave-buffer-hook focus-out-hook)
-  "Hooks trigger the save of input source.")
+(defvar preserve-minibuf-triggers
+  (list 'counsel-M-x)
+  "Triggers to set english.")
 
 (defvar prefix-override-recap-triggers
   '(evil-local-mode yas-minor-mode)
@@ -244,33 +242,17 @@ Some functions take precedence of the override, need to recap after.")
 ;; Following codes are mainly about tracking buffer
 ;;
 
-(defvar -saved-in-buffer nil
+(defvar -for-buffer nil
   "Saved buffer input source.")
-(make-variable-buffer-local 'smart-input-source--saved-in-buffer)
-
-(defun -preserve-trigger-advice (fn &rest _args)
-  "Advice for preserve trigger FN."
-  (-save-to-buffer)
-  (let ((res (apply fn _args)))
-    (-restore-from-buffer)
-    res))
+(make-variable-buffer-local 'smart-input-source--for-buffer)
 
 (defun -save-to-buffer ()
   "Save buffer input source."
-  (setq -saved-in-buffer (-get)))
+  (setq -for-buffer (-get)))
 
 (defun -restore-from-buffer ()
   "Restore buffer input source."
-  (-set (or -saved-in-buffer ENGLISH)))
-
-(defun -minibuffer-setup-handler ()
-  (with-current-buffer (window-buffer (minibuffer-selected-window))
-      (-save-to-buffer))
-  (set-english))
-
-(defun -minibuffer-exit-handler ()
-  (with-current-buffer (window-buffer (minibuffer-selected-window))
-    (-restore-from-buffer)))
+  (-set (or -for-buffer ENGLISH)))
 
 (defvar -prefix-override-keys
   '("C-c" "C-x" "C-h")
@@ -287,11 +269,14 @@ Possible values are 'normal, 'prefix and 'sequence.")
 (defvar -prefix-override-map-alist nil
   "Map alist for override")
 
-(defvar -saved-in-buffer-before-prefix nil
-  "Saved buffer input source before prefix.")
-(make-variable-buffer-local 'smart-input-source--saved-in-buffer-before-prefix)
+(defvar -before-prefix nil
+  "Input source before prefix.")
+(make-variable-buffer-local 'smart-input-source--before-prefix)
 
 (defvar -buffer-before-prefix nil
+  "Current buffer before prefix.")
+
+(defvar -buffer-before-command nil
   "Current buffer before prefix.")
 
 (defun -prefix-override-recap-advice (&rest res)
@@ -308,9 +293,10 @@ Possible values are 'normal, 'prefix and 'sequence.")
   (let* ((keys (this-command-keys))
          (n (length keys))
          (key (aref keys (1- n))))
-    (setq -prefix-override-state 'prefix)
     (setq -prefix-override-map-enable nil)
-    (add-hook 'post-command-hook #'-prefix-post-command-handler)
+    (setq -buffer-before-prefix (current-buffer))
+    (setq -before-prefix (-get))
+    (set-english)
 
     ;; Don't record this command
     (setq this-command last-command)
@@ -320,22 +306,60 @@ Possible values are 'normal, 'prefix and 'sequence.")
     ;; Push the key back on the event queue
     (setq unread-command-events (cons key unread-command-events))))
 
-(defun -prefix-post-command-handler ()
-  (cond
-   ((eq -prefix-override-state 'normal) t)
-   ((eq -prefix-override-state 'prefix)
-    (setq -saved-in-buffer-before-prefix (-get))
-    (setq -buffer-before-prefix (current-buffer))
-    (set-english)
-    (setq -prefix-override-state 'sequence))
-   ((eq -prefix-override-state 'sequence)
-    (with-current-buffer -buffer-before-prefix
-      (setq -saved-in-buffer -saved-in-buffer-before-prefix)
-      (setq -saved-in-buffer-before-prefix nil))
-    (remove-hook 'post-command-hook #'-prefix-post-command-handler)
-    (setq -prefix-override-map-enable t)
-    (setq -prefix-override-state 'normal))))
+(define-minor-mode preserve-hint-mode
+  :global t
+  :init-value nil)
 
+(define-minor-mode trace-mode
+  :global t
+  :init-value nil)
+
+(defun -preserve-pre-command-handler ()
+  (when trace-mode
+    (print (format "pre : [%s]@key [%s]@command [%s]@buffer"
+                   (this-command-keys)
+                   this-command
+                   (current-buffer))))
+
+  (setq -buffer-before-command (current-buffer))
+
+  (if -buffer-before-prefix
+    (with-current-buffer -buffer-before-prefix
+      (setq -for-buffer -before-prefix)
+      (setq -before-prefix nil)
+      (setq -prefix-override-map-enable t))
+    (when (and (not (minibufferp))
+               (memq this-command preserve-save-triggers))
+      (-save-to-buffer)
+      (when (memq this-command preserve-minibuf-triggers)
+        (set-english)))))
+
+(defun -preserve-ignore-buffer-p (&optional buffer)
+  (-string-match-p "\*" (buffer-name buffer)))
+
+(defun -preserve-post-command-handler ()
+  (when preserve-hint-mode
+    (when (and (minibufferp)
+               (not (minibufferp -buffer-before-command))
+               (not (memq this-command preserve-minibuf-triggers)))
+        (print (format "!!! command [%s] opened minibuffer")))
+    (when (not (or -buffer-before-prefix
+                   (eq -buffer-before-command (current-buffer))
+                   (-preserve-ignore-buffer-p -buffer-before-command)
+                   (memq this-command preserve-save-triggers)))
+      (print (format "!!! command [%s] shift from buffer %s to %s"
+                     this-command -buffer-before-command (current-buffer)))))
+
+  (when trace-mode
+    (print (format "post: [%s]@key [%s]@command [%s]@buffer"
+                   (this-command-keys)
+                   this-command
+                   (current-buffer))))
+
+  (setq -buffer-before-prefix nil)
+  (unless (or (eq -buffer-before-command (current-buffer))
+              (minibufferp))
+    (-restore-from-buffer)))
 
 :autoload
 (define-minor-mode global-respect-mode
@@ -343,7 +367,6 @@ Possible values are 'normal, 'prefix and 'sequence.")
 
 - Respect self: optional start this mode with English
 - Respect ~evil~: switch to English when leaving ~evil~ ~insert~ mode.
-- Respect ~minibuffer~: switch to English when enter ~minibuffer~.
 - Respect prefix key: switch to English for ~C-c~/ ~C-x~/ ~C-h~.
 - Respect buffer: recover buffer input source when it regain focus."
   :global t
@@ -355,14 +378,8 @@ Possible values are 'normal, 'prefix and 'sequence.")
          (when start-with-english (set-english))
 
          ;; preserve buffer input source
-         (dolist (trigger preserve-triggers)
-           (advice-add trigger :around #'-preserve-trigger-advice))
-         (dolist (hook save-hooks)
-           (add-hook hook #'-save-to-buffer))
-
-         ;; set english when enter minibuf, restore when exit
-         (add-hook 'minibuffer-setup-hook #'-minibuffer-setup-handler)
-         (add-hook 'minibuffer-exit-hook #'-minibuffer-exit-handler)
+         (add-hook 'pre-command-hook #'-preserve-pre-command-handler)
+         (add-hook 'post-command-hook #'-preserve-post-command-handler)
 
          ;; set english when exit evil insert state
          (when (featurep 'evil)
@@ -384,14 +401,8 @@ Possible values are 'normal, 'prefix and 'sequence.")
            (advice-add trigger :after #'-prefix-override-recap-advice)))
 
      ;; for preserving buffer input source
-     (dolist (trigger preserve-triggers)
-       (advice-remove trigger #'-preserve-trigger-advice))
-     (dolist (hook save-hooks)
-       (remove-hook hook #'-save-to-buffer))
-
-     ;; for minibuf
-     (remove-hook 'minibuffer-setup-hook #'-minibuffer-setup-handler)
-     (remove-hook 'minibuffer-exit-hook #'-minibuffer-exit-handler)
+     (remove-hook 'pre-command-hook #'-preserve-pre-command-handler)
+     (remove-hook 'post-command-hook #'-preserve-post-command-handler)
 
      ;; for evil
      (when (featurep 'evil)
