@@ -343,7 +343,10 @@ Some commands such as `counsel-M-x' overwrite it.")
 
   (pcase -prefix-handle-stage
     ('prefix
-     (setq -prefix-handle-stage 'sequence))
+     (setq -prefix-handle-stage 'sequence)
+     ;; key sequence is canceled
+     (unless -real-this-command
+       (-preserve-pre-command-handler)))
     ('sequence
      ;; still in the profix handling
      (with-current-buffer -buffer-before-prefix
@@ -398,8 +401,9 @@ Some commands such as `counsel-M-x' overwrite it.")
         "!! cmd [%s] shift from buffer %s to %s, add it to `save-triggers'\?"
         -real-this-command -buffer-before-command (current-buffer)))))
 
-  (unless (or (eq -buffer-before-command (current-buffer))
-              (minibufferp))
+  (when (and (eq -prefix-handle-stage 'normal)
+             (not (eq -buffer-before-command (current-buffer)))
+             (not (minibufferp)))
     (when trace-mode
       (print (format "restore: [%s]@[%s]" -for-buffer (current-buffer))))
     (-restore-from-buffer)))
