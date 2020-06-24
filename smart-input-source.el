@@ -332,7 +332,8 @@ Some commands such as `counsel-M-x' overwrite it.")
   (setq -real-this-command this-command)
 
   (when trace-mode
-    (print (format "pre : [%s]@key [%s]@cmd [%s]@buf"
+    (print (format "pre@[%s]: [%s]@key [%s]@cmd [%s]@buf"
+                   -prefix-handle-stage
                    (this-command-keys)
                    -real-this-command
                    (current-buffer))))
@@ -377,10 +378,10 @@ Some commands such as `counsel-M-x' overwrite it.")
        (format
         "!! cmd [%s] opened minibuffer, add it to `M-x-commands'\?"
         -real-this-command)))
-    (when (not (or -buffer-before-prefix
-                   (eq -buffer-before-command (current-buffer))
-                   (-preserve-hint-ignore-p -buffer-before-command)
-                   (memq -real-this-command preserve-save-triggers)))
+    (unless (or (eq -prefix-handle-stage 'normal)
+                (eq -buffer-before-command (current-buffer))
+                (-preserve-hint-ignore-p -buffer-before-command)
+                (memq -real-this-command preserve-save-triggers))
       (print
        (format
         "!! cmd [%s] shift from buffer %s to %s, add it to `save-triggers'\?"
