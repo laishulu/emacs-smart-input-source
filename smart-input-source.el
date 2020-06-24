@@ -291,8 +291,8 @@ Possible values are 'normal, 'prefix and 'sequence.")
   "Saved buffer input source before prefix.")
 (make-variable-buffer-local 'smart-input-source--saved-in-buffer-before-prefix)
 
-(defvar -saved-buffer-before-prefix nil
-  "Saved buffer before prefix.")
+(defvar -buffer-before-prefix nil
+  "Current buffer before prefix.")
 
 (defun -prefix-override-recap-advice (&rest res)
   "Advice for `prefix-override-recap-triggers' with RES res"
@@ -325,11 +325,11 @@ Possible values are 'normal, 'prefix and 'sequence.")
    ((eq -prefix-override-state 'normal) t)
    ((eq -prefix-override-state 'prefix)
     (setq -saved-in-buffer-before-prefix (-get))
-    (setq -saved-buffer-before-prefix (current-buffer))
+    (setq -buffer-before-prefix (current-buffer))
     (set-english)
     (setq -prefix-override-state 'sequence))
    ((eq -prefix-override-state 'sequence)
-    (with-current-buffer -saved-buffer-before-prefix
+    (with-current-buffer -buffer-before-prefix
       (setq -saved-in-buffer -saved-in-buffer-before-prefix)
       (setq -saved-in-buffer-before-prefix nil))
     (remove-hook 'post-command-hook #'-prefix-post-command-handler)
