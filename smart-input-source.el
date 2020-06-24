@@ -263,6 +263,11 @@ Some functions take precedence of the override, need to recap after.")
 (defvar -prefix-override-map-alist nil
   "Map alist for override")
 
+(defvar -prefix-handle-stage 'normal
+  "Processing state of the prefix key.
+
+Possible values: 'normal, 'prefix, 'sequence.")
+
 (defvar -before-prefix nil
   "Input source before prefix.")
 (make-variable-buffer-local 'smart-input-source--before-prefix)
@@ -289,6 +294,7 @@ Some commands such as `counsel-M-x' overwrite it.")
 (defun -prefix-override-handler (arg)
   "Prefix key handler."
   (interactive "P")
+  (setq -prefix-handle-stage 'prefix)
   (when trace-mode
     (print (format "prefix: [%s]" (this-command-keys))))
   (let* ((keys (this-command-keys))
@@ -298,6 +304,7 @@ Some commands such as `counsel-M-x' overwrite it.")
     (setq -buffer-before-prefix (current-buffer))
     (setq -before-prefix (-get))
     (when trace-mode
+      (print (format "now: [%s]" -before-prefix))
       (print (format "set: english @ [%s]" (current-buffer))))
     (set-english)
 
@@ -330,24 +337,28 @@ Some commands such as `counsel-M-x' overwrite it.")
                    -real-this-command
                    (current-buffer))))
 
-  (if -buffer-before-prefix
-      ;; still in the profix handling
-      (with-current-buffer -buffer-before-prefix
-        (setq -for-buffer -before-prefix)
-        (setq -before-prefix nil)
-        (when trace-mode
-          (print (format "save: [%s]@[%s]" -for-buffer (current-buffer))))
-        (setq -prefix-override-map-enable t))
-
-    (when (and (not (minibufferp))
-               (memq -real-this-command preserve-save-triggers))
-      (when trace-mode
-        (print (format "save: [%s]@[%s]" (-get) (current-buffer))))
-      (-save-to-buffer)
-      (when (memq -real-this-command preserve-M-x-commands)
-        (when trace-mode
-          (print (format "set: english @ [%s]" (current-buffer))))
-        (set-english)))))
+  (pcase -prefix-handle-stage
+    ('prefix
+     (setq -prefix-handle-stage 'sequence))
+    ('sequence
+     ;; still in the profix handling
+     (with-current-buffer -buffer-before-prefix
+       (setq -for-buffer -before-prefix)
+       (setq -before-prefix nil)
+       (when trace-mode
+         (print (format "save: [%s]@[%s]" -for-buffer (current-buffer)))))
+     (setq -prefix-override-map-enable t)
+     (setq -prefix-handle-stage 'normal))
+    ('normal
+     (when (and (not (minibufferp))
+                (memq -real-this-command preserve-save-triggers))
+       (when trace-mode
+         (print (format "save: [%s]@[%s]" (-get) (current-buffer))))
+       (-save-to-buffer)
+       (when (memq -real-this-command preserve-M-x-commands)
+         (when trace-mode
+           (print (format "set: english @ [%s]" (current-buffer))))
+         (set-english))))))
 
 (defun -preserve-hint-ignore-p (&optional buffer)
   "BUFFER does not need input source preservation."
