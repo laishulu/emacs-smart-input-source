@@ -298,7 +298,7 @@ Some commands such as `counsel-M-x' overwrite it.")
   (when trace-mode
     (print (format "prefix: [%s], override: [%s]"
                    (this-command-keys)
-                   (-prefix-override-map-enable))))
+                   -prefix-override-map-enable)))
   (let* ((keys (this-command-keys))
          (n (length keys))
          (key (aref keys (1- n))))
