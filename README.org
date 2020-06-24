@@ -200,7 +200,6 @@ yourself, or reach the author for help.
 | ~smart-input-source-preserve-save-triggers~         | no     | Commands trigger the save of input source          | see variable doc                     |
 | ~smart-input-source-preserve-preserve-M-x-commands~ | no     | Commands execute extended command                  | see variable doc                     |
 | ~smart-input-source-follow-context-hooks~           | no     | Hooks trigger the context following                | see variable doc                     |
-| ~smart-input-source-save-hooks~                     | no     | Hooks trigger the save of the input source         | see variable doc                     |
 |-----------------------------------------------------+--------+----------------------------------------------------+--------------------------------------|
 
 
