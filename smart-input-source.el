@@ -296,7 +296,9 @@ Some commands such as `counsel-M-x' overwrite it.")
   (interactive "P")
   (setq -prefix-handle-stage 'prefix)
   (when trace-mode
-    (print (format "prefix: [%s]" (this-command-keys))))
+    (print (format "prefix: [%s], override: [%s]"
+                   (this-command-keys)
+                   (-prefix-override-map-enable))))
   (let* ((keys (this-command-keys))
          (n (length keys))
          (key (aref keys (1- n))))
@@ -332,11 +334,12 @@ Some commands such as `counsel-M-x' overwrite it.")
   (setq -real-this-command this-command)
 
   (when trace-mode
-    (print (format "pre@[%s]: [%s]@key [%s]@cmd [%s]@buf"
+    (print (format "pre@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override"
                    -prefix-handle-stage
                    (this-command-keys)
                    -real-this-command
-                   (current-buffer))))
+                   (current-buffer)
+                   -prefix-override-map-enable)))
 
   (pcase -prefix-handle-stage
     ('prefix
@@ -370,6 +373,14 @@ Some commands such as `counsel-M-x' overwrite it.")
 (defun -preserve-post-command-handler ()
   "Handler for `post-command-hook' to preserve input source."
   ;; (setq this-command -real-this-command)
+  (when trace-mode
+    (print (format "post@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override"
+                   -prefix-handle-stage
+                   (this-command-keys)
+                   -real-this-command
+                   (current-buffer)
+                   -prefix-override-map-enable)))
+
   (when preserve-hint-mode
     (when (and (minibufferp)
                (not (minibufferp -buffer-before-command))
@@ -386,12 +397,6 @@ Some commands such as `counsel-M-x' overwrite it.")
        (format
         "!! cmd [%s] shift from buffer %s to %s, add it to `save-triggers'\?"
         -real-this-command -buffer-before-command (current-buffer)))))
-
-  (when trace-mode
-    (print (format "post: [%s]@key [%s]@cmd [%s]@buf"
-                   (this-command-keys)
-                   -real-this-command
-                   (current-buffer))))
 
   (unless (or (eq -buffer-before-command (current-buffer))
               (minibufferp))
