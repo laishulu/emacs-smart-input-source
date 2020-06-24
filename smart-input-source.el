@@ -346,7 +346,14 @@ Some commands such as `counsel-M-x' overwrite it.")
      (setq -prefix-handle-stage 'sequence)
      ;; key sequence is canceled
      (unless -real-this-command
-       (-preserve-pre-command-handler)))
+       (with-current-buffer -buffer-before-prefix
+         (setq -for-buffer -before-prefix)
+         (setq -before-prefix nil)
+         (when trace-mode
+           (print (format "restore: [%s]@[%s]" -for-buffer (current-buffer))))
+         (-restore-from-buffer))
+       (setq -prefix-override-map-enable t)
+       (setq -prefix-handle-stage 'normal)))
     ('sequence
      ;; still in the profix handling
      (with-current-buffer -buffer-before-prefix
