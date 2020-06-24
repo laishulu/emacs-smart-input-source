@@ -104,6 +104,10 @@ smart-input-source-OTHER: other language context.")
   ;; (list 'counsel-M-x 'execute-extended-command)
   " M-x-commands to open minibuffer.")
 
+(defvar prefix-override-keys
+  '("C-c" "C-x" "C-h")
+  "Prefix keys to be overrided.")
+
 (defvar prefix-override-recap-triggers
   '(evil-local-mode yas-minor-mode)
   "Commands trigger the recap of the prefix override.)
@@ -254,15 +258,6 @@ Some functions take precedence of the override, need to recap after.")
   "Restore buffer input source."
   (-set (or -for-buffer ENGLISH)))
 
-(defvar -prefix-override-keys
-  '("C-c" "C-x" "C-h")
-  "Prefix keys to be overrided.")
-
-(defvar -prefix-override-state 'normal
-  "State of previx override.
-
-Possible values are 'normal, 'prefix and 'sequence.")
-
 (defvar -prefix-override-map-enable nil
   "Enabe the override keymap")
 
@@ -278,6 +273,11 @@ Possible values are 'normal, 'prefix and 'sequence.")
 
 (defvar -buffer-before-command nil
   "Current buffer before prefix.")
+
+(defvar -real-this-command nil
+  "Real this command.
+
+Some commands such as `counsel-M-x' overwrite it.")
 
 (defun -prefix-override-recap-advice (&rest res)
   "Advice for `prefix-override-recap-triggers' with RES res."
@@ -318,27 +318,30 @@ Possible values are 'normal, 'prefix and 'sequence.")
 
 (defun -preserve-pre-command-handler ()
   "Handler for `pre-command-hook' to preserve input source."
+  (setq -buffer-before-command (current-buffer))
+  (setq -real-this-command this-command)
+
   (when trace-mode
     (print (format "pre : [%s]@key [%s]@command [%s]@buffer"
                    (this-command-keys)
-                   this-command
+                   -real-this-command
                    (current-buffer))))
 
-  (setq -buffer-before-command (current-buffer))
-
   (if -buffer-before-prefix
-    (with-current-buffer -buffer-before-prefix
-      (setq -for-buffer -before-prefix)
-      (when trace-mode
-        (print (format "save: [%s]@[%s]" (-get) (current-buffer))))
-      (setq -before-prefix nil)
-      (setq -prefix-override-map-enable t))
+      ;; still in the profix handling
+      (with-current-buffer -buffer-before-prefix
+        (setq -for-buffer -before-prefix)
+        (setq -before-prefix nil)
+        (when trace-mode
+          (print (format "save: [%s]@[%s]" (-get) (current-buffer))))
+        (setq -prefix-override-map-enable t))
+
     (when (and (not (minibufferp))
-               (memq this-command preserve-save-triggers))
+               (memq -real-this-command preserve-save-triggers))
       (when trace-mode
         (print (format "save: [%s]@[%s]" (-get) (current-buffer))))
       (-save-to-buffer)
-      (when (memq this-command preserve-M-x-commands)
+      (when (memq -real-this-command preserve-M-x-commands)
         (when trace-mode
           (print (format "set: english @ [%s]" (-get) (current-buffer))))
         (set-english)))))
@@ -351,29 +354,35 @@ Possible values are 'normal, 'prefix and 'sequence.")
 
 (defun -preserve-post-command-handler ()
   "Handler for `post-command-hook' to preserve input source."
+  ;; (setq this-command -real-this-command)
   (when preserve-hint-mode
     (when (and (minibufferp)
                (not (minibufferp -buffer-before-command))
-               (not (memq this-command preserve-M-x-commands)))
-        (print (format "!!! command [%s] opened minibuffer" this-command)))
+               (not (memq -real-this-command preserve-M-x-commands)))
+      (print
+       (format
+        "!! cmd [%s] opened minibuffer, add it to `M-x-commands'\?"
+        -real-this-command)))
     (when (not (or -buffer-before-prefix
                    (eq -buffer-before-command (current-buffer))
                    (-preserve-hint-ignore-p -buffer-before-command)
-                   (memq this-command preserve-save-triggers)))
-      (print (format "!!! command [%s] shift from buffer %s to %s"
-                     this-command -buffer-before-command (current-buffer)))))
+                   (memq -real-this-command preserve-save-triggers)))
+      (print
+       (format
+        "!! cmd [%s] shift from buffer %s to %s, add it to `save-triggers'\?"
+        -real-this-command -buffer-before-command (current-buffer)))))
 
   (when trace-mode
     (print (format "post: [%s]@key [%s]@command [%s]@buffer"
                    (this-command-keys)
-                   this-command
+                   -real-this-command
                    (current-buffer))))
 
   (setq -buffer-before-prefix nil)
   (unless (or (eq -buffer-before-command (current-buffer))
               (minibufferp))
-  (when trace-mode
-    (print (format "restore: [%s]@[%s]" -for-buffer (current-buffer))))
+    (when trace-mode
+      (print (format "restore: [%s]@[%s]" -for-buffer (current-buffer))))
     (-restore-from-buffer)))
 
 :autoload
@@ -405,7 +414,7 @@ Possible values are 'normal, 'prefix and 'sequence.")
                `((smart-input-source--prefix-override-map-enable
                   .
                   ,(let ((keymap (make-sparse-keymap)))
-                     (dolist (prefix -prefix-override-keys)
+                     (dolist (prefix prefix-override-keys)
                        (define-key keymap
                          (kbd prefix) #'-prefix-override-handler))
                      keymap))))
