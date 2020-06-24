@@ -100,8 +100,7 @@ smart-input-source-OTHER: other language context.")
   "Triggers to save the input source for buffer.")
 
 (defvar preserve-M-x-commands
-  '()
-  ;; (list 'counsel-M-x 'execute-extended-command)
+  (list 'counsel-M-x 'execute-extended-command)
   " M-x-commands to open minibuffer.")
 
 (defvar prefix-override-keys
