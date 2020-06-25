@@ -374,8 +374,7 @@ Some commands such as `counsel-M-x' overwrite it.")
                (not (-preserve-hint-ignore-p -buffer-before-command))
                (not (-save-trigger-or-M-x-command-p -real-this-command)))
       (print
-       (format
-        "!! cmd [%s] switched buffer %s => %s, add it to `save-triggers'\?"
+       (format "!! cmd [%s] switched %s to %s, add it to `save-triggers'\?"
         -real-this-command -buffer-before-command (current-buffer))))
 
     (when (and -real-this-command
@@ -383,8 +382,7 @@ Some commands such as `counsel-M-x' overwrite it.")
                (not (minibufferp -buffer-before-command))
                (not (memq -real-this-command preserve-M-x-commands)))
       (print
-       (format
-        "!! cmd [%s] opened minibuffer, add it to `M-x-commands'\?"
+       (format "!! cmd [%s] opened minibuffer, add it to `M-x-commands'\?"
         -real-this-command)))))
 
 (defun -preserve-post-command-handler ()
