@@ -95,6 +95,7 @@ smart-input-source-OTHER: other language context.")
         'counsel-M-x
         'next-buffer 'previous-buffer
         'other-window 'windmove-last
+        'ace-window
         'windmove-up 'windmove-down 'windmove-left 'windmove-right
         'centaur-tabs-forward 'centaur-tabs-backward 'centaur-tabs-do-select)
   "Triggers to save the input source for buffer.")
@@ -198,7 +199,9 @@ Some functions take precedence of the override, need to recap after.")
     (funcall do-get)))
 
 (defun -set (lang)
-  "Set the input source according to lang LANG, avoiding unnecessary switch."
+  "Set the input source according to lang LANG
+
+Unnecessary switching is avoided internally."
   (when (and lang (functionp do-set))
     ;; swith only when required
     (pcase (-get)
@@ -268,10 +271,6 @@ Some functions take precedence of the override, need to recap after.")
 
 Possible values: 'normal, 'prefix, 'sequence.")
 
-(defvar -before-prefix nil
-  "Input source before prefix.")
-(make-variable-buffer-local 'smart-input-source--before-prefix)
-
 (defvar -buffer-before-prefix nil
   "Current buffer before prefix.")
 
@@ -295,7 +294,7 @@ Some commands such as `counsel-M-x' overwrite it.")
   "Prefix key handler."
   (interactive "P")
   (setq -prefix-handle-stage 'prefix)
-  (when trace-mode
+  (when log-mode
     (print (format "prefix: [%s], override: [%s]"
                    (this-command-keys)
                    -prefix-override-map-enable)))
@@ -304,9 +303,9 @@ Some commands such as `counsel-M-x' overwrite it.")
          (key (aref keys (1- n))))
     (setq -prefix-override-map-enable nil)
     (setq -buffer-before-prefix (current-buffer))
-    (setq -before-prefix (-get))
-    (when trace-mode
-      (print (format "now: [%s]" -before-prefix))
+    (setq -for-buffer (-get))
+    (when log-mode
+      (print (format "now: [%s]" -for-buffer))
       (print (format "set: english @ [%s]" (current-buffer))))
     (set-english)
 
@@ -323,8 +322,8 @@ Some commands such as `counsel-M-x' overwrite it.")
   :global t
   :init-value nil)
 
-(define-minor-mode trace-mode
-  "Trace the execution of this package."
+(define-minor-mode log-mode
+  "Log the execution of this package."
   :global t
   :init-value nil)
 
@@ -333,8 +332,48 @@ Some commands such as `counsel-M-x' overwrite it.")
   (setq -buffer-before-command (current-buffer))
   (setq -real-this-command this-command)
 
-  (when trace-mode
+  (when log-mode
     (print (format "pre@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override"
+                   -prefix-handle-stage
+                   (this-command-keys)
+                   -real-this-command
+                   (current-buffer)
+                   -prefix-override-map-enable)))
+
+  (when (and (eq -prefix-handle-stage 'normal)
+             (not (minibufferp))
+             (memq -real-this-command preserve-save-triggers))
+    (when log-mode
+      (print (format "save: [%s]@[%s]" (-get) (current-buffer))))
+    (-save-to-buffer)
+    (when (memq -real-this-command preserve-M-x-commands)
+      (when log-mode
+        (print (format "set: english @ [%s]" (current-buffer))))
+      (set-english))))
+
+(defun -preserve-hint-ignore-p (&optional buffer)
+  "BUFFER does not need input source preservation."
+  (and (-string-match-p "\*" (buffer-name buffer))
+       (not (-string-match-p "\*New" (buffer-name buffer)))
+       (not (-string-match-p "\*Scratch" (buffer-name buffer)))))
+
+(defun -to-normal-stage (&optional force-restore)
+  (when (or force-restore
+            (and (not (eq -buffer-before-command (current-buffer)))
+                 (not (minibufferp))))
+
+    (when log-mode
+      (print (format "restore: [%s]@[%s]" -for-buffer (current-buffer))))
+    (-restore-from-buffer))
+
+  (setq -prefix-override-map-enable t)
+  (setq -prefix-handle-stage 'normal))
+
+(defun -preserve-post-command-handler ()
+  "Handler for `post-command-hook' to preserve input source."
+  ;; (setq this-command -real-this-command)
+  (when log-mode
+    (print (format "post@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override"
                    -prefix-handle-stage
                    (this-command-keys)
                    -real-this-command
@@ -343,53 +382,28 @@ Some commands such as `counsel-M-x' overwrite it.")
 
   (pcase -prefix-handle-stage
     ('prefix
-     (setq -prefix-handle-stage 'sequence)
-     ;; key sequence is canceled
-     (unless -real-this-command
-       (with-current-buffer -buffer-before-prefix
-         (setq -for-buffer -before-prefix)
-         (setq -before-prefix nil)
-         (when trace-mode
-           (print (format "restore: [%s]@[%s]" -for-buffer (current-buffer))))
-         (-restore-from-buffer))
-       (setq -prefix-override-map-enable t)
-       (setq -prefix-handle-stage 'normal)))
+     (setq -prefix-handle-stage 'sequence))
     ('sequence
-     ;; still in the profix handling
-     (with-current-buffer -buffer-before-prefix
-       (setq -for-buffer -before-prefix)
-       (setq -before-prefix nil)
-       (when trace-mode
-         (print (format "save: [%s]@[%s]" -for-buffer (current-buffer)))))
-     (setq -prefix-override-map-enable t)
-     (setq -prefix-handle-stage 'normal))
+     (cond
+
+      ;; still in progress
+      ((minibufferp)
+       (setq -prefix-handle-stage 'sequence))
+
+      ;; key sequence is canceled
+      ((not -real-this-command)
+
+       (when log-mode
+         (print "Key sequence canceled"))
+       (-to-normal-stage t))
+
+      ;; end key sequence
+      (t
+       (when log-mode
+         (print "Key sequence ended"))
+       (-to-normal-stage))))
     ('normal
-     (when (and (not (minibufferp))
-                (memq -real-this-command preserve-save-triggers))
-       (when trace-mode
-         (print (format "save: [%s]@[%s]" (-get) (current-buffer))))
-       (-save-to-buffer)
-       (when (memq -real-this-command preserve-M-x-commands)
-         (when trace-mode
-           (print (format "set: english @ [%s]" (current-buffer))))
-         (set-english))))))
-
-(defun -preserve-hint-ignore-p (&optional buffer)
-  "BUFFER does not need input source preservation."
-  (and (-string-match-p "\*" (buffer-name buffer))
-       (not (-string-match-p "\*New" (buffer-name buffer)))
-       (not (-string-match-p "\*Scratch" (buffer-name buffer)))))
-
-(defun -preserve-post-command-handler ()
-  "Handler for `post-command-hook' to preserve input source."
-  ;; (setq this-command -real-this-command)
-  (when trace-mode
-    (print (format "post@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override"
-                   -prefix-handle-stage
-                   (this-command-keys)
-                   -real-this-command
-                   (current-buffer)
-                   -prefix-override-map-enable)))
+     (-to-normal-stage)))
 
   (when preserve-hint-mode
     (when (and (minibufferp)
@@ -406,14 +420,7 @@ Some commands such as `counsel-M-x' overwrite it.")
       (print
        (format
         "!! cmd [%s] shift from buffer %s to %s, add it to `save-triggers'\?"
-        -real-this-command -buffer-before-command (current-buffer)))))
-
-  (when (and (eq -prefix-handle-stage 'normal)
-             (not (eq -buffer-before-command (current-buffer)))
-             (not (minibufferp)))
-    (when trace-mode
-      (print (format "restore: [%s]@[%s]" -for-buffer (current-buffer))))
-    (-restore-from-buffer)))
+        -real-this-command -buffer-before-command (current-buffer))))))
 
 :autoload
 (define-minor-mode global-respect-mode

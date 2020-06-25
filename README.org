@@ -171,7 +171,7 @@ input source id/ by runing the following command in Emacs:
 Turn on ~smart-input-source-preserve-hint-mode~, replay the actions that the
 input resources are not preserved, and and check message buffer for hints.
 
-Turn on ~smart-input-source-preserve-trace-mode~ to trace and analysis by
+Turn on ~smart-input-source-preserve-log-mode~ to log and analysis by
 yourself, or reach the author for help.
 
 **  Input examples
