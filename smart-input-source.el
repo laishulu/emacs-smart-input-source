@@ -352,8 +352,8 @@ Some commands such as `counsel-M-x' overwrite it.")
       (print (format "save: [%s]@[%s]" (-get) (current-buffer))))
     (-save-to-buffer)
     (when log-mode
-      (print (format "set: english @ [%s]" (current-buffer)))
-      (set-english))))
+      (print (format "set: english @ [%s]" (current-buffer))))
+    (set-english)))
 
 (defun -preserve-hint-ignore-p (&optional buffer)
   "BUFFER does not need input source preservation."
