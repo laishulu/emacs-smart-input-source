@@ -346,9 +346,8 @@ Some commands such as `counsel-M-x' overwrite it.")
     (when log-mode
       (print (format "save: [%s]@[%s]" (-get) (current-buffer))))
     (-save-to-buffer)
-    (when (memq -real-this-command preserve-M-x-commands)
-      (when log-mode
-        (print (format "set: english @ [%s]" (current-buffer))))
+    (when log-mode
+      (print (format "set: english @ [%s]" (current-buffer)))
       (set-english))))
 
 (defun -preserve-hint-ignore-p (&optional buffer)
