@@ -327,6 +327,11 @@ Some commands such as `counsel-M-x' overwrite it.")
   :global t
   :init-value nil)
 
+(defun -save-trigger-or-M-x-command-p (cmd)
+  "CMD is save trigger or M-x command."
+  (or (memq -real-this-command preserve-save-triggers)
+      (memq -real-this-command preserve-M-x-commands)))
+
 (defun -preserve-pre-command-handler ()
   "Handler for `pre-command-hook' to preserve input source."
   (setq -buffer-before-command (current-buffer))
@@ -342,7 +347,7 @@ Some commands such as `counsel-M-x' overwrite it.")
 
   (when (and (eq -prefix-handle-stage 'normal)
              (not (minibufferp))
-             (memq -real-this-command preserve-save-triggers))
+             (-save-trigger-or-M-x-command-p -real-this-command))
     (when log-mode
       (print (format "save: [%s]@[%s]" (-get) (current-buffer))))
     (-save-to-buffer)
@@ -371,7 +376,7 @@ Some commands such as `counsel-M-x' overwrite it.")
   (when preserve-hint-mode
     (when (and (not (eq -buffer-before-command (current-buffer)))
                (not (-preserve-hint-ignore-p -buffer-before-command))
-               (not (memq -real-this-command preserve-save-triggers)))
+               (not (-save-trigger-or-M-x-command-p -real-this-command)))
       (print
        (format
         "!! cmd [%s] shift from buffer %s to %s, add it to `save-triggers'\?"
