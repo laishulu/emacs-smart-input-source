@@ -296,8 +296,7 @@ Some commands such as `counsel-M-x' overwrite it.")
   (setq -prefix-handle-stage 'prefix)
   (when log-mode
     (print (format "prefix: [%s], override: [%s]"
-                   (this-command-keys)
-                   -prefix-override-map-enable)))
+                   (this-command-keys) -prefix-override-map-enable)))
   (let* ((keys (this-command-keys))
          (n (length keys))
          (key (aref keys (1- n))))
@@ -348,11 +347,9 @@ Some commands such as `counsel-M-x' overwrite it.")
   (when (and (eq -prefix-handle-stage 'normal)
              (not (minibufferp))
              (-save-trigger-or-M-x-command-p -real-this-command))
-    (when log-mode
-      (print (format "save: [%s]@[%s]" (-get) (current-buffer))))
+    (when log-mode (print (format "save: [%s]@[%s]" (-get) (current-buffer))))
     (-save-to-buffer)
-    (when log-mode
-      (print (format "set: english @ [%s]" (current-buffer))))
+    (when log-mode (print (format "set: english @ [%s]" (current-buffer))))
     (set-english)))
 
 (defun -preserve-hint-ignore-p (&optional buffer)
@@ -365,7 +362,6 @@ Some commands such as `counsel-M-x' overwrite it.")
   (when (or force-restore
             (and (not (eq -buffer-before-command (current-buffer)))
                  (not (minibufferp))))
-
     (when log-mode
       (print (format "restore: [%s]@[%s]" -for-buffer (current-buffer))))
     (-restore-from-buffer))
@@ -379,10 +375,9 @@ Some commands such as `counsel-M-x' overwrite it.")
                (not (-save-trigger-or-M-x-command-p -real-this-command)))
       (print
        (format
-        "!! cmd [%s] shift from buffer %s to %s, add it to `save-triggers'\?"
-        -real-this-command -buffer-before-command (current-buffer)))))
+        "!! cmd [%s] switched buffer %s => %s, add it to `save-triggers'\?"
+        -real-this-command -buffer-before-command (current-buffer))))
 
-  (when preserve-hint-mode
     (when (and -real-this-command
                (minibufferp)
                (not (minibufferp -buffer-before-command))
@@ -404,29 +399,22 @@ Some commands such as `counsel-M-x' overwrite it.")
                    -prefix-override-map-enable)))
 
   (pcase -prefix-handle-stage
-    ('prefix
-     (setq -prefix-handle-stage 'sequence))
+    ('prefix (setq -prefix-handle-stage 'sequence))
     ('sequence
      (cond
-
       ;; still in progress
       ((minibufferp)
        (setq -prefix-handle-stage 'sequence))
 
       ;; key sequence is canceled
       ((not -real-this-command)
-
-       (when log-mode
-         (print "Key sequence canceled"))
+       (when log-mode (print "Key sequence canceled"))
        (-to-normal-stage t))
 
       ;; end key sequence
-      (t
-       (when log-mode
-         (print "Key sequence ended"))
-       (-to-normal-stage))))
-    ('normal
-     (-to-normal-stage))))
+      (t (when log-mode (print "Key sequence ended"))
+         (-to-normal-stage))))
+    ('normal (-to-normal-stage))))
 
 :autoload
 (define-minor-mode global-respect-mode
