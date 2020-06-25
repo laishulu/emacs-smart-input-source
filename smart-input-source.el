@@ -412,8 +412,9 @@ Some commands such as `counsel-M-x' overwrite it.")
        (-to-normal-stage t))
 
       ;; end key sequence
-      (t (when log-mode (print "Key sequence ended"))
-         (-to-normal-stage))))
+      (t
+       (when log-mode (print "Key sequence ended"))
+       (-to-normal-stage))))
     ('normal (-to-normal-stage))))
 
 :autoload
