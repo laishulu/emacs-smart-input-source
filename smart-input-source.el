@@ -293,21 +293,9 @@ Some commands such as `counsel-M-x' overwrite it.")
 (defun -prefix-override-handler (arg)
   "Prefix key handler."
   (interactive "P")
-  (setq -prefix-handle-stage 'prefix)
-  (when log-mode
-    (print (format "prefix: [%s], override: [%s]"
-                   (this-command-keys) -prefix-override-map-enable)))
   (let* ((keys (this-command-keys))
          (n (length keys))
          (key (aref keys (1- n))))
-    (setq -prefix-override-map-enable nil)
-    (setq -buffer-before-prefix (current-buffer))
-    (setq -for-buffer (-get))
-    (when log-mode
-      (print (format "now: [%s]" -for-buffer))
-      (print (format "set: english @ [%s]" (current-buffer))))
-    (set-english)
-
     ;; Don't record this command
     (setq this-command last-command)
     ;; Restore the prefix arg
@@ -315,16 +303,6 @@ Some commands such as `counsel-M-x' overwrite it.")
     (prefix-command-preserve-state)
     ;; Push the key back on the event queue
     (setq unread-command-events (cons key unread-command-events))))
-
-(define-minor-mode preserve-hint-mode
-  "Hint to add command to related variables."
-  :global t
-  :init-value nil)
-
-(define-minor-mode log-mode
-  "Log the execution of this package."
-  :global t
-  :init-value nil)
 
 (defun -save-trigger-or-M-x-command-p (cmd)
   "CMD is save trigger or M-x command."
@@ -344,13 +322,28 @@ Some commands such as `counsel-M-x' overwrite it.")
                    (current-buffer)
                    -prefix-override-map-enable)))
 
-  (when (and (eq -prefix-handle-stage 'normal)
-             (not (minibufferp))
-             (-save-trigger-or-M-x-command-p -real-this-command))
-    (when log-mode (print (format "save: [%s]@[%s]" (-get) (current-buffer))))
-    (-save-to-buffer)
-    (when log-mode (print (format "set: english @ [%s]" (current-buffer))))
-    (set-english)))
+  (pcase -prefix-handle-stage
+    ('normal
+     ;; not prefix key
+     (unless (eq -real-this-command #'-prefix-override-handler)
+       (when (and (not (minibufferp))
+                  (-save-trigger-or-M-x-command-p -real-this-command))
+         (when log-mode (print (format "save: [%s]@[%s]" (-get) (current-buffer))))
+         (-save-to-buffer)
+         (when log-mode (print (format "set: english @ [%s]" (current-buffer))))
+         (set-english)))
+
+     ;; for prefix key
+     (when (eq -real-this-command #'-prefix-override-handler)
+       (setq -prefix-override-map-enable nil)
+       (setq -buffer-before-prefix (current-buffer))
+       (setq -for-buffer (-get))
+       (set-english)
+       (when log-mode
+         (print (format "Input source: [%s] => [%s]" -for-buffer english)))
+       (setq -prefix-handle-stage 'prefix)))
+    ('prefix t)
+    ('sequence t)))
 
 (defun -preserve-hint-ignore-p (&optional buffer)
   "BUFFER does not need input source preservation."
@@ -359,6 +352,9 @@ Some commands such as `counsel-M-x' overwrite it.")
        (not (-string-match-p "\*Scratch" (buffer-name buffer)))))
 
 (defun -to-normal-stage (&optional force-restore)
+  "Transite to normal stage of prefix key overriding.
+
+FOR-RESTORE means restore input source unconditionally."
   (when (or force-restore
             (and (not (eq -buffer-before-command (current-buffer)))
                  (not (minibufferp))))
@@ -414,6 +410,16 @@ Some commands such as `counsel-M-x' overwrite it.")
        (when log-mode (print "Key sequence ended"))
        (-to-normal-stage))))
     ('normal (-to-normal-stage))))
+
+(define-minor-mode preserve-hint-mode
+  "Hint to add command to related variables."
+  :global t
+  :init-value nil)
+
+(define-minor-mode log-mode
+  "Log the execution of this package."
+  :global t
+  :init-value nil)
 
 :autoload
 (define-minor-mode global-respect-mode
