@@ -367,7 +367,26 @@ Some commands such as `counsel-M-x' overwrite it.")
     (-restore-from-buffer))
 
   (setq -prefix-override-map-enable t)
-  (setq -prefix-handle-stage 'normal))
+  (setq -prefix-handle-stage 'normal)
+
+  (when preserve-hint-mode
+    (when (and (not (eq -buffer-before-command (current-buffer)))
+               (not (-preserve-hint-ignore-p -buffer-before-command))
+               (not (memq -real-this-command preserve-save-triggers)))
+      (print
+       (format
+        "!! cmd [%s] shift from buffer %s to %s, add it to `save-triggers'\?"
+        -real-this-command -buffer-before-command (current-buffer)))))
+
+  (when preserve-hint-mode
+    (when (and -real-this-command
+               (minibufferp)
+               (not (minibufferp -buffer-before-command))
+               (not (memq -real-this-command preserve-M-x-commands)))
+      (print
+       (format
+        "!! cmd [%s] opened minibuffer, add it to `M-x-commands'\?"
+        -real-this-command)))))
 
 (defun -preserve-post-command-handler ()
   "Handler for `post-command-hook' to preserve input source."
@@ -403,24 +422,7 @@ Some commands such as `counsel-M-x' overwrite it.")
          (print "Key sequence ended"))
        (-to-normal-stage))))
     ('normal
-     (-to-normal-stage)))
-
-  (when preserve-hint-mode
-    (when (and (minibufferp)
-               (not (minibufferp -buffer-before-command))
-               (not (memq -real-this-command preserve-M-x-commands)))
-      (print
-       (format
-        "!! cmd [%s] opened minibuffer, add it to `M-x-commands'\?"
-        -real-this-command)))
-    (unless (or (eq -prefix-handle-stage 'normal)
-                (eq -buffer-before-command (current-buffer))
-                (-preserve-hint-ignore-p -buffer-before-command)
-                (memq -real-this-command preserve-save-triggers))
-      (print
-       (format
-        "!! cmd [%s] shift from buffer %s to %s, add it to `save-triggers'\?"
-        -real-this-command -buffer-before-command (current-buffer))))))
+     (-to-normal-stage))))
 
 :autoload
 (define-minor-mode global-respect-mode
