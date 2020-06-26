@@ -455,7 +455,21 @@ FORCE-RESTORE means restore input source unconditionally."
      (setq -prefix-override-map-enable t)
      (-prefix-override-recap-advice)
      (dolist (trigger prefix-override-recap-triggers)
-       (advice-add trigger :after #'-prefix-override-recap-advice)))
+       (advice-add trigger :after #'-prefix-override-recap-advice))
+
+     ;; deal with comfliction between super key and input method
+     (when (eq window-system "w32")
+       ;; prevent single keypress from activating Start Menu
+       (setq w32-pass-lwindow-to-system nil) 
+       (w32-register-hot-key [s-])
+       (setq w32-lwindow-modifier nil)
+       (define-key key-translation-map (kbd "<lwindow>")
+         (lambda(prompt)
+           (smart-input-source-set-english)
+           (event-apply-super-modifier prompt)
+           (sleep-for 0.2)
+           ;; make sure it's not used as a modifier
+           (setq w32-lwindow-modifier 'hyper)))))
 
    (unless global-respect-mode
      ;; for preserving buffer input source
@@ -639,10 +653,12 @@ meanings as `string-match-p'."
   "Switch input source smartly according to context."
   :init-value nil
   (-ensure-ism
-   (if follow-context-mode
+   (when follow-context-mode
+     (dolist (hook follow-context-hooks)
+       (add-hook hook #'follow-context nil t))
+     (unless follow-context-mode
        (dolist (hook follow-context-hooks)
-         (add-hook hook #'follow-context nil t))
-     (remove-hook hook #'follow-context nil t))))
+         (remove-hook hook #'follow-context nil t))))))
 
 :autoload
 (define-globalized-minor-mode
