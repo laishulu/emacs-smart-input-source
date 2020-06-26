@@ -24,7 +24,7 @@ This package provide several modes to switch OS native input source smartly:
   all buffers.
 
 * Features
-**  In English
+** In English
 1. Use OS native input source, no need to change use experience.
 2. Support GUI Emacs, as well as Terminal Emacs.
 3. Easy to install and configure. No further configuration for
@@ -54,8 +54,10 @@ This package provide several modes to switch OS native input source smartly:
    editing, input source will never be switched to other languages.
 
 * Install
-Just install this package from ~melpa~, and then install *input source manager*
-by any of the following ways:
+Just install ~smart-input-source~ from ~melpa~.
+
+* Prepare input source manager
+*input source manager* can be prepared by any of the following ways:
 - On MacOS, use GUI Emacs Mac Port (EMP), no need to configure input source
   manager. You can install ~EMP~ by the following commands:
   #+BEGIN_SRC bash
@@ -105,8 +107,67 @@ by any of the following ways:
   #+END_SRC
   Refer to the section of /Configurations for other input source managers/
   at the end of this documentation.
+
+** Example: ~fcitx~
+~fcitx~ is a input method framework popular among Chinese Linux users.
+~fcitx-remote~ can serve as an input source manager for `fcitx`, and you can
+configure as following:
+#+BEGIN_SRC lisp
+(require 'subr-x)
+(setq smart-input-source-external-ism "fcitx-remote")
+(setq smart-input-source-english "1")
+(setq-default smart-input-source-other "2")
+(setq smart-input-source-do-get
+      (lambda()
+        (string-trim
+         (shell-command-to-string
+          smart-input-source-external-ism))))
+(setq smart-input-source-do-set
+      (lambda(source)
+        (pcase source
+          ("1" (string-trim (shell-command-to-string
+                             (concat smart-input-source-external-ism " -c"))))
+          ("2" (string-trim (shell-command-to-string
+                             (concat smart-input-source-external-ism " -o")))))))
+#+END_SRC
+
+** Example: ~ibus~
+~ibus~ is another popular input method framework in the Linux world.
+You can configure as following:
+#+BEGIN_SRC lisp
+(require 'subr-x)
+(setq smart-input-source-external-ism "ibus")
+(setq smart-input-source-english "xkb:us::eng")
+(setq-default smart-input-source-other "OTHER_INPUT_SOURCE")
+(setq smart-input-source-do-get
+      (lambda()
+        (string-trim (shell-command-to-string
+          (concat smart-input-source-external-ism " engine")))))
+(setq smart-input-source-do-set
+      (lambda(source)
+        (string-trim (shell-command-to-string
+          (concat smart-input-source-external-ism " engine " source)))))
+#+END_SRC
+
+** Example: ~im-select~
+[[https://github.com/daipeihust/im-select][im-select]] can be used as input source manager in Microsoft Windows.
+It fulfills the requirements as a drop-in replacement of ~macism~, thus its
+configuration is simpler than other input source managers.
+#+BEGIN_SRC lisp
+(setq smart-input-source-external-ism "im-select.exe")
+(setq smart-input-source-english "ENGLISH_INPUT_SOURCE")
+(setq-default smart-input-source-other "OTHER_INPUT_SOURCE")
+#+END_SRC
+
+However, because even though ~im-select~ supports switching different input
+languages, it does not support multiple input methods in the same lanuage,
+thus you should ensure that in each input language there is only one input
+method, just like the following screenshot.
+
+#+CAPTION: Smart input source
+[[./screenshots/windows-im-select.jpg]]
  
-* Usage
+* Configure
 The mode is designed carefully, so it's safe to enable for all buffers even
 its all in English.
 
@@ -178,7 +239,7 @@ yourself, or reach the author for help.
 #+CAPTION: Smart Input Source 
 [[./screenshots/smart-input-source.png]]
 
-* Configure
+* Variables and commands
 
 | Variable                                            | Buffer | Description                                        | Default                              |
 |-----------------------------------------------------+--------+----------------------------------------------------+--------------------------------------|
@@ -189,7 +250,7 @@ yourself, or reach the author for help.
 | ~smart-input-source-other-pattern~                  | yes    | Pattern to identify a character as other           | ~\cc~ , see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]]             |
 | ~smart-input-source-blank-pattern~                  | yes    | Pattern to identify a character as blank           | ~[:blank:]~                          |
 | ~smart-input-source-aggressive-line~                | yes    | Aggressively detect context across blank lines     | ~t~                                  |
-| ~smart-input-source-external-ism~                   | no     | input resource manager                             | ~macism~                             |
+| ~smart-input-source-external-ism~                   | no     | input resource manager                             |                                      |
 | ~smart-input-source-do-get~                         | no     | Function to get the current input source           | determined from the environment      |
 | ~smart-input-source-do-set~                         | no     | Function to set the input source                   | determined from the environment      |
 | ~smart-inpu-source-set-english-hook~                | no     | Hook to run after set input source to English      | nil                                  |
@@ -208,66 +269,14 @@ yourself, or reach the author for help.
 | ~smart-input-source-inline-english-face~ | Face for the online English region overlay |
 |------------------------------------------+--------------------------------------------|
 
+
+| Command Name                     | Description                                                   |
+|----------------------------------+---------------------------------------------------------------|
+| ~smart-input-source-set-english~ | Set the input source to English                               |
+| ~smart-input-source-set-other~   | Set the input source to other language                        |
+| ~smart-input-source-switch~      | Switch the input source between English and other language    |
+|----------------------------------+---------------------------------------------------------------|
 * How to
-** Configure other input source managers
-*** Example: ~fcitx~
-~fcitx~ is a input method framework popular among Chinese Linux users.
-~fcitx-remote~ can serve as an input source manager for `fcitx`, and you can
-configure as following:
-#+BEGIN_SRC lisp
-(require 'subr-x)
-(setq smart-input-source-external-ism "fcitx-remote")
-(setq smart-input-source-english "1")
-(setq-default smart-input-source-other "2")
-(setq smart-input-source-do-get
-      (lambda()
-        (string-trim
-         (shell-command-to-string
-          smart-input-source-external-ism))))
-(setq smart-input-source-do-set
-      (lambda(source)
-        (pcase source
-          ("1" (string-trim (shell-command-to-string
-                             (concat smart-input-source-external-ism " -c"))))
-          ("2" (string-trim (shell-command-to-string
-                             (concat smart-input-source-external-ism " -o")))))))
-#+END_SRC
-
-*** Example: ~ibus~
-~ibus~ is another popular input method framework in the Linux world.
-You can configure as following:
-#+BEGIN_SRC lisp
-(require 'subr-x)
-(setq smart-input-source-external-ism "ibus")
-(setq smart-input-source-english "xkb:us::eng")
-(setq-default smart-input-source-other "OTHER_INPUT_SOURCE")
-(setq smart-input-source-do-get
-      (lambda()
-        (string-trim (shell-command-to-string
-          (concat smart-input-source-external-ism " engine")))))
-(setq smart-input-source-do-set
-      (lambda(source)
-        (string-trim (shell-command-to-string
-          (concat smart-input-source-external-ism " engine " source)))))
-#+END_SRC
-
-*** Example: ~im-select~
-[[https://github.com/daipeihust/im-select][im-select]] can be used as input source manager in Microsoft Windows.
-It fulfills the requirements as a drop-in replacement of ~macism~, thus its
-configuration is simpler than other input source managers.
-#+BEGIN_SRC lisp
-(setq smart-input-source-external-ism "im-select.exe")
-(setq smart-input-source-english "ENGLISH_INPUT_SOURCE")
-(setq-default smart-input-source-other "OTHER_INPUT_SOURCE")
-#+END_SRC
-
-However, because even though ~im-select~ supports switching different input
-languages, it does not support multiple input methods in the same lanuage,
-thus you should ensure that in each input language there is only one input
-method, just like the following screenshot.
-
-#+CAPTION: Smart input source
-[[./screenshots/windows-im-select.jpg]]
 
 ** Input source specific cursor color
 #+BEGIN_SRC lisp
