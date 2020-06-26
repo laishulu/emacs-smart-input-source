@@ -102,7 +102,7 @@ smart-input-source-OTHER: other language context.")
 
 (defvar preserve-M-x-commands
   (list 'counsel-M-x 'execute-extended-command)
-  " M-x-commands to open minibuffer.")
+  "M-x-commands to open minibuffer.")
 
 (defvar prefix-override-keys
   '("C-c" "C-x" "C-h")
@@ -110,7 +110,7 @@ smart-input-source-OTHER: other language context.")
 
 (defvar prefix-override-recap-triggers
   '(evil-local-mode yas-minor-mode)
-  "Commands trigger the recap of the prefix override.)
+  "Commands trigger the recap of the prefix override.
 
 Some functions take precedence of the override, need to recap after.")
 
@@ -171,7 +171,7 @@ Some functions take precedence of the override, need to recap after.")
   (setq -ism-inited t))
 
 (defmacro -ensure-ism (&rest body)
-  "Only run ARGS with valid ism"
+  "Only run BODY with valid ism."
   `(progn
      (unless smart-input-source--ism-inited
        (smart-input-source--init-ism))
@@ -199,7 +199,7 @@ Some functions take precedence of the override, need to recap after.")
     (funcall do-get)))
 
 (defun -set (lang)
-  "Set the input source according to lang LANG
+  "Set the input source according to lang LANG.
 
 Unnecessary switching is avoided internally."
   (when (and lang (functionp do-set))
@@ -261,10 +261,10 @@ Unnecessary switching is avoided internally."
   (-set (or -for-buffer ENGLISH)))
 
 (defvar -prefix-override-map-enable nil
-  "Enabe the override keymap")
+  "Enabe the override keymap.")
 
 (defvar -prefix-override-map-alist nil
-  "Map alist for override")
+  "Map alist for override.")
 
 (defvar -prefix-handle-stage 'normal
   "Processing state of the prefix key.
@@ -278,9 +278,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
   "Current buffer before prefix.")
 
 (defvar -real-this-command nil
-  "Real this command.
-
-Some commands such as `counsel-M-x' overwrite it.")
+  "Real this command. Some commands overwrite it.")
 
 (defun -prefix-override-recap-advice (&rest res)
   "Advice for `prefix-override-recap-triggers' with RES res."
@@ -291,7 +289,7 @@ Some commands such as `counsel-M-x' overwrite it.")
   res)
 
 (defun -prefix-override-handler (arg)
-  "Prefix key handler."
+  "Prefix key handler with ARG."
   (interactive "P")
   (let* ((keys (this-command-keys))
          (n (length keys))
@@ -305,7 +303,7 @@ Some commands such as `counsel-M-x' overwrite it.")
     (setq unread-command-events (cons key unread-command-events))))
 
 (defun -save-trigger-or-M-x-command-p (cmd)
-  "CMD is save trigger or M-x command."
+  "CMD is save trigger or `\\\\[m-x]' command."
   (or (memq -real-this-command preserve-save-triggers)
       (memq -real-this-command preserve-M-x-commands)))
 
@@ -354,7 +352,7 @@ Some commands such as `counsel-M-x' overwrite it.")
 (defun -to-normal-stage (&optional force-restore)
   "Transite to normal stage of prefix key overriding.
 
-FOR-RESTORE means restore input source unconditionally."
+FORCE-RESTORE means restore input source unconditionally."
   (when (or force-restore
             (and (not (eq -buffer-before-command (current-buffer)))
                  (not (minibufferp))))
