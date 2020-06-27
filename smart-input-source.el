@@ -326,19 +326,21 @@ Possible values: 'normal, 'prefix, 'sequence.")
      (unless (eq -real-this-command #'-prefix-override-handler)
        (when (and (not (minibufferp))
                   (-save-trigger-or-M-x-command-p -real-this-command))
-         (when log-mode (print (format "save: [%s]@[%s]" (-get) (current-buffer))))
          (-save-to-buffer)
-         (when log-mode (print (format "set: english @ [%s]" (current-buffer))))
-         (set-english)))
+         (set-english)
+         (when log-mode
+           (print (format "Input source: [%s] (saved) => [%s]"
+                          -for-buffer english)))))
 
      ;; for prefix key
      (when (eq -real-this-command #'-prefix-override-handler)
        (setq -prefix-override-map-enable nil)
        (setq -buffer-before-prefix (current-buffer))
-       (setq -for-buffer (-get))
+       (-save-to-buffer)
        (set-english)
        (when log-mode
-         (print (format "Input source: [%s] => [%s]" -for-buffer english)))
+           (print (format "Input source: [%s] (saved) => [%s]"
+                          -for-buffer english)))
        (setq -prefix-handle-stage 'prefix)))
     ('prefix t)
     ('sequence t)))
