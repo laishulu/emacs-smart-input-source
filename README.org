@@ -221,20 +221,6 @@ Tips:
 2. If you want to change the default value of a *buffer local* variable for all
    buffers, you should use ~setq-default~ rather than ~setq~.
 
-**  How to get the input source id
-After /input source manager/ is configured, you can get your /current
-input source id/ by runing the following command in Emacs:
-#+BEGIN_SRC lisp
-(smart-input-source--get)
-#+END_SRC
-
-**  How to preserve input source
-Turn on ~smart-input-source-preserve-hint-mode~, replay the actions that the
-input resources are not preserved, and and check message buffer for hints.
-
-Turn on ~smart-input-source-preserve-log-mode~ to log and analysis by
-yourself, or reach the author for help.
-
 **  Input examples
 #+CAPTION: Smart Input Source 
 [[./screenshots/smart-input-source.png]]
@@ -270,12 +256,13 @@ yourself, or reach the author for help.
 |------------------------------------------+--------------------------------------------|
 
 
-| Command Name                     | Description                                                   |
-|----------------------------------+---------------------------------------------------------------|
-| ~smart-input-source-set-english~ | Set the input source to English                               |
-| ~smart-input-source-set-other~   | Set the input source to other language                        |
-| ~smart-input-source-switch~      | Switch the input source between English and other language    |
-|----------------------------------+---------------------------------------------------------------|
+| Command Name                     | Description                                                |
+|----------------------------------+------------------------------------------------------------|
+| ~smart-input-source-set-english~ | Set the input source to English                            |
+| ~smart-input-source-set-other~   | Set the input source to other language                     |
+| ~smart-input-source-switch~      | Switch the input source between English and other language |
+|----------------------------------+------------------------------------------------------------|
+
 * How to
 
 ** Input source specific cursor color
@@ -301,3 +288,17 @@ rather than:
 2. Switched by ~smart-input-source-switch~.
 3. Set directly by ~smart-input-source-set-english~.
 4. Set directly by ~smart-input-source-set-other~.
+
+**  How to get the input source id
+After /input source manager/ is configured, you can get your /current
+input source id/ by evaluating the following expression in Emacs:
+#+BEGIN_SRC lisp
+(smart-input-source--get)
+#+END_SRC
+
+**  How to preserve input source
+Turn on ~smart-input-source-preserve-hint-mode~, replay the actions that the
+input resources are not preserved, and and check message buffer for hints.
+
+Turn on ~smart-input-source-preserve-log-mode~ to log and analysis by
+yourself, or reach the author for help.
