@@ -339,11 +339,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
                         -for-buffer english)))
        (setq -prefix-handle-stage 'prefix)))
     ('prefix t)
-    ('sequence t))
-
-  (print "end pre handler")
-
-  )
+    ('sequence t)))
 
 (defun -preserve-assume-english-p (&optional buffer)
   "BUFFER does not need input source preservation."

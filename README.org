@@ -199,7 +199,6 @@ its all in English.
               (set-cursor-color "green")))
 
   ;; (push 'YOUR-COMMAND smart-input-source-preserve-save-triggers)
-  ;; (push 'YOUR-COMMAND smart-input-source-preserve-M-x-commands)
 
   ;; enable the /respect/ mode
   (smart-input-source-global-respect-mode t)
@@ -245,7 +244,6 @@ Tips:
 | ~smart-input-source-prefix-override-keys~           | no     | Prefix keys to be respected                        | '("C-c" "C-x" "C-h")                 |
 | ~smart-input-source-prefix-override-recap-triggers~ | no     | Functions trigger the recap of the prefix override | see variable doc                     |
 | ~smart-input-source-preserve-save-triggers~         | no     | Commands trigger the save of input source          | see variable doc                     |
-| ~smart-input-source-preserve-preserve-M-x-commands~ | no     | Commands execute extended command                  | see variable doc                     |
 | ~smart-input-source-follow-context-hooks~           | no     | Hooks trigger the context following                | see variable doc                     |
 |-----------------------------------------------------+--------+----------------------------------------------------+--------------------------------------|
 
