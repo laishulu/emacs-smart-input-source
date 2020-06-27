@@ -100,10 +100,6 @@ smart-input-source-OTHER: other language context.")
         'centaur-tabs-forward 'centaur-tabs-backward 'centaur-tabs-do-select)
   "Triggers to save the input source for buffer.")
 
-(defvar preserve-M-x-commands
-  (list 'counsel-M-x 'execute-extended-command)
-  "M-x-commands to open minibuffer.")
-
 (defvar prefix-override-keys
   '("C-c" "C-x" "C-h")
   "Prefix keys to be overrided.")
@@ -302,10 +298,9 @@ Possible values: 'normal, 'prefix, 'sequence.")
     ;; Push the key back on the event queue
     (setq unread-command-events (cons key unread-command-events))))
 
-(defun -save-trigger-or-M-x-command-p (cmd)
-  "CMD is save trigger or `\\\\[m-x]' command."
-  (or (memq -real-this-command preserve-save-triggers)
-      (memq -real-this-command preserve-M-x-commands)))
+(defun -save-trigger-p (cmd)
+  "CMD is save trigger."
+  (memq -real-this-command preserve-save-triggers))
 
 (defun -preserve-pre-command-handler ()
   "Handler for `pre-command-hook' to preserve input source."
@@ -324,10 +319,11 @@ Possible values: 'normal, 'prefix, 'sequence.")
     ('normal
      ;; not prefix key
      (unless (eq -real-this-command #'-prefix-override-handler)
-       (when (and (not (minibufferp))
-                  (-save-trigger-or-M-x-command-p -real-this-command))
+       (when (and (not (-preserve-assume-english-p (current-buffer)))
+                  (-save-trigger-p -real-this-command))
          (-save-to-buffer)
          (set-english)
+         (print log-mode)
          (when log-mode
            (print (format "Input source: [%s] (saved) => [%s]"
                           -for-buffer english)))))
@@ -339,47 +335,31 @@ Possible values: 'normal, 'prefix, 'sequence.")
        (-save-to-buffer)
        (set-english)
        (when log-mode
-           (print (format "Input source: [%s] (saved) => [%s]"
-                          -for-buffer english)))
+         (print (format "Input source: [%s] (saved) => [%s]"
+                        -for-buffer english)))
        (setq -prefix-handle-stage 'prefix)))
     ('prefix t)
-    ('sequence t)))
+    ('sequence t))
 
-(defun -preserve-hint-ignore-p (&optional buffer)
+  (print "end pre handler")
+
+  )
+
+(defun -preserve-assume-english-p (&optional buffer)
   "BUFFER does not need input source preservation."
-  (and (-string-match-p "\*" (buffer-name buffer))
-       (not (-string-match-p "\*New" (buffer-name buffer)))
-       (not (-string-match-p "\*Scratch" (buffer-name buffer)))))
+  (or (minibufferp)
+      (and (-string-match-p "\*" (buffer-name buffer))
+           (not (-string-match-p "\*New" (buffer-name buffer)))
+           (not (-string-match-p "\*Scratch" (buffer-name buffer))))))
 
-(defun -to-normal-stage (&optional force-restore)
-  "Transite to normal stage of prefix key overriding.
-
-FORCE-RESTORE means restore input source unconditionally."
-  (when (or force-restore
-            (and (not (eq -buffer-before-command (current-buffer)))
-                 (not (minibufferp))))
+(defun -to-normal-stage (restore)
+  "Transite to normal stage and restore input source if RESTORE is t."
+  (when restore
     (when log-mode
       (print (format "restore: [%s]@[%s]" -for-buffer (current-buffer))))
     (-restore-from-buffer))
-
   (setq -prefix-override-map-enable t)
-  (setq -prefix-handle-stage 'normal)
-
-  (when preserve-hint-mode
-    (when (and (not (eq -buffer-before-command (current-buffer)))
-               (not (-preserve-hint-ignore-p -buffer-before-command))
-               (not (-save-trigger-or-M-x-command-p -real-this-command)))
-      (print
-       (format "!! cmd [%s] switched %s to %s, add it to `save-triggers'\?"
-        -real-this-command -buffer-before-command (current-buffer))))
-
-    (when (and -real-this-command
-               (minibufferp)
-               (not (minibufferp -buffer-before-command))
-               (not (memq -real-this-command preserve-M-x-commands)))
-      (print
-       (format "!! cmd [%s] opened minibuffer, add it to `M-x-commands'\?"
-        -real-this-command)))))
+  (setq -prefix-handle-stage 'normal))
 
 (defun -preserve-post-command-handler ()
   "Handler for `post-command-hook' to preserve input source."
@@ -403,13 +383,36 @@ FORCE-RESTORE means restore input source unconditionally."
       ;; key sequence is canceled
       ((not -real-this-command)
        (when log-mode (print "Key sequence canceled"))
-       (-to-normal-stage t))
+       (-to-normal-stage t)
+       (when (and preserve-hint-mode
+                  (not (-save-trigger-p -real-this-command)))
+         (print
+          (format "!! cmd [%s] switched %s to %s, add it to `save-triggers'\?"
+                  -real-this-command
+                  -buffer-before-command (current-buffer)))))
 
       ;; end key sequence
       (t
        (when log-mode (print "Key sequence ended"))
-       (-to-normal-stage))))
-    ('normal (-to-normal-stage))))
+       (let ((restore (not (-preserve-assume-english-p (current-buffer)))))
+         (-to-normal-stage restore)
+
+         (when (and preserve-hint-mode restore
+                    (not (-save-trigger-p -real-this-command)))
+           (print
+            (format "!! cmd [%s] switched %s to %s, add it to `save-triggers'\?"
+                    -real-this-command
+                    -buffer-before-command (current-buffer))))))))
+    ('normal
+     (let ((restore (not (eq -buffer-before-command (current-buffer)))))
+       (-to-normal-stage restore)
+
+       (when (and preserve-hint-mode restore
+                  (not (-save-trigger-p -real-this-command)))
+         (print
+          (format "!! cmd [%s] switched %s to %s, add it to `save-triggers'\?"
+                  -real-this-command
+                  -buffer-before-command (current-buffer))))))))
 
 (define-minor-mode preserve-hint-mode
   "Hint to add command to related variables."
