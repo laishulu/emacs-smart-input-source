@@ -65,8 +65,11 @@ smart-input-source-ENGLISH: English context
 smart-input-source-OTHER: other language context.")
 (make-variable-buffer-local 'smart-input-source-fixed-context)
 
-(defvar start-with-english t
+(defvar with-english t
   "Switch to english when `global-respect-mode' enabled.")
+
+(defvar with-prefix-and-buffer t
+  "Preserve buffer input source when `global-respect-mode' enabled.")
 
 (defvar other-pattern "\\cc"
   "Pattern to identify a character as other lang.")
@@ -277,7 +280,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
   "Real this command. Some commands overwrite it.")
 
 (defun -prefix-override-recap-advice (&rest res)
-  "Advice for `prefix-override-recap-triggers' with RES res."
+  "Advice for `prefix-override-recap-triggers' with RES."
   (add-to-ordered-list
    'emulation-mode-map-alists
    'smart-input-source--prefix-override-map-alist
@@ -433,45 +436,47 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (-ensure-ism
    (when global-respect-mode
      ;; set english when mode enabled
-     (when start-with-english (set-english))
+     (when with-english (set-english))
 
-     ;; preserve buffer input source
-     (add-hook 'pre-command-hook #'-preserve-pre-command-handler)
-     (add-hook 'post-command-hook #'-preserve-post-command-handler)
+     (when with-prefix-and-buffer
+       ;; set english when exit evil insert state
+       (when (featurep 'evil)
+         (add-hook 'evil-insert-state-exit-hook #'set-english))
 
-     ;; set english when exit evil insert state
-     (when (featurep 'evil)
-       (add-hook 'evil-insert-state-exit-hook #'set-english))
+       ;; preserve buffer input source
+       (add-hook 'pre-command-hook #'-preserve-pre-command-handler)
+       (add-hook 'post-command-hook #'-preserve-post-command-handler)
 
-     ;; set english when prefix key pressed
-     (setq -prefix-override-map-alist
-           `((smart-input-source--prefix-override-map-enable
-              .
-              ,(let ((keymap (make-sparse-keymap)))
-                 (dolist (prefix prefix-override-keys)
-                   (define-key keymap
-                     (kbd prefix) #'-prefix-override-handler))
-                 keymap))))
+       ;; set english when prefix key pressed
+       (setq -prefix-override-map-alist
+             `((smart-input-source--prefix-override-map-enable
+                .
+                ,(let ((keymap (make-sparse-keymap)))
+                   (dolist (prefix prefix-override-keys)
+                     (define-key keymap
+                       (kbd prefix) #'-prefix-override-handler))
+                   keymap))))
 
-     (setq -prefix-override-map-enable t)
-     (-prefix-override-recap-advice)
-     (dolist (trigger prefix-override-recap-triggers)
-       (advice-add trigger :after #'-prefix-override-recap-advice)))
+       (setq -prefix-override-map-enable t)
+       (-prefix-override-recap-advice)
+       (dolist (trigger prefix-override-recap-triggers)
+         (advice-add trigger :after #'-prefix-override-recap-advice))))
 
    (unless global-respect-mode
-     ;; for preserving buffer input source
-     (remove-hook 'pre-command-hook #'-preserve-pre-command-handler)
-     (remove-hook 'post-command-hook #'-preserve-post-command-handler)
-
      ;; for evil
      (when (featurep 'evil)
        (remove-hook 'evil-insert-state-exit-hook #'set-english))
 
-     ;; for prefix key
-     (setq emulation-mode-map-alists
-           (delq 'smart-input-source--prefix-override-map-alist
-                 emulation-mode-map-alists))
-     (setq -prefix-override-map-enable nil))))
+     (when with-prefix-and-buffer
+       ;; for preserving buffer input source
+       (remove-hook 'pre-command-hook #'-preserve-pre-command-handler)
+       (remove-hook 'post-command-hook #'-preserve-post-command-handler)
+
+       ;; for prefix key
+       (setq emulation-mode-map-alists
+             (delq 'smart-input-source--prefix-override-map-alist
+                   emulation-mode-map-alists))
+       (setq -prefix-override-map-enable nil)))))
 
 ;;
 ;; Following codes are mainly about follow-context-mode
