@@ -198,7 +198,7 @@ its all in English.
                           "Red")))
               (set-cursor-color "green")))
 
-  ;; (add-to-list 'YOUR-COMMAND 'smart-input-source-preserve-save-triggers)
+  ;; (add-to-list 'smart-input-source-preserve-save-triggers 'YOUR-COMMAND)
 
   ;; enable the /respect/ mode
   (smart-input-source-global-respect-mode t)
