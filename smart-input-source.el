@@ -327,7 +327,6 @@ Possible values: 'normal, 'prefix, 'sequence.")
                   (-save-trigger-p -real-this-command))
          (-save-to-buffer)
          (set-english)
-         (print log-mode)
          (when log-mode
            (print (format "Input source: [%s] (saved) => [%s]."
                           -for-buffer english)))))
