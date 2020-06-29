@@ -311,7 +311,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (setq -real-this-command this-command)
 
   (when log-mode
-    (print (format "pre@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override"
+    (print (format "pre@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
                    -prefix-handle-stage
                    (this-command-keys)
                    -real-this-command
@@ -320,28 +320,34 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
   (pcase -prefix-handle-stage
     ('normal
-     ;; not prefix key
-     (unless (eq -real-this-command #'-prefix-override-handler)
+     (cond
+      ;; not prefix key
+      ((not (eq -real-this-command #'-prefix-override-handler))
        (when (and (not (-preserve-assume-english-p (current-buffer)))
                   (-save-trigger-p -real-this-command))
          (-save-to-buffer)
          (set-english)
          (print log-mode)
          (when log-mode
-           (print (format "Input source: [%s] (saved) => [%s]"
+           (print (format "Input source: [%s] (saved) => [%s]."
                           -for-buffer english)))))
 
-     ;; for prefix key
-     (when (eq -real-this-command #'-prefix-override-handler)
-       (setq -prefix-override-map-enable nil)
-       (setq -buffer-before-prefix (current-buffer))
-       (-save-to-buffer)
-       (set-english)
+      ;; for prefix key
+      ((eq -real-this-command #'-prefix-override-handler)
        (when log-mode
-         (print (format "Input source: [%s] (saved) => [%s]"
-                        -for-buffer english)))
-       (setq -prefix-handle-stage 'prefix)))
-    ('prefix t)
+         (print (format "[%s] is a prefix key, shortcut to pre@[prefix]."
+                        (this-command-keys))))
+       ;; go to pre@[prefix] directly
+       (setq -prefix-handle-stage 'prefix)
+       (-preserve-pre-command-handler))))
+    ('prefix
+     (setq -prefix-override-map-enable nil)
+     (setq -buffer-before-prefix (current-buffer))
+     (-save-to-buffer)
+     (set-english)
+     (when log-mode
+       (print (format "Input source: [%s] (saved) => [%s]."
+                      -for-buffer english))))
     ('sequence t)))
 
 (defun -preserve-assume-english-p (&optional buffer)
@@ -355,7 +361,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
   "Transite to normal stage and restore input source if RESTORE is t."
   (when restore
     (when log-mode
-      (print (format "restore: [%s]@[%s]" -for-buffer (current-buffer))))
+      (print (format "restore: [%s]@[%s]." -for-buffer (current-buffer))))
     (-restore-from-buffer))
   (setq -prefix-override-map-enable t)
   (setq -prefix-handle-stage 'normal))
@@ -364,7 +370,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
   "Handler for `post-command-hook' to preserve input source."
   ;; (setq this-command -real-this-command)
   (when log-mode
-    (print (format "post@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override"
+    (print (format "post@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
                    -prefix-handle-stage
                    (this-command-keys)
                    -real-this-command
@@ -381,7 +387,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
       ;; key sequence is canceled
       ((not -real-this-command)
-       (when log-mode (print "Key sequence canceled"))
+       (when log-mode (print "Key sequence canceled."))
        (-to-normal-stage t)
        (when (and preserve-hint-mode
                   (not (-save-trigger-p -real-this-command)))
@@ -392,7 +398,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
       ;; end key sequence
       (t
-       (when log-mode (print "Key sequence ended"))
+       (when log-mode (print "Key sequence ended."))
        (let ((restore (not (-preserve-assume-english-p (current-buffer)))))
          (-to-normal-stage restore)
 
