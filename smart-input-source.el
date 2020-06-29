@@ -117,6 +117,9 @@ Some functions take precedence of the override, need to recap after.")
   '(evil-insert-state-entry-hook)
   "Hooks trigger the set of input source following context.")
 
+(defvar inline-english-surround-blank t
+  "Surround blank after quit inline english mode.")
+
 (defface inline-english-face
   '()
   "Face of the inline english region overlay."
@@ -805,7 +808,8 @@ input source to English."
   ;; select input source
   (let* ((back-detect (-back-detect-chars))
          (back-to (back-detect-to back-detect))
-         (back-char (back-detect-char back-detect)))
+         (back-char (back-detect-char back-detect))
+         (delete-end-blank-n (if inline-english-surround-blank -1 -2)))
 
     ;; [other lang][:blank inline overlay:]^
     ;; [:overlay with trailing blank :]^
@@ -826,14 +830,15 @@ input source to English."
                (tighten-back-to (back-detect-to tighten-back-detect)))
           (when (and (< tighten-back-to (-inline-overlay-end))
                      (> tighten-back-to (-inline-overlay-start)))
-            (delete-char -1))))
+            (delete-char delete-end-blank-n))))
 
-      (save-excursion
-        (goto-char (-inline-overlay-start))
-        (let* ((tighten-fore-detect (-fore-detect-chars))
-               (tighten-fore-to (fore-detect-to tighten-fore-detect)))
-          (when (> tighten-fore-to (-inline-overlay-start))
-            (delete-char 1))))))
+      (unless inline-english-surround-blank
+        (save-excursion
+          (goto-char (-inline-overlay-start))
+          (let* ((tighten-fore-detect (-fore-detect-chars))
+                 (tighten-fore-to (fore-detect-to tighten-fore-detect)))
+            (when (> tighten-fore-to (-inline-overlay-start))
+              (delete-char 1)))))))
   (delete-overlay -inline-overlay)
   (setq -inline-overlay nil))
 
