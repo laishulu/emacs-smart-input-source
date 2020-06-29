@@ -433,8 +433,9 @@ Possible values: 'normal, 'prefix, 'sequence.")
 - Respect buffer: recover buffer input source when it regain focus."
   :global t
   :init-value nil
-  (-ensure-ism
-   (when global-respect-mode
+  (cond
+   (global-respect-mode
+    (-ensure-ism
      ;; set english when mode enabled
      (when with-english (set-english))
 
@@ -460,9 +461,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
        (setq -prefix-override-map-enable t)
        (-prefix-override-recap-advice)
        (dolist (trigger prefix-override-recap-triggers)
-         (advice-add trigger :after #'-prefix-override-recap-advice))))
-
-   (unless global-respect-mode
+         (advice-add trigger :after #'-prefix-override-recap-advice)))))
+   ((not global-respect-mode)
      ;; for evil
      (when (featurep 'evil)
        (remove-hook 'evil-insert-state-exit-hook #'set-english))
@@ -644,13 +644,14 @@ meanings as `string-match-p'."
 (define-minor-mode follow-context-mode
   "Switch input source smartly according to context."
   :init-value nil
-  (-ensure-ism
-   (when follow-context-mode
+  (cond
+   (follow-context-mode
+    (-ensure-ism
      (dolist (hook follow-context-hooks)
-       (add-hook hook #'follow-context nil t))
-     (unless follow-context-mode
-       (dolist (hook follow-context-hooks)
-         (remove-hook hook #'follow-context nil t))))))
+       (add-hook hook #'follow-context nil t))))
+   ((not follow-context-mode)
+    (dolist (hook follow-context-hooks)
+      (remove-hook hook #'follow-context nil t)))))
 
 :autoload
 (define-globalized-minor-mode
@@ -686,10 +687,12 @@ meanings as `string-match-p'."
 (define-minor-mode inline-english-mode
   "English overlay mode for mixed language editing."
   :init-value nil
-  (-ensure-ism
-   (if inline-english-mode
-       (add-hook 'post-self-insert-hook #'check-to-activate-overlay nil t)
-     (remove-hook 'post-self-insert-hook #'check-to-activate-overlay t))))
+  (cond
+   (inline-english-mode
+    (-ensure-ism
+     (add-hook 'post-self-insert-hook #'check-to-activate-overlay nil t)))
+   ((not inline-english-mode)
+    (remove-hook 'post-self-insert-hook #'check-to-activate-overlay t))))
 
 :autoload
 (define-globalized-minor-mode
