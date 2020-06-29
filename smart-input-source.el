@@ -146,7 +146,7 @@ Some functions take precedence of the override, need to recap after.")
 ;;
 (defconst ENGLISH 1 "Just for english input source.")
 (defconst OTHER 2 "Just for other input source.")
-(defconst ISM-EMP 1 "Emacs mac port builtin input source manager.")
+(defconst EMP 1 "Emacs mac port builtin input source manager.")
 (defvar -ism nil "The input source manager.")
 (defvar -ism-inited nil "Input source manager initialized.")
 
@@ -154,7 +154,7 @@ Some functions take precedence of the override, need to recap after.")
   "Init input source manager."
   (when (and (string= (window-system) "mac")
              (fboundp 'mac-input-source))
-    (setq -ism ISM-EMP))
+    (setq -ism EMP))
 
   (when (and (not -ism) external-ism)
     (let ((ism-path (executable-find external-ism)))
@@ -179,14 +179,14 @@ Some functions take precedence of the override, need to recap after.")
 
 (defun -mk-get-fn ()
   "Make a function to be bound to `do-get'."
-  (if (equal -ism ISM-EMP)
+  (if (equal -ism EMP)
       #'mac-input-source
     (lambda ()
       (string-trim (shell-command-to-string -ism)))))
 
 (defun -mk-set-fn ()
   "Make a function to be bound to `do-set'."
-  (if (equal -ism ISM-EMP)
+  (if (equal -ism EMP)
       (lambda (source) (mac-select-input-source source))
     (lambda (source)
       (string-trim
