@@ -68,6 +68,9 @@ nil: dynamic context
 (defvar with-english t
   "Switch to english when `global-respect-mode' enabled.")
 
+(defvar with-evil-normal-escape t
+  "<escape> to english in normal state when `global-respect-mode' enabled.")
+
 (defvar with-prefix-and-buffer t
   "Preserve buffer input source when `global-respect-mode' enabled.")
 
@@ -444,7 +447,9 @@ Possible values: 'normal, 'prefix, 'sequence.")
      (when with-prefix-and-buffer
        ;; set english when exit evil insert state
        (when (featurep 'evil)
-         (add-hook 'evil-insert-state-exit-hook #'set-english))
+         (add-hook 'evil-insert-state-exit-hook #'set-english)
+         (when with-evil-normal-escape
+             (define-key evil-normal-state-map (kbd "<escape>") #'set-english)))
 
        ;; preserve buffer input source
        (add-hook 'pre-command-hook #'-preserve-pre-command-handler)
@@ -467,7 +472,9 @@ Possible values: 'normal, 'prefix, 'sequence.")
    ((not global-respect-mode)
      ;; for evil
      (when (featurep 'evil)
-       (remove-hook 'evil-insert-state-exit-hook #'set-english))
+       (remove-hook 'evil-insert-state-exit-hook #'set-english)
+       (when with-evil-normal-escape
+         (define-key evil-normal-state-map (kbd "<escape>") nil)))
 
      (when with-prefix-and-buffer
        ;; for preserving buffer input source

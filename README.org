@@ -247,6 +247,7 @@ Tips:
 | ~smart-inpu-source-set-english-hook~                | no     | Hook to run after set input source to English      | nil                                  |
 | ~smart-inpu-source-set-other-hook~                  | no     | Hook to run after set input source to other        | nil                                  |
 | ~smart-input-source-with-english~                   | no     | Switch to English for `respect-mode'               | ~t~                                  |
+| ~smart-input-source-with-evil-normal-escape~        | no     | esc to English from evil-normal for `respect-mode' | ~t~                                  |
 | ~smart-input-source-with-prefix-and-buffer~         | no     | Handle prefix key and buffer for `respect-mode'    | ~t~                                  |
 | ~smart-input-source-prefix-override-keys~           | no     | Prefix keys to be respected                        | '("C-c" "C-x" "C-h")                 |
 | ~smart-input-source-prefix-override-recap-triggers~ | no     | Functions trigger the recap of the prefix override | see variable doc                     |
