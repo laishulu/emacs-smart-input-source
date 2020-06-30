@@ -61,8 +61,8 @@ Should accept a string which is the id of the input source.")
 
 Possible values:
 nil: dynamic context
-smart-input-source-ENGLISH: English context
-smart-input-source-OTHER: other language context.")
+'english: English context
+'other: other language context.")
 (make-variable-buffer-local 'smart-input-source-fixed-context)
 
 (defvar with-english t
@@ -144,9 +144,6 @@ Some functions take precedence of the override, need to recap after.")
 ;;
 ;; Following codes are mainly about input source manager
 ;;
-(defconst ENGLISH 1 "Just for english input source.")
-(defconst OTHER 2 "Just for other input source.")
-(defconst EMP 1 "Emacs mac port builtin input source manager.")
 (defvar -ism nil "The input source manager.")
 (defvar -ism-inited nil "Input source manager initialized.")
 
@@ -154,7 +151,7 @@ Some functions take precedence of the override, need to recap after.")
   "Init input source manager."
   (when (and (string= (window-system) "mac")
              (fboundp 'mac-input-source))
-    (setq -ism EMP))
+    (setq -ism 'emp))
 
   (when (and (not -ism) external-ism)
     (let ((ism-path (executable-find external-ism)))
@@ -179,14 +176,14 @@ Some functions take precedence of the override, need to recap after.")
 
 (defun -mk-get-fn ()
   "Make a function to be bound to `do-get'."
-  (if (equal -ism EMP)
+  (if (equal -ism 'emp)
       #'mac-input-source
     (lambda ()
       (string-trim (shell-command-to-string -ism)))))
 
 (defun -mk-set-fn ()
   "Make a function to be bound to `do-set'."
-  (if (equal -ism EMP)
+  (if (equal -ism 'emp)
       (lambda (source) (mac-select-input-source source))
     (lambda (source)
       (string-trim
@@ -205,14 +202,14 @@ Unnecessary switching is avoided internally."
     ;; swith only when required
     (pcase (-get)
       ((pred (equal english))
-       (when (member lang (list OTHER other))
+       (when (member lang (list 'other other))
          (funcall do-set other)))
       ((pred (equal other))
-       (when (member lang (list ENGLISH english))
+       (when (member lang (list 'english english))
          (funcall do-set english))))
 
     ;; run hook whether switched or not
-    (if (member lang (list OTHER other))
+    (if (member lang (list 'other other))
         (run-hooks 'smart-input-source-set-other-hook)
       (run-hooks 'smart-input-source-set-english-hook))))
 
@@ -220,13 +217,13 @@ Unnecessary switching is avoided internally."
 (defun set-english ()
   "Set input source to `english'."
   (interactive)
-  (-ensure-ism (-set ENGLISH)))
+  (-ensure-ism (-set 'english)))
 
 :autoload
 (defun set-other ()
   "Set input source to `other'."
   (interactive)
-  (-ensure-ism (-set OTHER)))
+  (-ensure-ism (-set 'other)))
 
 :autoload
 (defun switch ()
@@ -257,7 +254,7 @@ Unnecessary switching is avoided internally."
 
 (defun -restore-from-buffer ()
   "Restore buffer input source."
-  (-set (or -for-buffer ENGLISH)))
+  (-set (or -for-buffer 'english)))
 
 (defvar -prefix-override-map-enable nil
   "Enabe the override keymap.")
@@ -589,7 +586,7 @@ meanings as `string-match-p'."
            (< fore-to (line-end-position))
            (= fore-to (point))
            (-english-p fore-char))
-      ENGLISH)
+      'english)
 
      ;; [english][^][blank][not english]
      ((and (and (> fore-to (point))
@@ -597,7 +594,7 @@ meanings as `string-match-p'."
            (> back-to (line-beginning-position))
            (= back-to (point))
            (-english-p back-char))
-      ENGLISH)
+      'english)
 
      ;; [:other lang:][^]
      ;; [^][:other lang:]
@@ -608,41 +605,41 @@ meanings as `string-match-p'."
                (-other-lang-p fore-char))
           (and (-other-lang-p back-char)
                (-other-lang-p fore-char)))
-      OTHER)
+      'other)
 
      ;; [english][^][line end]
      ((and (= back-to (point))
            (-english-p back-char)
            (= fore-to (line-end-position)))
-      ENGLISH)
+      'english)
 
      ;; [english: include the previous line][blank][^]
      ((and (or aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
            (-english-p cross-line-back-char))
-      ENGLISH)
+      'english)
 
      ;; [other lang: include the previous line][blank][^]
      ((and (or aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
            (-other-lang-p cross-line-back-char))
-      OTHER)
+      'other)
 
      ;; [^][blank][english: include the next line]
      ((and (or aggressive-line
                (< cross-line-fore-to (line-end-position 2)))
            (> cross-line-fore-to (line-end-position))
            (-english-p cross-line-fore-char))
-      ENGLISH)
+      'english)
 
      ;; [^][blank][other lang: include the next line]
      ((and (or aggressive-line
                (< cross-line-fore-to (line-end-position 2)))
            (> cross-line-fore-to (line-end-position))
            (-other-lang-p cross-line-fore-char))
-      OTHER))))
+      'other))))
 
 
 ;;;###autoload
