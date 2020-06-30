@@ -74,10 +74,9 @@ Just install ~smart-input-source~ from ~melpa~.
   a. The first time when you use ~macism SOME_INPUT_SOURCE_ID~ in your app,
   MacOS will popup a window asking you to grant permission of Accessibility, you
   can also grant the permission manually following the instructions in [[https://github.com/laishulu/macism/][macism]].
-  b. Don't use ~Alacritty~ for TUI Emacs, because it can't handle input method
-  well when delete composition characters, and it can't handle ~Option~ and
-  ~Command~ key as well when input method is on. I just recommend ~kitty~ until
-  ~Alacirtty~ fixed those long existing bugs.
+  b. Don't use ~Alacritty~ for TUI Emacs, because it can't handle deleting
+  as well as ~Option~ and ~Command~ key properly when input method is on. I just
+  recommend ~kitty~ until ~Alacirtty~ fixed those long existing bugs.
 
   If you have problems on granting permission of Accessibility for Emacs, see
   below:
