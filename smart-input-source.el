@@ -106,7 +106,7 @@ nil: dynamic context
   "Triggers to save the input source for buffer.")
 
 (defvar preserve-save-hooks
-  (list 'mouse-leave-buffer-hook 'focus-out-hook)
+  (list 'focus-out-hook)
   "Hooks to save the input source for buffer.")
 
 (defvar preserve-restore-hooks
@@ -319,7 +319,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (message (format "Handle save hook, save [%s] to [%s]."
                      (-get) (current-buffer))))
   (unless (eq this-command 'mouse-drag-region)
-    (-save-to-buffer)))
+    (-save-to-buffer)
+    (set-english)))
 
 (defun -preserve-restore-handler ()
   "Handler for `preserve-restore-hooks'"
