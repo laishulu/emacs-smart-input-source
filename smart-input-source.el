@@ -106,6 +106,14 @@ nil: dynamic context
         'centaur-tabs-forward 'centaur-tabs-backward 'centaur-tabs-do-select)
   "Triggers to save the input source for buffer.")
 
+(defvar preserve-save-hooks
+  (list 'mouse-leave-buffer-hook 'focus-out-hook)
+  "Hooks to save the input source for buffer.")
+
+(defvar preserve-restore-hooks
+  (list 'focus-in-hook)
+  "Hooks to restore the input source from buffer.")
+
 (defvar prefix-override-keys
   '("C-c" "C-x" "C-h")
   "Prefix keys to be overrided.")
@@ -302,8 +310,22 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (setq unread-command-events (cons key unread-command-events))))
 
 (defun -save-trigger-p (cmd)
-  "CMD is save trigger."
+  "CMD is a save trigger."
   (memq -real-this-command preserve-save-triggers))
+
+(defun -preserve-save-handler ()
+  "Handler for `preserve-save-hooks'"
+  (when log-mode
+    (print (format "Handle save hook, save [%s] to [%s]."
+                   -for-buffer (current-buffer))))
+  (-save-to-buffer))
+
+(defun -preserve-restore-handler ()
+  "Handler for `preserve-restore-hooks'"
+  (when log-mode
+    (print (format "Handle restore hook, restore [%s] from [%s] ."
+                   -for-buffer (current-buffer))))
+  (-restore-from-buffer))
 
 (defun -preserve-pre-command-handler ()
   "Handler for `pre-command-hook' to preserve input source."
@@ -454,6 +476,11 @@ Possible values: 'normal, 'prefix, 'sequence.")
        ;; preserve buffer input source
        (add-hook 'pre-command-hook #'-preserve-pre-command-handler)
        (add-hook 'post-command-hook #'-preserve-post-command-handler)
+
+       (dolist (hook preserve-save-hooks)
+         (add-hook hook #'-preserve-save-handler))
+       (dolist (hook preserve-restore-hooks)
+         (add-hook hook #'-preserve-restore-handler))
 
        ;; set english when prefix key pressed
        (setq -prefix-override-map-alist
