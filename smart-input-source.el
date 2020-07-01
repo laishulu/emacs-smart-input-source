@@ -97,8 +97,7 @@ nil: dynamic context
 (make-variable-buffer-local 'smart-input-source-aggressive-line)
 
 (defvar preserve-save-triggers
-  (list 'mouse-leave-buffer-hook 'focus-out-hook
-        'counsel-M-x
+  (list 'counsel-M-x
         'next-buffer 'previous-buffer
         'other-window 'windmove-last
         'ace-window
