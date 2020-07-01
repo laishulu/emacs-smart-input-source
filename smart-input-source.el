@@ -318,7 +318,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (when log-mode
     (message (format "Handle save hook, save [%s] to [%s]."
                      (-get) (current-buffer))))
-  (-save-to-buffer))
+  (unless (eq this-command 'mouse-drag-region)
+    (-save-to-buffer)))
 
 (defun -preserve-restore-handler ()
   "Handler for `preserve-restore-hooks'"
@@ -461,12 +462,6 @@ Possible values: 'normal, 'prefix, 'sequence.")
   :init-value nil
   (cond
    (global-respect-mode
-
-    ;; enable terminal focus event
-    (unless (display-graphic-p)
-      (require 'terminal-focus-reporting)
-      (terminal-focus-reporting-mode t))
-
     (-ensure-ism
      ;; set english when mode enabled
      (when with-english (set-english))
@@ -481,6 +476,11 @@ Possible values: 'normal, 'prefix, 'sequence.")
        ;; preserve buffer input source
        (add-hook 'pre-command-hook #'-preserve-pre-command-handler)
        (add-hook 'post-command-hook #'-preserve-post-command-handler)
+
+       ;; enable terminal focus event
+       (unless (display-graphic-p)
+         (require 'terminal-focus-reporting)
+         (terminal-focus-reporting-mode t))
 
        (dolist (hook preserve-save-hooks)
          (add-hook hook #'-preserve-save-handler))
