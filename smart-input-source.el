@@ -3,7 +3,7 @@
 ;; URL: https://github.com/laishulu/emacs-smart-input-source
 ;; Created: March 27th, 2020
 ;; Keywords: convenience
-;; Package-Requires: ((names "0.5") (emacs "25"))
+;; Package-Requires: ((names "0.5") (emacs "25") (terminal-focus-reporting "0.0"))
 ;; Version: 1.0
 
 ;; This file is not part of GNU Emacs.
@@ -221,7 +221,8 @@ Unnecessary switching is avoided internally."
     ;; run hook whether switched or not
     (if (member lang (list 'other other))
         (run-hooks 'smart-input-source-set-other-hook)
-      (run-hooks 'smart-input-source-set-english-hook))))
+      (run-hooks 'smart-input-source-set-english-hook)))
+  (when log-mode (message (format "Do set input source: [%s]" lang))))
 
 :autoload
 (defun set-english ()
@@ -315,15 +316,15 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (defun -preserve-save-handler ()
   "Handler for `preserve-save-hooks'"
   (when log-mode
-    (print (format "Handle save hook, save [%s] to [%s]."
-                   -for-buffer (current-buffer))))
+    (message (format "Handle save hook, save [%s] to [%s]."
+                     (-get) (current-buffer))))
   (-save-to-buffer))
 
 (defun -preserve-restore-handler ()
   "Handler for `preserve-restore-hooks'"
   (when log-mode
-    (print (format "Handle restore hook, restore [%s] from [%s] ."
-                   -for-buffer (current-buffer))))
+    (message (format "Handle restore hook, restore [%s] from [%s] ."
+                     -for-buffer (current-buffer))))
   (-restore-from-buffer))
 
 (defun -preserve-pre-command-handler ()
@@ -332,12 +333,12 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (setq -real-this-command this-command)
 
   (when log-mode
-    (print (format "pre@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
-                   -prefix-handle-stage
-                   (this-command-keys)
-                   -real-this-command
-                   (current-buffer)
-                   -prefix-override-map-enable)))
+    (message (format "pre@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
+                     -prefix-handle-stage
+                     (this-command-keys)
+                     -real-this-command
+                     (current-buffer)
+                     -prefix-override-map-enable)))
 
   (pcase -prefix-handle-stage
     ('normal
@@ -347,16 +348,15 @@ Possible values: 'normal, 'prefix, 'sequence.")
        (when (and (not (-preserve-assume-english-p (current-buffer)))
                   (-save-trigger-p -real-this-command))
          (-save-to-buffer)
-         (set-english)
          (when log-mode
-           (print (format "Input source: [%s] (saved) => [%s]."
-                          -for-buffer english)))))
+           (message (format "[%s] is a save trigger, save input source: [%s]."
+                            -real-this-command -for-buffer)))))
 
       ;; for prefix key
       ((eq -real-this-command #'-prefix-override-handler)
        (when log-mode
-         (print (format "[%s] is a prefix key, shortcut to pre@[prefix]."
-                        (this-command-keys))))
+         (message (format "[%s] is a prefix key, shortcut to pre@[prefix]."
+                          (this-command-keys))))
        ;; go to pre@[prefix] directly
        (setq -prefix-handle-stage 'prefix)
        (-preserve-pre-command-handler))))
@@ -366,8 +366,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
      (-save-to-buffer)
      (set-english)
      (when log-mode
-       (print (format "Input source: [%s] (saved) => [%s]."
-                      -for-buffer english))))
+       (message (format "Input source: [%s] (saved) => [%s]."
+                        -for-buffer english))))
     ('sequence t)))
 
 (defun -preserve-assume-english-p (&optional buffer)
@@ -381,7 +381,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
   "Transite to normal stage and restore input source if RESTORE is t."
   (when restore
     (when log-mode
-      (print (format "restore: [%s]@[%s]." -for-buffer (current-buffer))))
+      (message (format "restore: [%s]@[%s]." -for-buffer (current-buffer))))
     (-restore-from-buffer))
   (setq -prefix-override-map-enable t)
   (setq -prefix-handle-stage 'normal))
@@ -390,12 +390,12 @@ Possible values: 'normal, 'prefix, 'sequence.")
   "Handler for `post-command-hook' to preserve input source."
   ;; (setq this-command -real-this-command)
   (when log-mode
-    (print (format "post@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
-                   -prefix-handle-stage
-                   (this-command-keys)
-                   -real-this-command
-                   (current-buffer)
-                   -prefix-override-map-enable)))
+    (message (format "post@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
+                     -prefix-handle-stage
+                     (this-command-keys)
+                     -real-this-command
+                     (current-buffer)
+                     -prefix-override-map-enable)))
 
   (pcase -prefix-handle-stage
     ('prefix (setq -prefix-handle-stage 'sequence))
@@ -407,24 +407,24 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
       ;; key sequence is canceled
       ((not -real-this-command)
-       (when log-mode (print "Key sequence canceled."))
+       (when log-mode (message "Key sequence canceled."))
        (-to-normal-stage t)
        (when (and preserve-hint-mode
                   (not (-save-trigger-p -real-this-command)))
-         (print
+         (message
           (format "!! cmd [%s] switched %s to %s, add it to `save-triggers'\?"
                   -real-this-command
                   -buffer-before-command (current-buffer)))))
 
       ;; end key sequence
       (t
-       (when log-mode (print "Key sequence ended."))
+       (when log-mode (message "Key sequence ended."))
        (let ((restore (not (-preserve-assume-english-p (current-buffer)))))
          (-to-normal-stage restore)
 
          (when (and preserve-hint-mode restore
                     (not (-save-trigger-p -real-this-command)))
-           (print
+           (message
             (format "!! cmd [%s] switched %s to %s, add it to `save-triggers'\?"
                     -real-this-command
                     -buffer-before-command (current-buffer))))))))
@@ -434,7 +434,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
        (when (and preserve-hint-mode restore
                   (not (-save-trigger-p -real-this-command)))
-         (print
+         (message
           (format "!! cmd [%s] switched %s to %s, add it to `save-triggers'\?"
                   -real-this-command
                   -buffer-before-command (current-buffer))))))))
@@ -461,6 +461,12 @@ Possible values: 'normal, 'prefix, 'sequence.")
   :init-value nil
   (cond
    (global-respect-mode
+
+    ;; enable terminal focus event
+    (unless (display-graphic-p)
+      (require 'terminal-focus-reporting)
+      (terminal-focus-reporting-mode t))
+
     (-ensure-ism
      ;; set english when mode enabled
      (when with-english (set-english))
@@ -470,7 +476,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
        (when (featurep 'evil)
          (add-hook 'evil-insert-state-exit-hook #'set-english)
          (when with-evil-normal-escape
-             (define-key evil-normal-state-map (kbd "<escape>") #'set-english)))
+           (define-key evil-normal-state-map (kbd "<escape>") #'set-english)))
 
        ;; preserve buffer input source
        (add-hook 'pre-command-hook #'-preserve-pre-command-handler)
@@ -496,22 +502,22 @@ Possible values: 'normal, 'prefix, 'sequence.")
        (dolist (trigger prefix-override-recap-triggers)
          (advice-add trigger :after #'-prefix-override-recap-advice)))))
    ((not global-respect-mode)
-     ;; for evil
-     (when (featurep 'evil)
-       (remove-hook 'evil-insert-state-exit-hook #'set-english)
-       (when with-evil-normal-escape
-         (define-key evil-normal-state-map (kbd "<escape>") nil)))
+    ;; for evil
+    (when (featurep 'evil)
+      (remove-hook 'evil-insert-state-exit-hook #'set-english)
+      (when with-evil-normal-escape
+        (define-key evil-normal-state-map (kbd "<escape>") nil)))
 
-     (when with-prefix-and-buffer
-       ;; for preserving buffer input source
-       (remove-hook 'pre-command-hook #'-preserve-pre-command-handler)
-       (remove-hook 'post-command-hook #'-preserve-post-command-handler)
+    (when with-prefix-and-buffer
+      ;; for preserving buffer input source
+      (remove-hook 'pre-command-hook #'-preserve-pre-command-handler)
+      (remove-hook 'post-command-hook #'-preserve-post-command-handler)
 
-       ;; for prefix key
-       (setq emulation-mode-map-alists
-             (delq 'smart-input-source--prefix-override-map-alist
-                   emulation-mode-map-alists))
-       (setq -prefix-override-map-enable nil)))))
+      ;; for prefix key
+      (setq emulation-mode-map-alists
+            (delq 'smart-input-source--prefix-override-map-alist
+                  emulation-mode-map-alists))
+      (setq -prefix-override-map-enable nil)))))
 
 ;;
 ;; Following codes are mainly about follow-context-mode
