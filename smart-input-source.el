@@ -169,6 +169,9 @@ Some functions take precedence of the override, need to recap after.")
 (defvar -current nil
   "Current input source.")
 
+(defvar -previous nil
+  "Previous input source.")
+
 (defun -set-cursor-color-advice (fn color)
   "Advice for FN of `set-cursor-color'.
 
@@ -186,21 +189,24 @@ way."
   "Update cursor color according to input source."
   (-get)
 
-  ;; for GUI
-  (when (display-graphic-p)
-    ;; actually which color passed to the function does not matter,
-    ;; the advice will take care of it.
-    (set-cursor-color default-cursor-color))
+  (unless (eq -current -previous)
+    (setq -previous -current)
 
-  ;; for TUI
-  (unless (display-graphic-p)
-    (pcase -current
-    ('english
-     (send-string-to-terminal (format "\e]12;%s\a" default-cursor-color)))
-    ('other
-     (send-string-to-terminal (format "\e]12;%s\a" other-cursor-color)))
-    (unknown
-     (funcall fn color)))))
+    ;; for GUI
+    (when (display-graphic-p)
+      ;; actually which color passed to the function does not matter,
+      ;; the advice will take care of it.
+      (set-cursor-color default-cursor-color))
+
+    ;; for TUI
+    (unless (display-graphic-p)
+      (pcase -current
+        ('english
+         (send-string-to-terminal (format "\e]12;%s\a" default-cursor-color)))
+        ('other
+         (send-string-to-terminal (format "\e]12;%s\a" other-cursor-color)))
+        (unknown
+         (funcall fn color))))))
 
 (defvar -cursor-color-timer nil
   "Timer to update cursor color.")
