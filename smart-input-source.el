@@ -56,6 +56,11 @@ Should accept a string which is the id of the input source.")
 (defvar english "com.apple.keylayout.US"
   "Input source for english.")
 
+(defvar default-cursor-color nil
+  "Default cursor color, used for English.
+
+`nil' means obtained from the envrionment.")
+
 (defvar other-cursor-color "green"
   "Cursor color for other language.")
 
@@ -164,14 +169,11 @@ Some functions take precedence of the override, need to recap after.")
 (defvar -current nil
   "Current input source.")
 
-(defvar -default-cursor-color nil
-  "Default cursor color.")
-
 (defun -set-cursor-color-advice (fn color)
   "Advice for FN of `set-cursor-color'."
   (pcase -current
     ('english
-     (funcall fn -default-cursor-color))
+     (funcall fn default-cursor-color))
     ('other
      (funcall fn other-cursor-color))
     (unknown
@@ -182,7 +184,7 @@ Some functions take precedence of the override, need to recap after.")
   ;; actually which color passed to the function does not matter,
   ;; the advice will take care of it.
   (-get)
-  (set-cursor-color -default-cursor-color))
+  (set-cursor-color default-cursor-color))
 
 (defvar -cursor-color-timer nil
   "Timer to update cursor color.")
@@ -195,11 +197,11 @@ Some functions take precedence of the override, need to recap after.")
   (cond
    (global-cursor-color-mode
     ;; save original cursor color
-    (unless -default-cursor-color
-      (setq -default-cursor-color
+    (unless default-cursor-color
+      (setq default-cursor-color
             (or (cdr (assq 'cursor-color default-frame-alist))
                 (face-background 'cursor)
-                "red")))
+                "white")))
     (advice-add 'set-cursor-color :around #'-set-cursor-color-advice)
     (add-hook 'smart-input-source-set-english-hook #'-update-cursor-color)
     (add-hook 'smart-input-source-set-other-hook #'-update-cursor-color)
