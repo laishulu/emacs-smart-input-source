@@ -18,10 +18,12 @@ This package provide several modes to switch OS native input source smartly:
   easily by a variable, whose default value indicates when entering evil insert
   mode.
 - A buffer local mode: ~smart-input-source-inline-english-mode~ to enable the
-  automatic triggering of a temporary overlay to input English and then back to
-  none-English without switching input sources manually. It also has a global
+  automaticly triggering of a temporary overlay to input English and then back
+  to none-English without switching input sources manually. It also has a global
   version ~smart-input-source-global-inline-english-mode~ to enable the mode for
   all buffers.
+- A global mode: ~smart-input-source-global-cursor-color-mode~ to automaticly
+  change cursor color according to current input source.
 
 * Features
 ** In English
@@ -29,13 +31,14 @@ This package provide several modes to switch OS native input source smartly:
 2. Support GUI Emacs, as well as Terminal Emacs.
 3. Easy to install and configure. No further configuration for
    ~GUI Emacs Mac Port~ with ~Sogou Input~.
-4. Respect buffer/mode by proper input source:
+4. Automaticly change cursor color according to current input source.
+5. Respect buffer/mode by proper input source:
    1) Respect self: optional start this mode with English
    2) Respect ~evil~: switch to English when leaving ~evil~ ~insert~ mode.
    3) Respect ~minibuffer~: switch to English when enter ~minibuffer~.
    4) Respect prefix key: switch to English for ~C-c~ / ~C-x~ / ~C-h~ and more.
    5) Respect buffer: recover buffer input source when it regain focus.
-5. Support ~inline English~ region:
+6. Support ~inline English~ region:
    1) Inserting space around none-English characters triggers the region.
    2) In this mode, English will be sticked.
    3) Region is closed when:
@@ -47,10 +50,10 @@ This package provide several modes to switch OS native input source smartly:
    5) After the close of the region, one space in the head and one space in the
       tail (if exists) of the region will be deleted. But if the whole region is
       blank, the no character will be deleted.
-6. Switch input source according to context:
+7. Switch input source according to context:
    1) Preconfigured for entering evil insert mode.
    2) For native emacs user, you can configure by easily set a variable.
-7. Input source switching rules are designed carefully, for pure English
+8. Input source switching rules are designed carefully, for pure English
    editing, input source will never be switched to other languages.
 
 * Install
@@ -189,21 +192,7 @@ its all in English.
                 "com.sogou.inputmethod.sogou.pinyin")
 
   :config
-  ;; Input source specific cursor color
-  (defvar original-cursor-background nil)
-  (add-hook 'smart-input-source-set-english-hook
-            (lambda ()
-              (when original-cursor-background
-                (set-cursor-color original-cursor-background))))
-  (add-hook 'smart-input-source-set-other-hook
-            (lambda ()
-              (unless original-cursor-background
-                (setq original-cursor-background
-                      (or (cdr (assq 'cursor-color default-frame-alist))
-                          (face-background 'cursor)
-                          "Red")))
-              (set-cursor-color "green")))
-
+ 
   ;; (push 'YOUR-COMMAND smart-input-source-preserve-save-triggers)
 
   ;; enable the /respect/ mode
@@ -217,6 +206,9 @@ its all in English.
   ;; :hook
   ;; (((text-mode prog-mode) . smart-input-source-follow-context-mode)
   ;;  ((text-mode prog-mode) . smart-input-source-inline-english-mode))
+
+  ;; enable the color color mode
+  (smart-input-source-global-cursor-color-mode t)
   )
 #+END_SRC
 
@@ -244,6 +236,7 @@ Tips:
 | ~smart-input-source-external-ism~                   | no     | input resource manager                             |                                      |
 | ~smart-input-source-do-get~                         | no     | Function to get the current input source           | determined from the environment      |
 | ~smart-input-source-do-set~                         | no     | Function to set the input source                   | determined from the environment      |
+| ~smart-input-source-other-cursor-color~             | no     | Cursor color for other input source                | ~green~                              |
 | ~smart-inpu-source-set-english-hook~                | no     | Hook to run after set input source to English      | nil                                  |
 | ~smart-inpu-source-set-other-hook~                  | no     | Hook to run after set input source to other        | nil                                  |
 | ~smart-input-source-with-english~                   | no     | Switch to English for `respect-mode'               | ~t~                                  |
@@ -270,31 +263,6 @@ Tips:
 |----------------------------------+------------------------------------------------------------|
 
 * How to
-
-** Input source specific cursor color
-#+BEGIN_SRC lisp
-(defvar original-cursor-background nil)
-(add-hook 'smart-input-source-set-english-hook
-          (lambda ()
-            (when original-cursor-background
-              (set-cursor-color original-cursor-background))))
-(add-hook 'smart-input-source-set-other-hook
-          (lambda ()
-            (unless original-cursor-background
-              (setq original-cursor-background
-                    (or (cdr (assq 'cursor-color default-frame-alist))
-                        (face-background 'cursor)
-                        "Red")))
-            (set-cursor-color "green")))
-#+END_SRC
-
-Note: Cursor face won't change if the input source is switched through OS,
-rather than:
-1. Switched by this package automatically.
-2. Switched by ~smart-input-source-switch~.
-3. Set directly by ~smart-input-source-set-english~.
-4. Set directly by ~smart-input-source-set-other~.
-
 **  How to get the input source id
 After /input source manager/ is configured, you can get your /current
 input source id/ by evaluating the following expression in Emacs:

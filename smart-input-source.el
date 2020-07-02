@@ -56,6 +56,9 @@ Should accept a string which is the id of the input source.")
 (defvar english "com.apple.keylayout.US"
   "Input source for english.")
 
+(defvar other-cursor-color "green"
+  "Cursor color for other language.")
+
 (defvar fixed-context nil
   "Context is fixed to a specific language.
 
@@ -151,6 +154,58 @@ Some functions take precedence of the override, need to recap after.")
 (declare-function mac-select-input-source "ext:macfns.c"
                   (SOURCE &optional SET-KEYBOARD-LAYOUT-OVERRIDE-P) t)
 
+;; Following codes are mainly about cursor color mode
+
+(defvar -current nil
+  "Current input source.")
+
+(defvar -default-cursor-color nil
+  "Default cursor color.")
+
+(defun set-cursor-color-advice (fn color)
+  "Advice for FN of `set-cursor-color'."
+  (pcase -current
+    ('english
+     (funcall fn -default-cursor-color))
+    ('other
+     (funcall fn other-cursor-color))
+    (unknown
+     (funcall fn color))))
+
+(defun set-english-cursor-color()
+  "Set cursor color for English."
+  (when -default-cursor-color
+    ;; avoid advice?
+    (set-cursor-color -default-cursor-color)))
+
+(defun set-other-cursor-color()
+  "Set cursor color for other language."
+  ;; avoid advice?
+  (set-cursor-color other-cursor-color))
+
+:autoload
+(define-minor-mode global-cursor-color-mode
+  "Automaticly change cursor color according to input source."
+  :global t
+  :init-value nil
+  (cond
+   (global-cursor-color-mode
+    ;; save original cursor color
+    (unless -default-cursor-color
+      (setq -default-cursor-color
+            (or (cdr (assq 'cursor-color default-frame-alist))
+                (face-background 'cursor)
+                "red")))
+    (advice-add 'set-cursor-color :around #'set-cursor-color-advice)
+    (add-hook 'smart-input-source-set-english-hook #'set-english-cursor-color)
+    (add-hook 'smart-input-source-set-other-hook #'set-other-cursor-color))
+   ((not global-cursor-color-mode)
+    (advice-remove 'set-cursor-color #'set-cursor-color-advice)
+    (remove-hook 'smart-input-source-set-english-hook
+                 #'set-english-cursor-color)
+    (remove-hook 'smart-input-source-set-other-hook
+                 #'set-other-cursor-color))))
+
 ;;
 ;; Following codes are mainly about input source manager
 ;;
@@ -202,7 +257,11 @@ Some functions take precedence of the override, need to recap after.")
 (defun -get ()
   "Get the input source id."
   (when (functionp do-get)
-    (funcall do-get)))
+    (let ((source (funcall do-get)))
+      (pcase source
+        (english (setq -current 'english))
+        (other (setq -current 'other)))
+      source)))
 
 (defun -set (lang)
   "Set the input source according to lang LANG.
@@ -213,9 +272,11 @@ Unnecessary switching is avoided internally."
     (pcase (-get)
       ((pred (equal english))
        (when (member lang (list 'other other))
+         (setq -current 'other)
          (funcall do-set other)))
       ((pred (equal other))
        (when (member lang (list 'english english))
+         (setq -current 'english)
          (funcall do-set english))))
 
     ;; run hook whether switched or not
@@ -541,11 +602,11 @@ meanings as `string-match-p'."
   "Predicate on STR is not English."
   (not (-string-match-p english-pattern str)))
 
-(defun -other-lang-p (str)
+(defun -other-p (str)
   "Predicate on STR is other language."
   (-string-match-p other-pattern str))
 
-(defun -not-other-lang-p (str)
+(defun -not-other-p (str)
   "Predicate on STR is not other language."
   (not (-string-match-p other-pattern str)))
 
@@ -640,11 +701,11 @@ meanings as `string-match-p'."
      ;; [^][:other lang:]
      ;; [:other lang:][:blank or not:][^][:blank or not:][:other lang:]
      ((or (and (= back-to (point))
-               (-other-lang-p back-char))
+               (-other-p back-char))
           (and (= fore-to (point))
-               (-other-lang-p fore-char))
-          (and (-other-lang-p back-char)
-               (-other-lang-p fore-char)))
+               (-other-p fore-char))
+          (and (-other-p back-char)
+               (-other-p fore-char)))
       'other)
 
      ;; [english][^][line end]
@@ -664,7 +725,7 @@ meanings as `string-match-p'."
      ((and (or aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
-           (-other-lang-p cross-line-back-char))
+           (-other-p cross-line-back-char))
       'other)
 
      ;; [^][blank][english: include the next line]
@@ -678,7 +739,7 @@ meanings as `string-match-p'."
      ((and (or aggressive-line
                (< cross-line-fore-to (line-end-position 2)))
            (> cross-line-fore-to (line-end-position))
-           (-other-lang-p cross-line-fore-char))
+           (-other-p cross-line-fore-char))
       'other))))
 
 
@@ -769,15 +830,15 @@ input source to English."
              ;; [other lang][:space:][^][:not none-english:]
              (and (> back-to (line-beginning-position))
                   (< back-to (point))
-                  (-other-lang-p back-char)
+                  (-other-p back-char)
                   (not (and (< (1+ back-to) (point))
                             (= fore-to (point))
-                            (-not-other-lang-p back-char))))
+                            (-not-other-p back-char))))
              ;; [:not none-english:][^][:space:][other lang]
              (and (< fore-to (line-end-position))
-                  (-other-lang-p fore-char)
+                  (-other-p fore-char)
                   (not (and (> fore-to (point))
-                            (-not-other-lang-p back-char)))))
+                            (-not-other-p back-char)))))
         (activate-inline-overlay (1- (point)))))))
 
 :autoload
@@ -846,7 +907,7 @@ input source to English."
     ;; [other lang][:blank inline overlay:]^
     ;; [:overlay with trailing blank :]^
     (when (or (and (= back-to (-inline-overlay-start))
-                   (-other-lang-p back-char))
+                   (-other-p back-char))
               (and (> back-to (-inline-overlay-start))
                    (< back-to (-inline-overlay-end))
                    (< back-to (point))))
