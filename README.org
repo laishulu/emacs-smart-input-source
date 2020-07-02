@@ -237,6 +237,7 @@ Tips:
 | ~smart-input-source-do-get~                         | no     | Function to get the current input source           | determined from the environment      |
 | ~smart-input-source-do-set~                         | no     | Function to set the input source                   | determined from the environment      |
 | ~smart-input-source-other-cursor-color~             | no     | Cursor color for other input source                | ~green~                              |
+| ~smart-input-source-cursor-color-seconds~           | no     | Idle timer interval to update cursor color.        | ~0.2~                                |
 | ~smart-inpu-source-set-english-hook~                | no     | Hook to run after set input source to English      | nil                                  |
 | ~smart-inpu-source-set-other-hook~                  | no     | Hook to run after set input source to other        | nil                                  |
 | ~smart-input-source-with-english~                   | no     | Switch to English for `respect-mode'               | ~t~                                  |

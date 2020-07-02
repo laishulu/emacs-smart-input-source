@@ -59,6 +59,9 @@ Should accept a string which is the id of the input source.")
 (defvar other-cursor-color "green"
   "Cursor color for other language.")
 
+(defvar cursor-color-seconds 0.2
+  "Idle timer interval to update cursor color.")
+
 (defvar fixed-context nil
   "Context is fixed to a specific language.
 
@@ -162,7 +165,7 @@ Some functions take precedence of the override, need to recap after.")
 (defvar -default-cursor-color nil
   "Default cursor color.")
 
-(defun set-cursor-color-advice (fn color)
+(defun -set-cursor-color-advice (fn color)
   "Advice for FN of `set-cursor-color'."
   (pcase -current
     ('english
@@ -172,16 +175,15 @@ Some functions take precedence of the override, need to recap after.")
     (unknown
      (funcall fn color))))
 
-(defun set-english-cursor-color()
-  "Set cursor color for English."
-  (when -default-cursor-color
-    ;; avoid advice?
-    (set-cursor-color -default-cursor-color)))
+(defun -update-cursor-color()
+  "Update cursor color according to input source."
+  ;; actually which color passed to the function does not matter,
+  ;; the advice will take care of it.
+  (-get)
+  (set-cursor-color -default-cursor-color))
 
-(defun set-other-cursor-color()
-  "Set cursor color for other language."
-  ;; avoid advice?
-  (set-cursor-color other-cursor-color))
+(defvar -cursor-color-timer nil
+  "Timer to update cursor color.")
 
 :autoload
 (define-minor-mode global-cursor-color-mode
@@ -196,15 +198,20 @@ Some functions take precedence of the override, need to recap after.")
             (or (cdr (assq 'cursor-color default-frame-alist))
                 (face-background 'cursor)
                 "red")))
-    (advice-add 'set-cursor-color :around #'set-cursor-color-advice)
-    (add-hook 'smart-input-source-set-english-hook #'set-english-cursor-color)
-    (add-hook 'smart-input-source-set-other-hook #'set-other-cursor-color))
+    (advice-add 'set-cursor-color :around #'-set-cursor-color-advice)
+    (add-hook 'smart-input-source-set-english-hook #'-update-cursor-color)
+    (add-hook 'smart-input-source-set-other-hook #'-update-cursor-color)
+    (when cursor-color-seconds
+      (setq -cursor-color-timer
+            (run-with-idle-timer cursor-color-seconds t
+                                 #'-update-cursor-color))))
    ((not global-cursor-color-mode)
-    (advice-remove 'set-cursor-color #'set-cursor-color-advice)
+    (advice-remove 'set-cursor-color #'-set-cursor-color-advice)
     (remove-hook 'smart-input-source-set-english-hook
-                 #'set-english-cursor-color)
+                 #'-update-cursor-color)
     (remove-hook 'smart-input-source-set-other-hook
-                 #'set-other-cursor-color))))
+                 #'-update-cursor-color)
+    (when -cursor-color-timer (cancel-timer -cursor-color-timer)))))
 
 ;;
 ;; Following codes are mainly about input source manager
@@ -259,8 +266,10 @@ Some functions take precedence of the override, need to recap after.")
   (when (functionp do-get)
     (let ((source (funcall do-get)))
       (pcase source
-        (english (setq -current 'english))
-        (other (setq -current 'other)))
+        ((pred (equal english))
+         (setq -current 'english))
+        ((pred (equal other))
+         (setq -current 'other)))
       source)))
 
 (defun -set (lang)
