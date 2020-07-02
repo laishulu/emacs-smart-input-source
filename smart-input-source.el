@@ -60,7 +60,9 @@ Should accept a string which is the id of the input source.")
   "Cursor color for other language.")
 
 (defvar cursor-color-seconds 0.2
-  "Idle timer interval to update cursor color.")
+  "Idle timer interval to update cursor color.
+
+`nil' to disable the timer.")
 
 (defvar fixed-context nil
   "Context is fixed to a specific language.
