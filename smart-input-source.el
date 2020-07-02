@@ -215,8 +215,9 @@ way."
     ;; save original cursor color
     (unless default-cursor-color
       (setq default-cursor-color
-            (or (cdr (assq 'cursor-color default-frame-alist))
-                (face-background 'cursor)
+            (or (when (display-graphic-p)
+                  (or (cdr (assq 'cursor-color default-frame-alist))
+                      (face-background 'cursor)))
                 "white")))
     (advice-add 'set-cursor-color :around #'-set-cursor-color-advice)
     (add-hook 'smart-input-source-set-english-hook #'-update-cursor-color)
