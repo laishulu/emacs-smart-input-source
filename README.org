@@ -2,11 +2,12 @@
 [[https://melpa.org/#/smart-input-source][file:https://melpa.org/packages/smart-input-source-badge.svg]]
 
 * About
-This package provide several modes to switch OS native input source smartly:
+This package provide several modes to switch OS-native or Emacs-native input
+source smartly:
 
 - A global mode: ~smart-input-source-global-respect-mode~ to respect buffer/mode
   by proper input source
-  1. Respect self: optional start this mode with English
+  1. Respect self: start Emacs with specified language.
   2. Respect ~evil~: switch to English when leaving ~evil~ ~insert~ mode.
   3. Respect ~minibuffer~: switch to English when enter ~minibuffer~.
   4. Respect prefix key: switch to English for ~C-c~ / ~C-x~ / ~C-h~ and more.
@@ -18,27 +19,28 @@ This package provide several modes to switch OS native input source smartly:
   easily by a variable, whose default value indicates when entering evil insert
   mode.
 - A buffer local mode: ~smart-input-source-inline-english-mode~ to enable the
-  automaticly triggering of a temporary overlay to input English and then back
+  automatically triggering of a temporary overlay to input English and then back
   to none-English without switching input sources manually. It also has a global
   version ~smart-input-source-global-inline-english-mode~ to enable the mode for
   all buffers.
-- A global mode: ~smart-input-source-global-cursor-color-mode~ to automaticly
+- A global mode: ~smart-input-source-global-cursor-color-mode~ to automatically
   change cursor color according to current input source.
 
 * Features
 ** In English
-1. Use OS native input source, no need to change use experience.
-2. Support GUI Emacs, as well as Terminal Emacs.
-3. Easy to install and configure. No further configuration for
+1. Ease the use of OS-native input source, no need to change use experience.
+2. Ease the use of Emacs-native input source, for further compatibility. 
+3. Support GUI Emacs, as well as Terminal Emacs.
+4. Easy to install and configure. No further configuration for
    ~GUI Emacs Mac Port~ with ~Sogou Input~.
-4. Automaticly change cursor color according to current input source.
-5. Respect buffer/mode by proper input source:
-   1) Respect self: optional start this mode with English
+5. Automatically change cursor color according to current input source.
+6. Respect buffer/mode by proper input source:
+   1) Respect self: start Emacs with specified language.
    2) Respect ~evil~: switch to English when leaving ~evil~ ~insert~ mode.
    3) Respect ~minibuffer~: switch to English when enter ~minibuffer~.
    4) Respect prefix key: switch to English for ~C-c~ / ~C-x~ / ~C-h~ and more.
    5) Respect buffer: recover buffer input source when it regain focus.
-6. Support ~inline English~ region:
+7. Support ~inline English~ region:
    1) Inserting space around none-English characters triggers the region.
    2) In this mode, English will be sticked.
    3) Region is closed when:
@@ -50,25 +52,25 @@ This package provide several modes to switch OS native input source smartly:
    5) After the close of the region, one space in the head and one space in the
       tail (if exists) of the region will be deleted. But if the whole region is
       blank, the no character will be deleted.
-7. Switch input source according to context:
-   1) Preconfigured for entering evil insert mode.
+8. Switch input source according to context:
+   1) Pre-configured for entering evil insert mode.
    2) For native emacs user, you can configure by easily set a variable.
-8. Input source switching rules are designed carefully, for pure English
+9. Input source switching rules are designed carefully, for pure English
    editing, input source will never be switched to other languages.
 
 * Install
 Just install ~smart-input-source~ from ~melpa~.
 
-* Prepare input source manager
-*input source manager* can be prepared by any of the following ways:
-- On MacOS, use GUI Emacs Mac Port (EMP), no need to configure input source
-  manager. You can install ~EMP~ by the following commands:
+* Prepare /input source manager (ISM)/
+*input source manager (ISM)* can be prepared by any of the following ways:
+- On MacOS, use GUI Emacs Mac Port (EMP), no need to configure ISM. You can
+  install ~EMP~ by the following commands:
   #+BEGIN_SRC bash
   brew tap railwaycat/emacsmacport
   brew install emacs-mac --with-modules --with-rsvg --with-imagemagick --with-natural-title-bar
   #+END_SRC
 - On MacOS, use Emacs other than GUI EMP, with ~macism~, no need to configure
-  input source manager. You can install ~macism~ by the following commands:
+  ISM. You can install ~macism~ by the following commands:
   #+BEGIN_SRC bash
   brew tap laishulu/macism
   brew install macism
@@ -95,25 +97,33 @@ Just install ~smart-input-source~ from ~melpa~.
   that folder opened in Finder. In the folder, you'll find the ruby program that
   you can drag on to the Accessibility list.
   #+END_QUOTE
-- Any other case (eg. on Linux or Windows), input source manager should be
-  configured:
-  #+BEGIN_SRC lisp
-  (setq smart-input-source-external-ism "YOUR_ISM")
-  #+END_SRC
-
-  If ~YOUR_ISM~ *CAN'T* be used in the following way:
+- If you have a ISM ~YOUR_ISM~:
   + Run ~YOUR_ISM~ will output the current input source
   + Run ~YOUR_ISM INPUT_SOURCE_ID~ will select ~INPUT_SOURCE_ID~.
 
-  you should also configure the following:
+  Then you can simply configure the ISM
+  #+BEGIN_SRC lisp
+  (setq smart-input-source-external-ism "YOUR_ISM")
+  #+END_SRC
+- The most flexible way to specify ISM is by define the following to functions:
   #+BEGIN_SRC lisp
   (setq smart-input-source-do-get
         #'YOUR_DO_GET_INPUT_SOURCE_FUNCTION)
   (setq smart-input-source-do-set
         #'YOUR_DO_SET_INPUT_SOURCE_FUNCTION)
   #+END_SRC
-  Refer to the section of /Configurations for other input source managers/
-  at the end of this documentation.
+
+** Example: Emacs-native input source
+~rime~ and ~pyim~ are two fabulous Emacs-native input methods. The former is
+powerful while the later is easy to install and use.
+#+BEGIN_SRC lisp
+(setq smart-input-source-english nil)
+(setq-default smart-input-source-other "rime")
+;; for pyim
+;; (setq-default smart-input-source-other "pyim")
+(setq smart-input-source-do-get (lambda() current-input-method))
+(setq smart-input-source-do-set (lambda(source) (set-input-method source)))
+#+END_SRC
 
 ** Example: ~fcitx~
 ~fcitx~ is a input method framework popular among Chinese Linux users.
