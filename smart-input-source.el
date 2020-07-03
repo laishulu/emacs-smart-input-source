@@ -64,7 +64,7 @@ Should accept a string which is the id of the input source.")
 (defvar other-cursor-color "green"
   "Cursor color for other language.")
 
-(defvar cursor-color-seconds 0.2
+(defvar cursor-color-seconds 0.5
   "Idle timer interval to update cursor color.
 
 `nil' to disable the timer.")
@@ -204,12 +204,32 @@ way."
         ('english
          (send-string-to-terminal (format "\e]12;%s\a" default-cursor-color)))
         ('other
-         (send-string-to-terminal (format "\e]12;%s\a" other-cursor-color)))
-        (unknown
-         (funcall fn color))))))
+         (send-string-to-terminal (format "\e]12;%s\a" other-cursor-color)))))))
 
 (defvar -cursor-color-timer nil
-  "Timer to update cursor color.")
+  "Timer for `-cursor-color-timer-function'.")
+
+(defun -cursor-color-timer-function ()
+  "Update cursor color on idle timer."
+  (when -cursor-color-timer
+    (cancel-timer -cursor-color-timer))
+  (-update-cursor-color)
+  (setq -cursor-color-timer
+        (run-with-idle-timer
+         ;; every time the wait period increases by cursor-color-seconds
+         (time-add (current-idle-time)
+                   (* cursor-color-seconds -cursor-color-timer-count))
+         nil
+         #'-cursor-color-timer-function))
+  (setq -cursor-color-timer-count (1+ -cursor-color-timer-count)))
+
+(defvar -cursor-color-timer-count 0
+  "Execution count of `-cursor-color-timer-function' in this idle period.")
+
+(defun -cursor-color-timer-restart ()
+  "Restart `-cursor-color-timer'."
+  (setq -cursor-color-timer-count 0)
+  (-cursor-color-timer-function))
 
 :autoload
 (define-minor-mode global-cursor-color-mode
@@ -229,9 +249,8 @@ way."
     (add-hook 'smart-input-source-set-english-hook #'-update-cursor-color)
     (add-hook 'smart-input-source-set-other-hook #'-update-cursor-color)
     (when cursor-color-seconds
-      (setq -cursor-color-timer
-            (run-with-idle-timer cursor-color-seconds t
-                                 #'-update-cursor-color))))
+      (run-with-idle-timer cursor-color-seconds t
+                           #'-cursor-color-timer-restart)))
    ((not global-cursor-color-mode)
     (advice-remove 'set-cursor-color #'-set-cursor-color-advice)
     (remove-hook 'smart-input-source-set-english-hook
