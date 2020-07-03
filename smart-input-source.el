@@ -237,7 +237,8 @@ way."
   :global t
   :init-value nil
   (cond
-   (global-cursor-color-mode
+   (; turn on the mode
+    global-cursor-color-mode
     ;; save original cursor color
     (unless default-cursor-color
       (setq default-cursor-color
@@ -251,7 +252,8 @@ way."
     (when cursor-color-seconds
       (run-with-idle-timer cursor-color-seconds t
                            #'-cursor-color-timer-restart)))
-   ((not global-cursor-color-mode)
+   (; turn off the mode
+    (not global-cursor-color-mode)
     (advice-remove 'set-cursor-color #'-set-cursor-color-advice)
     (remove-hook 'smart-input-source-set-english-hook
                  #'-update-cursor-color)
@@ -267,21 +269,33 @@ way."
 
 (defun -init-ism ()
   "Init input source manager."
+  ;; EMP
   (when (and (string= (window-system) "mac")
              (fboundp 'mac-input-source))
     (setq -ism 'emp))
 
+  ;; external ism
   (when (and (not -ism) external-ism)
     (let ((ism-path (executable-find external-ism)))
       (setq -ism ism-path)))
 
+  ;; make `do-set' and `do-get'
   (when -ism
+    ;; avoid override user customized do-get
     (unless (functionp do-get)
       (setq do-get (-mk-get-fn)))
 
+    ;; avoid override user customized do-set
     (unless (functionp do-set)
       (setq do-set (-mk-set-fn))))
 
+  ;; successfully inited
+  (when (and (functionp 'do-get)
+             (functionp 'do-set))
+    ;; a t `-ism' means customized by `do-get' and `do-set'
+    (unless -ism (setq -ism t)))
+
+  ;; just inited, successfully or not
   (setq -ism-inited t))
 
 (defmacro -ensure-ism (&rest body)
@@ -325,11 +339,13 @@ Unnecessary switching is avoided internally."
   (when (and lang (functionp do-set))
     ;; swith only when required
     (pcase (-get)
-      ((pred (equal english))
+      (; set to english
+       (pred (equal english))
        (when (member lang (list 'other other))
          (setq -current 'other)
          (funcall do-set other)))
-      ((pred (equal other))
+      (; set to other
+       (pred (equal other))
        (when (member lang (list 'english english))
          (setq -current 'english)
          (funcall do-set english))))
@@ -358,11 +374,13 @@ Unnecessary switching is avoided internally."
   (interactive)
   (-ensure-ism
    (pcase (-get)
-     ((pred (equal english))
+     (; current is english
+      (pred (equal english))
       (funcall do-set other)
       (run-hooks 'smart-input-source-set-other-hook)
       other)
-     ((pred (equal other))
+     (; current is other
+      (pred (equal other))
       (funcall do-set english)
       (run-hooks 'smart-input-source-set-english-hook)
       other))))
@@ -459,10 +477,11 @@ Possible values: 'normal, 'prefix, 'sequence.")
                      -prefix-override-map-enable)))
 
   (pcase -prefix-handle-stage
-    ('normal
+    (; current is normal stage
+     'normal
      (cond
-      ;; not prefix key
-      ((not (eq -real-this-command #'-prefix-override-handler))
+      (; not prefix key
+       (not (eq -real-this-command #'-prefix-override-handler))
        (when (and (not (-preserve-assume-english-p (current-buffer)))
                   (-save-trigger-p -real-this-command))
          (-save-to-buffer)
@@ -470,15 +489,16 @@ Possible values: 'normal, 'prefix, 'sequence.")
            (message (format "[%s] is a save trigger, save input source: [%s]."
                             -real-this-command -for-buffer)))))
 
-      ;; for prefix key
-      ((eq -real-this-command #'-prefix-override-handler)
+      (; for prefix key
+       (eq -real-this-command #'-prefix-override-handler)
        (when log-mode
          (message (format "[%s] is a prefix key, shortcut to pre@[prefix]."
                           (this-command-keys))))
        ;; go to pre@[prefix] directly
        (setq -prefix-handle-stage 'prefix)
        (-preserve-pre-command-handler))))
-    ('prefix
+    (; current is prefix stage
+     'prefix
      (setq -prefix-override-map-enable nil)
      (setq -buffer-before-prefix (current-buffer))
      (-save-to-buffer)
@@ -486,7 +506,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
      (when log-mode
        (message (format "Input source: [%s] (saved) => [%s]."
                         -for-buffer english))))
-    ('sequence t)))
+    (; current is sequence stage
+     'sequence t)))
 
 (defun -preserve-assume-english-p (&optional buffer)
   "BUFFER does not need input source preservation."
@@ -516,15 +537,17 @@ Possible values: 'normal, 'prefix, 'sequence.")
                      -prefix-override-map-enable)))
 
   (pcase -prefix-handle-stage
-    ('prefix (setq -prefix-handle-stage 'sequence))
-    ('sequence
+    (; current is prefix stage
+     'prefix
+     (setq -prefix-handle-stage 'sequence))
+    (; current is sequence stage
+     'sequence
      (cond
-      ;; still in progress
-      ((minibufferp)
+      (; still in progress
+       (minibufferp)
        (setq -prefix-handle-stage 'sequence))
-
-      ;; key sequence is canceled
-      ((not -real-this-command)
+      (; key sequence is canceled
+       (not -real-this-command)
        (when log-mode (message "Key sequence canceled."))
        (-to-normal-stage t)
        (when (and preserve-hint-mode
@@ -534,8 +557,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
                   -real-this-command
                   -buffer-before-command (current-buffer)))))
 
-      ;; end key sequence
-      (t
+      (; end key sequence
+       t
        (when log-mode (message "Key sequence ended."))
        (let ((restore (not (-preserve-assume-english-p (current-buffer)))))
          (-to-normal-stage restore)
@@ -546,7 +569,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
             (format "!! cmd [%s] switched %s to %s, add it to `save-triggers'\?"
                     -real-this-command
                     -buffer-before-command (current-buffer))))))))
-    ('normal
+    (; current is normal stage
+     'normal
      (let ((restore (not (eq -buffer-before-command (current-buffer)))))
        (-to-normal-stage restore)
 
@@ -578,7 +602,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
   :global t
   :init-value nil
   (cond
-   (global-respect-mode
+   (; turn on the mode
+    global-respect-mode
     (-ensure-ism
      ;; set english when mode enabled
      (when with-english (set-english))
@@ -618,7 +643,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
        (-prefix-override-recap-advice)
        (dolist (trigger prefix-override-recap-triggers)
          (advice-add trigger :after #'-prefix-override-recap-advice)))))
-   ((not global-respect-mode)
+   (; turn off the mode
+    (not global-respect-mode)
     ;; for evil
     (when (featurep 'evil)
       (remove-hook 'evil-insert-state-exit-hook #'set-english)
@@ -803,11 +829,13 @@ meanings as `string-match-p'."
   "Switch input source smartly according to context."
   :init-value nil
   (cond
-   (follow-context-mode
+   (; turn of the mode
+    follow-context-mode
     (-ensure-ism
      (dolist (hook follow-context-hooks)
        (add-hook hook #'follow-context nil t))))
-   ((not follow-context-mode)
+   (; turn off the mode
+    (not follow-context-mode)
     (dolist (hook follow-context-hooks)
       (remove-hook hook #'follow-context nil t)))))
 
@@ -846,10 +874,12 @@ meanings as `string-match-p'."
   "English overlay mode for mixed language editing."
   :init-value nil
   (cond
-   (inline-english-mode
+   (; turn on the mode
+    inline-english-mode
     (-ensure-ism
      (add-hook 'post-self-insert-hook #'check-to-activate-overlay nil t)))
-   ((not inline-english-mode)
+   (; turn off the mode
+    (not inline-english-mode)
     (remove-hook 'post-self-insert-hook #'check-to-activate-overlay t))))
 
 :autoload
