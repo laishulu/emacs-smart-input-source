@@ -131,21 +131,15 @@ powerful while the later is easy to install and use.
 configure as following:
 #+BEGIN_SRC lisp
 (require 'subr-x)
-(setq smart-input-source-external-ism "fcitx-remote")
 (setq smart-input-source-english "1")
 (setq-default smart-input-source-other "2")
 (setq smart-input-source-do-get
-      (lambda()
-        (string-trim
-         (shell-command-to-string
-          smart-input-source-external-ism))))
+      (lambda() (string-trim (shell-command-to-string "fcitx-remote"))))
 (setq smart-input-source-do-set
       (lambda(source)
         (pcase source
-          ("1" (string-trim (shell-command-to-string
-                             (concat smart-input-source-external-ism " -c"))))
-          ("2" (string-trim (shell-command-to-string
-                             (concat smart-input-source-external-ism " -o")))))))
+          ("1" (string-trim (shell-command-to-string "fcitx-remote -c")))
+          ("2" (string-trim (shell-command-to-string "fcitx-remote -o"))))))
 #+END_SRC
 
 ** Example: ~ibus~
@@ -153,17 +147,13 @@ configure as following:
 You can configure as following:
 #+BEGIN_SRC lisp
 (require 'subr-x)
-(setq smart-input-source-external-ism "ibus")
 (setq smart-input-source-english "xkb:us::eng")
 (setq-default smart-input-source-other "OTHER_INPUT_SOURCE")
 (setq smart-input-source-do-get
-      (lambda()
-        (string-trim (shell-command-to-string
-          (concat smart-input-source-external-ism " engine")))))
+      (lambda() (string-trim (shell-command-to-string "ibus engine"))))
 (setq smart-input-source-do-set
       (lambda(source)
-        (string-trim (shell-command-to-string
-          (concat smart-input-source-external-ism " engine " source)))))
+        (string-trim (shell-command-to-string (concat "ibus engine " source)))))
 #+END_SRC
 
 ** Example: ~im-select~
