@@ -269,29 +269,32 @@ way."
 
 (defun -init-ism ()
   "Init input source manager."
-  ;; EMP
-  (when (and (string= (window-system) "mac")
-             (fboundp 'mac-input-source))
-    (setq -ism 'emp))
+  ;; `do-get'and `do-set' takes the first precedence.
+  (unless (and (functionp do-get)
+               (functionp do-set))
+    ;; EMP
+    (when (and (string= (window-system) "mac")
+               (fboundp 'mac-input-source))
+      ;; EMP
+      (setq -ism 'emp))
 
-  ;; external ism
-  (when (and (not -ism) (stringp external-ism))
-    (let ((ism-path (executable-find external-ism)))
-      (setq -ism ism-path)))
+    ;; external ism
+    (when (and (not -ism) (stringp external-ism))
+      (let ((ism-path (executable-find external-ism)))
+        (when ism-path (setq -ism ism-path))))
 
-  ;; make `do-set' and `do-get'
-  (when -ism
-    ;; avoid override user customized do-get
-    (unless (functionp do-get)
-      (setq do-get (-mk-get-fn)))
-
-    ;; avoid override user customized do-set
-    (unless (functionp do-set)
-      (setq do-set (-mk-set-fn))))
+    ;; make `do-set' and `do-get'
+    (when -ism
+      ;; avoid override user customized do-get
+      (unless (functionp do-get)
+        (setq do-get (-mk-get-fn)))
+      ;; avoid override user customized do-set
+      (unless (functionp do-set)
+        (setq do-set (-mk-set-fn)))))
 
   ;; successfully inited
-  (when (and (functionp 'do-get)
-             (functionp 'do-set))
+  (when (and (functionp do-get)
+             (functionp do-set))
     ;; a t `-ism' means customized by `do-get' and `do-set'
     (unless -ism (setq -ism t)))
 
