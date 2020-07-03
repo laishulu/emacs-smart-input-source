@@ -827,7 +827,7 @@ meanings as `string-match-p'."
       'other))))
 
 
-;;;###autoload
+:autoload
 (define-minor-mode follow-context-mode
   "Switch input source smartly according to context."
   :init-value nil
