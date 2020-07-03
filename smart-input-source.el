@@ -275,7 +275,7 @@ way."
     (setq -ism 'emp))
 
   ;; external ism
-  (when (and (not -ism) external-ism)
+  (when (and (not -ism) (stringp external-ism))
     (let ((ism-path (executable-find external-ism)))
       (setq -ism ism-path)))
 
