@@ -954,6 +954,17 @@ input source to English."
   (interactive)
   (when (and inline-english-mode
              (overlayp -inline-overlay))
+
+    ;; In case some package automatically insert \n before EOF
+    ;; then kick \n out of the the overlay
+    (when (and (= (char-before (-inline-overlay-end))
+                  ?\n)
+               (< (-inline-overlay-start)
+                  (-inline-overlay-end)))
+      (move-overlay -inline-overlay
+                    (-inline-overlay-start)
+                    (1- (-inline-overlay-end))))
+
     ;; select input source
     (let* ((back-detect (-back-detect-chars))
            (back-to (back-detect-to back-detect)))
