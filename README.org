@@ -279,13 +279,13 @@ You can change some of the behaviors by configuring related variables.
 
 ** About /inline english mode/
 
-| Face Name                                         | Description                                                                   | Default |
-|---------------------------------------------------+-------------------------------------------------------------------------------+---------|
-| ~smart-input-source-inline-english-face~          | Face for the online English region overlay                                    |         |
-| ~smart-input-source-inline-english-not-max-point~ | Insert new line when the whole buffer ends with the region                    | ~t~     |
-| ~smart-input-source-inline-english-tighten-all~   | Delete all leading and trailing blanks, default to delete 1 respectively      | ~nil~   |
-| ~smart-input-source-single-space-close~           | Single space close the inline english region, default is double-spaces/return | ~t~     |
-|---------------------------------------------------+-------------------------------------------------------------------------------+---------|
+| Face Name                                         | Description                                                | Default |
+|---------------------------------------------------+------------------------------------------------------------+---------|
+| ~smart-input-source-inline-english-face~          | Face for the online English region overlay                 |         |
+| ~smart-input-source-inline-english-not-max-point~ | Insert new line when the whole buffer ends with the region | ~t~     |
+| ~smart-input-source-inline-english-tighten-all~   | Delete all blanks around, default to delete 1 respectively | ~nil~   |
+| ~smart-input-source-single-space-close~           | 1 space to close the region, default is 2 spaces/return    | ~t~     |
+|---------------------------------------------------+------------------------------------------------------------+---------|
 
 * How to
 **  How to get the input source id

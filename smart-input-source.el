@@ -157,10 +157,10 @@ Insert new line when the whole buffer ends with the region, to avoid
 autocomplete rendering a large area with the region background.")
 
 (defvar inline-english-tighten-all nil
-  "Delete all leading and trailing blanks.")
+  "Delete all blanks around the inline English region.")
 
 (defvar inline-english-single-space-close nil
-  "Single space close the inline english region.")
+  "Single space closes the inline English region.")
 
 ;;
 ;; Following symbols are not supposed to be used directly by end user.
