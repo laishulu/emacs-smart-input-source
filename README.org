@@ -64,14 +64,14 @@ Just install ~smart-input-source~ from ~melpa~.
 
 * Prepare /input source manager (ISM)/
 *input source manager (ISM)* can be prepared by any of the following ways:
-- On MacOS, use GUI Emacs Mac Port (EMP), no need to configure ISM. You can
+- For GUI Emacs Mac Port (EMP) on MacOS, no need to configure ISM. You can
   install ~EMP~ by the following commands:
   #+BEGIN_SRC bash
   brew tap railwaycat/emacsmacport
   brew install emacs-mac --with-modules --with-rsvg --with-imagemagick --with-natural-title-bar
   #+END_SRC
-- On MacOS, use Emacs other than GUI EMP, with ~macism~, no need to configure
-  ISM. You can install ~macism~ by the following commands:
+- Emacs other than GUI EMP on MacOS, no need to configure ISM by using ~macism~.
+  You can install ~macism~ by the following commands:
   #+BEGIN_SRC bash
   brew tap laishulu/macism
   brew install macism
@@ -106,7 +106,7 @@ Just install ~smart-input-source~ from ~melpa~.
   #+BEGIN_SRC lisp
   (setq smart-input-source-external-ism "YOUR_ISM")
   #+END_SRC
-- The most flexible way to specify ISM is by define the following to functions:
+- The most flexible way to specify ISM is defining the following functions:
   #+BEGIN_SRC lisp
   (setq smart-input-source-do-get
         #'YOUR_DO_GET_INPUT_SOURCE_FUNCTION)
