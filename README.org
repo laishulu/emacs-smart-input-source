@@ -232,6 +232,7 @@ Tips:
 | ~smart-inpu-source-set-other-hook~   | no     | Hook to run after set input source to other   | ~nil~                                |
 |--------------------------------------+--------+-----------------------------------------------+--------------------------------------|
 
+
 | Command Name                     | Description                                                |
 |----------------------------------+------------------------------------------------------------|
 | ~smart-input-source-set-english~ | Set the input source to English                            |
