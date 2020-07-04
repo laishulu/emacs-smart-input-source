@@ -150,6 +150,12 @@ Some functions take precedence of the override, need to recap after.")
  :foreground (face-attribute 'font-lock-constant-face :foreground)
  :inverse-video t)
 
+(defvar inline-english-not-max-point t
+  "Make sure there are other characters after inline english region.
+
+Insert new line when the whole buffer ends with the region, to avoid
+autocomplete rendering a large area with the region background.")
+
 ;;
 ;; Following symbols are not supposed to be used directly by end user.
 ;;
@@ -955,10 +961,11 @@ input source to English."
   (when (and inline-english-mode
              (overlayp -inline-overlay))
 
-    ;; When cursor is at point-max,
-    ;; autocomplete may display with a huge inline english overlay background.
-    (when (= (point) (point-max))
-      (save-excursion (insert-char ?\n)))
+    (when inline-english-not-max-point
+      ;; When cursor is at point-max,
+      ;; autocomplete may display with a huge inline english overlay background.
+      (when (= (point) (point-max))
+        (save-excursion (insert-char ?\n))))
 
     ;; In case some package automatically insert \n before EOF,
     ;; then kick \n out of the the overlay
