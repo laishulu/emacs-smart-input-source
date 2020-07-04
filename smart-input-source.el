@@ -955,7 +955,12 @@ input source to English."
   (when (and inline-english-mode
              (overlayp -inline-overlay))
 
-    ;; In case some package automatically insert \n before EOF
+    ;; When cursor is at point-max,
+    ;; autocomplete may display with a huge inline english overlay background.
+    (when (= (point) (point-max))
+      (save-excursion (insert-char ?\n)))
+
+    ;; In case some package automatically insert \n before EOF,
     ;; then kick \n out of the the overlay
     (when (and (= (char-before (-inline-overlay-end))
                   ?\n)
