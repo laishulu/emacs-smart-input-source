@@ -156,6 +156,12 @@ Some functions take precedence of the override, need to recap after.")
 Insert new line when the whole buffer ends with the region, to avoid
 autocomplete rendering a large area with the region background.")
 
+(defvar inline-english-tighten-all nil
+  "Delete all leading and trailing blanks.")
+
+(defvar inline-english-single-space-close nil
+  "Single space close the inline english region.")
+
 ;;
 ;; Following symbols are not supposed to be used directly by end user.
 ;;
@@ -952,10 +958,10 @@ input source to English."
                   (define-key keymap (kbd "<return>")
                     #'ret-check-to-deactivate-inline-overlay)
                   keymap))
-   (add-hook 'post-command-hook #'fly-check-to-deactivate-inline-overlay nil t)
+   (add-hook 'post-command-hook #'flycheck-to-deactivate-inline-overlay nil t)
    (set-english)))
 
-(defun fly-check-to-deactivate-inline-overlay ()
+(defun flycheck-to-deactivate-inline-overlay ()
   "Check whether to deactivate the inline english region overlay."
   (interactive)
   (when (and inline-english-mode
@@ -991,7 +997,8 @@ input source to English."
              ;; but not "           ^"
              (and (= (point) (-inline-overlay-end))
                   (> back-to (-inline-overlay-start))
-                  (= (+ 2 back-to) (point))))
+                  (= (+ (if inline-english-single-space-close 1 2)
+                        back-to) (point))))
         (deactivate-inline-overlay)))))
 
 (defun ret-check-to-deactivate-inline-overlay ()
@@ -1008,7 +1015,7 @@ input source to English."
   "Deactivate the inline english region overlay."
   (interactive)
   ;; clean up
-  (remove-hook 'post-command-hook #'fly-check-to-deactivate-inline-overlay t)
+  (remove-hook 'post-command-hook #'flycheck-to-deactivate-inline-overlay t)
 
   ;; select input source
   (let* ((back-detect (-back-detect-chars))
@@ -1034,14 +1041,18 @@ input source to English."
                (tighten-back-to (back-detect-to tighten-back-detect)))
           (when (and (< tighten-back-to (-inline-overlay-end))
                      (> tighten-back-to (-inline-overlay-start)))
-            (delete-char -1))))
+            (if inline-english-tighten-all
+                (delete-region (point) tighten-back-to)
+              (delete-char -1)))))
 
       (save-excursion
         (goto-char (-inline-overlay-start))
         (let* ((tighten-fore-detect (-fore-detect-chars))
                (tighten-fore-to (fore-detect-to tighten-fore-detect)))
           (when (> tighten-fore-to (-inline-overlay-start))
-            (delete-char 1))))))
+            (if inline-english-tighten-all
+                (delete-region (point) tighten-fore-to)
+              (delete-char 1)))))))
   (delete-overlay -inline-overlay)
   (setq -inline-overlay nil))
 

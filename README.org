@@ -46,12 +46,13 @@ source smartly:
    3) Region is closed when:
       a. Cursor leaves the region
       b. ~Return~ is pressed.
-      c. Two consecutive ~space~ are input.
+      c. Two consecutive ~space~ are input (can be configured to one ~space~).
    4) If the region ends with space, none-English input source will be
       selected, otherwise English input source is retained.
-   5) After the close of the region, one space in the head and one space in the
-      tail (if exists) of the region will be deleted. But if the whole region is
-      blank, the no character will be deleted.
+   5) After the close of the region, one space (can be configured to all spaces)
+      in the head and tail respectively (if exists) of the region will be
+      deleted. But if the whole region is blank, the no character will be
+      deleted.
 8. Switch input source according to context:
    1) Pre-configured for entering evil insert mode.
    2) For native emacs user, you can configure by easily set a variable.
@@ -215,8 +216,9 @@ Tips:
 2. If you want to change the default value of a *buffer local* variable for all
    buffers, you should use ~setq-default~ rather than ~setq~.
 
-**  Input examples
-#+CAPTION: Smart Input Source 
+**  Default behavior for /inline english mode/ and /follow context mode/
+You can change some of the behaviors by configuring related variables.
+#+CAPTION: Smart Input Source
 [[./screenshots/smart-input-source.png]]
 
 * Variables and commands
@@ -277,11 +279,13 @@ Tips:
 
 ** About /inline english mode/
 
-| Face Name                                         | Description                                                | Default |
-|---------------------------------------------------+------------------------------------------------------------+---------|
-| ~smart-input-source-inline-english-face~          | Face for the online English region overlay                 |         |
-| ~smart-input-source-inline-english-not-max-point~ | Insert new line when the whole buffer ends with the region | ~t~     |
-|---------------------------------------------------+------------------------------------------------------------+---------|
+| Face Name                                         | Description                                                                   | Default |
+|---------------------------------------------------+-------------------------------------------------------------------------------+---------|
+| ~smart-input-source-inline-english-face~          | Face for the online English region overlay                                    |         |
+| ~smart-input-source-inline-english-not-max-point~ | Insert new line when the whole buffer ends with the region                    | ~t~     |
+| ~smart-input-source-inline-english-tighten-all~   | Delete all leading and trailing blanks, default to delete 1 respectively      | ~nil~   |
+| ~smart-input-source-single-space-close~           | Single space close the inline english region, default is double-spaces/return | ~t~     |
+|---------------------------------------------------+-------------------------------------------------------------------------------+---------|
 
 * How to
 **  How to get the input source id
