@@ -19,10 +19,10 @@ source smartly:
   easily by a variable, whose default value indicates when entering evil insert
   mode.
 - A buffer local mode: ~smart-input-source-inline-mode~ to enable the
-  automatically triggering of a temporary overlay to input English/none-English
-  and then back to original input source without switching input sources
-  manually. It also has a global version ~smart-input-source-global-inline-mode~
-  to enable the mode for all buffers.
+  automatically triggering of a temporary overlay to input English/other
+  language and then back to original input source without switching input
+  sources manually. It also has a global version
+  ~smart-input-source-global-inline-mode~ to enable the mode for all buffers.
 - A global mode: ~smart-input-source-global-cursor-color-mode~ to automatically
   change cursor color according to current input source.
 
