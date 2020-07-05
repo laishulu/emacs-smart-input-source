@@ -164,7 +164,7 @@ autocomplete rendering a large area with the region background.")
   "Single space closes the inline region.")
 (make-variable-buffer-local 'smart-input-source-inline-with-single-space-close)
 
-(defvar inline-with-english nil
+(defvar inline-with-english t
   "With the inline region.")
 (make-variable-buffer-local 'smart-input-source-inline-with-english)
 
@@ -348,50 +348,52 @@ way."
 
 (defun -get ()
   "Get the input source id."
-  (when (functionp do-get)
-    (let ((source (funcall do-get)))
-      (pcase source
-        ((pred (equal english))
-         (setq -current 'english))
-        ((pred (equal other))
-         (setq -current 'other)))
-      source)))
+  (-ensure-ism
+   (when (functionp do-get)
+     (let ((source (funcall do-get)))
+       (pcase source
+         ((pred (equal english))
+          (setq -current 'english))
+         ((pred (equal other))
+          (setq -current 'other)))
+       source))))
 
 (defun -set (lang)
   "Set the input source according to lang LANG.
 
 Unnecessary switching is avoided internally."
-  (when (and lang (functionp do-set))
-    ;; swith only when required
-    (pcase (-get)
-      (; set to english
-       (pred (equal english))
-       (when (member lang (list 'other other))
-         (setq -current 'other)
-         (funcall do-set other)))
-      (; set to other
-       (pred (equal other))
-       (when (member lang (list 'english english))
-         (setq -current 'english)
-         (funcall do-set english))))
+  (-ensure-ism
+   (when (and lang (functionp do-set))
+     ;; swith only when required
+     (pcase (-get)
+       (; set to english
+        (pred (equal english))
+        (when (member lang (list 'other other))
+          (setq -current 'other)
+          (funcall do-set other)))
+       (; set to other
+        (pred (equal other))
+        (when (member lang (list 'english english))
+          (setq -current 'english)
+          (funcall do-set english))))
 
-    ;; run hook whether switched or not
-    (if (member lang (list 'other other))
-        (run-hooks 'smart-input-source-set-other-hook)
-      (run-hooks 'smart-input-source-set-english-hook)))
-  (when log-mode (message (format "Do set input source: [%s]" lang))))
+     ;; run hook whether switched or not
+     (if (member lang (list 'other other))
+         (run-hooks 'smart-input-source-set-other-hook)
+       (run-hooks 'smart-input-source-set-english-hook)))
+   (when log-mode (message (format "Do set input source: [%s]" lang)))))
 
 :autoload
 (defun set-english ()
   "Set input source to `english'."
   (interactive)
-  (-ensure-ism (-set 'english)))
+  (-set 'english))
 
 :autoload
 (defun set-other ()
   "Set input source to `other'."
   (interactive)
-  (-ensure-ism (-set 'other)))
+  (-set 'other))
 
 :autoload
 (defun switch ()
@@ -884,9 +886,13 @@ meanings as `string-match-p'."
   "The active inline overlay.")
 (make-variable-buffer-local 'smart-input-source--inline-overlay)
 
-(defvar -inline-insert-space-times 0
-  "The active inline overlay.")
-(make-variable-buffer-local 'smart-input-source--inline-insert-space-times)
+(defvar -inline-lang nil
+  "Language of the active inline overlay.")
+(make-variable-buffer-local 'smart-input-source--inline-lang)
+
+(defvar -inline-first-space-point nil
+  "First effective space point to check overlay activation.")
+(make-variable-buffer-local 'smart-input-source--inline-first-space-point)
 
 (defun -inline-overlay-start ()
   "Start position of the inline overlay."
@@ -940,7 +946,7 @@ input source to English."
     (cond
      (;if not effective space inserted, reset times to 0
       (not effective-space)
-      (setq -inline-insert-space-times 0))
+      (setq -inline-first-space-point nil))
      (;if effective space inserted
       effective-space
       (let* ((back-detect (-back-detect-chars))
@@ -950,20 +956,44 @@ input source to English."
              (fore-to (fore-detect-to fore-detect))
              (fore-char (fore-detect-char fore-detect)))
 
-        (when (or
-               ;; [other lang][:space:][^][:not none-english:]
-               (and (> back-to (line-beginning-position))
-                    (< back-to (point))
-                    (-other-p back-char)
-                    (not (and (< (1+ back-to) (point))
-                              (= fore-to (point))
-                              (-not-other-p back-char))))
-               ;; [:not none-english:][^][:space:][other lang]
-               (and (< fore-to (line-end-position))
-                    (-other-p fore-char)
-                    (not (and (> fore-to (point))
-                              (-not-other-p back-char)))))
-          (-inline-activate (1- (point)))))))))
+        (unless -inline-first-space-point
+          (setq -inline-first-space-point (point)))
+
+        (cond
+         (;inline english region
+          (and inline-with-english
+               (or ;; [other lang][:space:][^][:not none-english:]
+                (and (> back-to (line-beginning-position))
+                     (< back-to (point))
+                     (-other-p back-char)
+                     (not (and (< (1+ back-to) (point))
+                               (= fore-to (point))
+                               (-not-english-p fore-char))))
+                ;; [:not none-english:][:space:][^][other lang]
+                (and (< fore-to (line-end-position))
+                     (-other-p fore-char)
+                     (not (and (> fore-to (point))
+                               (-not-english-p back-char))))))
+          (-inline-activate (1- (point)))
+          (setq -inline-lang 'english))
+
+         (;inline other lang region
+          (and inline-with-other
+               (= (1+ -inline-first-space-point) (point))
+               (or ;; [not other][:double space:][^][:not english:]
+                (and (> back-to (line-beginning-position))
+                     (< (1+ back-to) (point))
+                     (-not-other-p back-char)
+                     (not (and (< (+ back-to 2) (point))
+                               (= fore-to (point))
+                               (-not-other-p fore-char))))
+                ;; [:not none-english:][^][:space:][other lang]
+                (and (< (1+ fore-to) (line-end-position))
+                     (-not-other-p fore-char)
+                     (not (and (> (1+ fore-to) (point))
+                               (-not-other-p back-char))))))
+          (-inline-activate (- (point) 2))
+          (setq -inline-lang 'other))))))))
 
 (defun -inline-activate (start)
   "Activate the inline region overlay from START."
@@ -982,7 +1012,7 @@ input source to English."
                     #'-inline-ret-check-to-deactivate)
                   keymap))
    (add-hook 'post-command-hook #'-inline-fly-check-deactivate nil t)
-   (set-english)))
+   (-set -inline-lang)))
 
 (defun -inline-fly-check-deactivate ()
   "Check whether to deactivate the inline region overlay."
@@ -1045,14 +1075,29 @@ input source to English."
          (back-to (back-detect-to back-detect))
          (back-char (back-detect-char back-detect)))
 
-    ;; [other lang][:blank inline overlay:]^
-    ;; [:overlay with trailing blank :]^
-    (when (or (and (= back-to (-inline-overlay-start))
-                   (-other-p back-char))
-              (and (> back-to (-inline-overlay-start))
-                   (< back-to (-inline-overlay-end))
-                   (< back-to (point))))
-      (set-other))
+
+    (cond
+     (; inline english region
+      (eq -inline-lang 'english)
+      ;; [other lang][:blank inline overlay:]^
+      ;; [:overlay with trailing blank :]^
+      (when (or (and (= back-to (-inline-overlay-start))
+                     (-other-p back-char))
+                (and (> back-to (-inline-overlay-start))
+                     (< back-to (-inline-overlay-end))
+                     (< back-to (point))))
+        (set-other)))
+
+     (; inline english region
+      (eq -inline-lang 'other)
+      ;; [:not-other:][:blank inline overlay:]^
+      ;; [:overlay with trailing blank :]^
+      (when (or (and (= back-to (-inline-overlay-start))
+                     (-not-other-p back-char))
+                (and (> back-to (-inline-overlay-start))
+                     (< back-to (-inline-overlay-end))
+                     (< back-to (point))))
+        (set-english))))
 
     ;; only tighten for none-blank inline region
     (when (and (<= (point) (-inline-overlay-end))
