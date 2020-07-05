@@ -140,27 +140,37 @@ Some functions take precedence of the override, need to recap after.")
   '(evil-insert-state-entry-hook)
   "Hooks trigger the set of input source following context.")
 
-(defface inline-english-face
+(defface inline-face
   '()
-  "Face of the inline english region overlay."
+  "Face of the inline region overlay."
   :group 'smart-input-source)
 
 (set-face-attribute
- 'smart-input-source-inline-english-face nil
+ 'smart-input-source-inline-face nil
  :foreground (face-attribute 'font-lock-constant-face :foreground)
  :inverse-video t)
 
-(defvar inline-english-not-max-point t
-  "Make sure there are other characters after inline english region.
+(defvar inline-not-max-point t
+  "Make sure there are other characters after inline region.
 
 Insert new line when the whole buffer ends with the region, to avoid
 autocomplete rendering a large area with the region background.")
 
-(defvar inline-english-tighten-all nil
-  "Delete all blanks around the inline English region.")
+(defvar inline-tighten-all nil
+  "Delete all blanks around the inline region.")
+(make-variable-buffer-local 'smart-input-source-inline-with-tighten-all)
 
-(defvar inline-english-single-space-close nil
-  "Single space closes the inline English region.")
+(defvar inline-single-space-close nil
+  "Single space closes the inline region.")
+(make-variable-buffer-local 'smart-input-source-inline-with-single-space-close)
+
+(defvar inline-with-english nil
+  "With the inline region.")
+(make-variable-buffer-local 'smart-input-source-inline-with-english)
+
+(defvar inline-with-other nil
+  "With the inline other lang region.")
+(make-variable-buffer-local 'smart-input-source-inline-with-other)
 
 ;;
 ;; Following symbols are not supposed to be used directly by end user.
@@ -867,12 +877,16 @@ meanings as `string-match-p'."
       (-set context))))
 
 ;;
-;; Following codes are mainly about the inline english region overlay
+;; Following codes are mainly about the inline region overlay
 ;;
 
 (defvar -inline-overlay nil
   "The active inline overlay.")
 (make-variable-buffer-local 'smart-input-source--inline-overlay)
+
+(defvar -inline-insert-space-times 0
+  "The active inline overlay.")
+(make-variable-buffer-local 'smart-input-source--inline-insert-space-times)
 
 (defun -inline-overlay-start ()
   "Start position of the inline overlay."
@@ -885,91 +899,100 @@ meanings as `string-match-p'."
     (overlay-end -inline-overlay)))
 
 :autoload
-(define-minor-mode inline-english-mode
+(define-minor-mode inline-mode
   "English overlay mode for mixed language editing."
   :init-value nil
   (cond
    (; turn on the mode
-    inline-english-mode
+    inline-mode
     (-ensure-ism
-     (add-hook 'post-self-insert-hook #'check-to-activate-overlay nil t)))
+     (add-hook 'post-self-insert-hook #'-inline-check-to-activate nil t)))
    (; turn off the mode
-    (not inline-english-mode)
-    (remove-hook 'post-self-insert-hook #'check-to-activate-overlay t))))
+    (not inline-mode)
+    (remove-hook 'post-self-insert-hook #'-inline-check-to-activate t))))
 
 :autoload
 (define-globalized-minor-mode
-  smart-input-source-global-inline-english-mode
-  inline-english-mode
-  inline-english-mode)
+  smart-input-source-global-inline-mode
+  inline-mode
+  inline-mode)
 
-(defun check-to-activate-overlay()
-  "Check whether to activate the inline english region overlay.
+(defun -inline-effect-space-inserted-p ()
+  "A effective space is inserted"
+  (and inline-mode
+       (not (overlayp -inline-overlay))
+       (not (button-at (point)))
+       (not (and (featurep 'evil)
+                 (or (evil-normal-state-p)
+                     (evil-visual-state-p)
+                     (evil-motion-state-p)
+                     (evil-operator-state-p))))
+       ;; around char is <spc> <DBC spc>
+       (memq (preceding-char) (list ?\s 12288))))
+
+(defun -inline-check-to-activate()
+  "Check whether to activate the inline region overlay.
 
 Check the context to determine whether the overlay should be activated or not,
-if the answer is yes, then activate the /inline english region/, set the
+if the answer is yes, then activate the /inline region/, set the
 input source to English."
-  (when (and inline-english-mode
-             (not (overlayp -inline-overlay))
-             (not (button-at (point)))
-             (not (and (featurep 'evil)
-                       (or (evil-normal-state-p)
-                           (evil-visual-state-p)
-                           (evil-motion-state-p)
-                           (evil-operator-state-p))))
-             ;; around char is <spc> <DBC spc>
-             (memq (preceding-char) (list ?\s 12288)))
-    (let* ((back-detect (-back-detect-chars))
-           (back-to (back-detect-to back-detect))
-           (back-char (back-detect-char back-detect))
-           (fore-detect (-fore-detect-chars))
-           (fore-to (fore-detect-to fore-detect))
-           (fore-char (fore-detect-char fore-detect)))
+  (let ((effective-space (-inline-effect-space-inserted-p)))
+    (cond
+     (;if not effective space inserted, reset times to 0
+      (not effective-space)
+      (setq -inline-insert-space-times 0))
+     (;if effective space inserted
+      effective-space
+      (let* ((back-detect (-back-detect-chars))
+             (back-to (back-detect-to back-detect))
+             (back-char (back-detect-char back-detect))
+             (fore-detect (-fore-detect-chars))
+             (fore-to (fore-detect-to fore-detect))
+             (fore-char (fore-detect-char fore-detect)))
 
-      (when (or
-             ;; [other lang][:space:][^][:not none-english:]
-             (and (> back-to (line-beginning-position))
-                  (< back-to (point))
-                  (-other-p back-char)
-                  (not (and (< (1+ back-to) (point))
-                            (= fore-to (point))
-                            (-not-other-p back-char))))
-             ;; [:not none-english:][^][:space:][other lang]
-             (and (< fore-to (line-end-position))
-                  (-other-p fore-char)
-                  (not (and (> fore-to (point))
-                            (-not-other-p back-char)))))
-        (activate-inline-overlay (1- (point)))))))
+        (when (or
+               ;; [other lang][:space:][^][:not none-english:]
+               (and (> back-to (line-beginning-position))
+                    (< back-to (point))
+                    (-other-p back-char)
+                    (not (and (< (1+ back-to) (point))
+                              (= fore-to (point))
+                              (-not-other-p back-char))))
+               ;; [:not none-english:][^][:space:][other lang]
+               (and (< fore-to (line-end-position))
+                    (-other-p fore-char)
+                    (not (and (> fore-to (point))
+                              (-not-other-p back-char)))))
+          (-inline-activate (1- (point)))))))))
 
-:autoload
-(defun activate-inline-overlay (start)
-  "Activate the inline english region overlay from START."
+(defun -inline-activate (start)
+  "Activate the inline region overlay from START."
   (interactive)
   (-ensure-ism
    (when (overlayp -inline-overlay)
      (delete-overlay -inline-overlay))
 
    (setq -inline-overlay (make-overlay start (point) nil t t ))
-   (overlay-put -inline-overlay 'face 'smart-input-source-inline-english-face)
+   (overlay-put -inline-overlay 'face 'smart-input-source-inline-face)
    (overlay-put -inline-overlay 'keymap
                 (let ((keymap (make-sparse-keymap)))
                   (define-key keymap (kbd "RET")
-                    #'ret-check-to-deactivate-inline-overlay)
+                    #'-inline-ret-check-to-deactivate)
                   (define-key keymap (kbd "<return>")
-                    #'ret-check-to-deactivate-inline-overlay)
+                    #'-inline-ret-check-to-deactivate)
                   keymap))
-   (add-hook 'post-command-hook #'flycheck-to-deactivate-inline-overlay nil t)
+   (add-hook 'post-command-hook #'-inline-fly-check-deactivate nil t)
    (set-english)))
 
-(defun flycheck-to-deactivate-inline-overlay ()
-  "Check whether to deactivate the inline english region overlay."
+(defun -inline-fly-check-deactivate ()
+  "Check whether to deactivate the inline region overlay."
   (interactive)
-  (when (and inline-english-mode
+  (when (and inline-mode
              (overlayp -inline-overlay))
 
-    (when inline-english-not-max-point
+    (when inline-not-max-point
       ;; When cursor is at point-max,
-      ;; autocomplete may display with a huge inline english overlay background.
+      ;; autocomplete may display with a huge inline overlay background.
       (when (= (point) (point-max))
         (save-excursion (insert-char ?\n))))
 
@@ -993,29 +1016,29 @@ input source to English."
              ;; out of range
              (or(< (point) (-inline-overlay-start))
                 (> (point) (-inline-overlay-end)))
-             ;; " inline english  ^"
+             ;; " inline  ^"
              ;; but not "           ^"
              (and (= (point) (-inline-overlay-end))
                   (> back-to (-inline-overlay-start))
-                  (= (+ (if inline-english-single-space-close 1 2)
+                  (= (+ (if inline-single-space-close 1 2)
                         back-to) (point))))
-        (deactivate-inline-overlay)))))
+        (-inline-deactivate)))))
 
-(defun ret-check-to-deactivate-inline-overlay ()
-  "Deactivate the inline english region overlay."
+(defun -inline-ret-check-to-deactivate ()
+  "Deactivate the inline region overlay."
   (interactive)
-  (when (and inline-english-mode (overlayp -inline-overlay))
+  (when (and inline-mode (overlayp -inline-overlay))
     ;; company
     (if (and (featurep 'company)
              (company--active-p))
         (company-complete-selection)
-      (deactivate-inline-overlay))))
+      (-inline-deactivate))))
 
-(defun deactivate-inline-overlay ()
-  "Deactivate the inline english region overlay."
+(defun -inline-deactivate ()
+  "Deactivate the inline region overlay."
   (interactive)
   ;; clean up
-  (remove-hook 'post-command-hook #'flycheck-to-deactivate-inline-overlay t)
+  (remove-hook 'post-command-hook #'-inline-fly-check-deactivate t)
 
   ;; select input source
   (let* ((back-detect (-back-detect-chars))
@@ -1031,7 +1054,7 @@ input source to English."
                    (< back-to (point))))
       (set-other))
 
-    ;; only tighten for none-blank inline english region
+    ;; only tighten for none-blank inline region
     (when (and (<= (point) (-inline-overlay-end))
                (> back-to (-inline-overlay-start)))
 
@@ -1041,7 +1064,7 @@ input source to English."
                (tighten-back-to (back-detect-to tighten-back-detect)))
           (when (and (< tighten-back-to (-inline-overlay-end))
                      (> tighten-back-to (-inline-overlay-start)))
-            (if inline-english-tighten-all
+            (if inline-tighten-all
                 (delete-region (point) tighten-back-to)
               (delete-char -1)))))
 
@@ -1050,7 +1073,7 @@ input source to English."
         (let* ((tighten-fore-detect (-fore-detect-chars))
                (tighten-fore-to (fore-detect-to tighten-fore-detect)))
           (when (> tighten-fore-to (-inline-overlay-start))
-            (if inline-english-tighten-all
+            (if inline-tighten-all
                 (delete-region (point) tighten-fore-to)
               (delete-char 1)))))))
   (delete-overlay -inline-overlay)
