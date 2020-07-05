@@ -462,13 +462,13 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (let* ((keys (this-command-keys))
          (n (length keys))
          (key (aref keys (1- n))))
-    ;; Don't record this command
-    (setq this-command last-command)
     ;; Restore the prefix arg
     (setq prefix-arg arg)
     (prefix-command-preserve-state)
     ;; Push the key back on the event queue
-    (setq unread-command-events (cons key unread-command-events))))
+    (setq unread-command-events
+          (append (mapcar (lambda (e) `(t . ,e)) (listify-key-sequence keys))
+                  unread-command-events))))
 
 (defun -save-trigger-p (cmd)
   "CMD is a save trigger."
