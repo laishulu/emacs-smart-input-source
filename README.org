@@ -18,11 +18,11 @@ source smartly:
   buffers. When to switch input source by following context can be configured
   easily by a variable, whose default value indicates when entering evil insert
   mode.
-- A buffer local mode: ~smart-input-source-inline-english-mode~ to enable the
-  automatically triggering of a temporary overlay to input English and then back
-  to none-English without switching input sources manually. It also has a global
-  version ~smart-input-source-global-inline-english-mode~ to enable the mode for
-  all buffers.
+- A buffer local mode: ~smart-input-source-inline-mode~ to enable the
+  automatically triggering of a temporary overlay to input English/none-English
+  and then back to original input source without switching input sources
+  manually. It also has a global version ~smart-input-source-global-inline-mode~
+  to enable the mode for all buffers.
 - A global mode: ~smart-input-source-global-cursor-color-mode~ to automatically
   change cursor color according to current input source.
 
@@ -40,8 +40,10 @@ source smartly:
    3) Respect ~minibuffer~: switch to English when enter ~minibuffer~.
    4) Respect prefix key: switch to English for ~C-c~ / ~C-x~ / ~C-h~ and more.
    5) Respect buffer: recover buffer input source when it regain focus.
-7. Support ~inline English~ region:
-   1) Inserting space around none-English characters triggers the region.
+7. Support ~inline English~ and ~inline other language~ region. Features of the
+   inline region (~inline english~ as an example):
+   1) Inserting space around none-English characters triggers the region (two
+      consecutive spaces for ~inline other language~ region).
    2) In this mode, English will be sticked.
    3) Region is closed when:
       a. Cursor leaves the region
@@ -194,9 +196,9 @@ its all in English.
   ;; (push 'YOUR-COMMAND smart-input-source-preserve-save-triggers)
 
   ;; :hook
-  ;; enable the /follow context/ and /inline english/ mode for specific buffers
+  ;; enable the /follow context/ and /inline region/ mode for specific buffers
   ;; (((text-mode prog-mode) . smart-input-source-follow-context-mode)
-  ;;  ((text-mode prog-mode) . smart-input-source-inline-english-mode))
+  ;;  ((text-mode prog-mode) . smart-input-source-inline-mode))
 
   :config
   ;; enable the /cursor color/ mode
@@ -206,7 +208,7 @@ its all in English.
   ;; enable the /follow context/ mode for all buffers
   (smart-input-source-global-follow-context-mode t)
   ;; enable the /inline english/ mode for all buffers
-  (smart-input-source-global-inline-english-mode t)
+  (smart-input-source-global-inline-mode t)
   )
 #+END_SRC
 
@@ -217,7 +219,8 @@ Tips:
    buffers, you should use ~setq-default~ rather than ~setq~.
 
 **  Default behavior for /inline english mode/ and /follow context mode/
-You can change some of the behaviors by configuring related variables.
+You can change some of the behaviors by configuring related variables, note:
+~inline other language~ feature is turned off by default.
 #+CAPTION: Smart Input Source
 [[./screenshots/smart-input-source.png]]
 
@@ -277,15 +280,17 @@ You can change some of the behaviors by configuring related variables.
 | ~smart-input-source-follow-context-hooks~ | no     | Hooks trigger the context following     | see variable doc |
 |-------------------------------------------+--------+-----------------------------------------+------------------|
 
-** About /inline english mode/
+** About /inline mode/
 
-| Face Name                                         | Description                                                | Default |
-|---------------------------------------------------+------------------------------------------------------------+---------|
-| ~smart-input-source-inline-english-face~          | Face for the online English region overlay                 |         |
-| ~smart-input-source-inline-english-not-max-point~ | Insert new line when the whole buffer ends with the region | ~t~     |
-| ~smart-input-source-inline-english-tighten-all~   | Delete all blanks around, default to delete 1 respectively | ~nil~   |
-| ~smart-input-source-single-space-close~           | 1 space to close the region, default is 2 spaces/return    | ~t~     |
-|---------------------------------------------------+------------------------------------------------------------+---------|
+| Face Name                                 | Buffer | Description                                                | Default |
+|-------------------------------------------+--------+------------------------------------------------------------+---------|
+| ~smart-input-source-inline-face~          | no     | Face for the inline region overlay                         |         |
+| ~smart-input-source-inline-not-max-point~ | no     | Insert new line when the whole buffer ends with the region | ~t~     |
+| ~smart-input-source-inline-tighten-all~   | yes    | Delete all blanks around, default to delete 1 respectively | ~nil~   |
+| ~smart-input-source-single-space-close~   | yes    | 1 space to close the region, default is 2 spaces/return    | ~t~     |
+| ~smart-input-source-with-english~         | yes    | enable the ~inline english~ region feature                 | ~t~     |
+| ~smart-input-source-with-other~           | yes    | enable the ~inline other language~ region feature          | ~nil~   |
+|-------------------------------------------+--------+------------------------------------------------------------+---------|
 
 * How to
 **  How to get the input source id
