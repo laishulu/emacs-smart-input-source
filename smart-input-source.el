@@ -110,7 +110,7 @@ nil: dynamic context
 (make-variable-buffer-local 'smart-input-source-aggressive-line)
 
 (defvar preserve-save-triggers
-  (list 'counsel-M-x
+  (list 'counsel-M-x 'org-capture
         'next-buffer 'previous-buffer
         'other-window 'windmove-last
         'ace-window
