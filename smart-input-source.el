@@ -765,12 +765,12 @@ meanings as `string-match-p'."
                           :cross-line-char (when cross-line-char
                                              (string cross-line-char)))))))
 
-(defun -guess-context ()
-  "Guest the lang context for the current point."
-  (let* ((back-detect (-back-detect-chars))
-         (fore-detect (-fore-detect-chars))
+(defun -context-other-p (back-detect fore-detect &optional position)
+  "Predicate for context of other language.
 
-         (back-to (back-detect-to back-detect))
+`back-detect' BACK-DETECT and `fore-detect' FORE-DETECT are required.
+If POSITION is not provided, then default to be the current position."
+  (let* ((back-to (back-detect-to back-detect))
          (back-char (back-detect-char back-detect))
          (cross-line-back-to (back-detect-cross-line-to back-detect))
          (cross-line-back-char (back-detect-cross-line-char back-detect))
@@ -779,75 +779,74 @@ meanings as `string-match-p'."
          (fore-char (fore-detect-char fore-detect))
          (cross-line-fore-to (fore-detect-cross-line-to fore-detect))
          (cross-line-fore-char (fore-detect-cross-line-char fore-detect)))
-
     (cond
-     ;; context is fixed.
-     (follow-context-fixed follow-context-fixed)
-
-     ;; [line beginning][^][english]
-     ;; [english][^][english]
-     ;; [not english][blank][^][blank or not][english]
-     ((and (or (= back-to (line-beginning-position))
-               (and (= back-to (point))
-                    (-english-p back-char))
-               (and (< back-to (point))
-                    (-not-english-p back-char)))
-           (< fore-to (line-end-position))
-           (-english-p fore-char))
-      'english)
-
-     ;; [english][blank or not][^][blank][not english]
-     ((and (and (> fore-to (point))
-                (-not-english-p fore-char))
-           (> back-to (line-beginning-position))
-           (-english-p back-char))
-      'english)
-
-     ;; [other lang][^]
-     ;; [^][other lang]
-     ;; [other lang][blank or not][^][blank or not][other lang]
-     ((or (and (= back-to (point))
-               (-other-p back-char))
-          (and (= fore-to (point))
-               (-other-p fore-char))
-          (and (-other-p back-char)
-               (-other-p fore-char)))
-      'other)
-
-     ;; [english][^][line end]
-     ((and (= back-to (point))
-           (-english-p back-char)
-           (= fore-to (line-end-position)))
-      'english)
-
-     ;; [english: include the previous line][blank][^]
-     ((and (or follow-context-aggressive-line
-               (> cross-line-back-to (line-beginning-position 0)))
-           (< cross-line-back-to (line-beginning-position))
-           (-english-p cross-line-back-char))
-      'english)
-
-     ;; [other lang: include the previous line][blank][^]
-     ((and (or follow-context-aggressive-line
+     (; [other]^
+      (and (= back-to (or position (point))) (-other-p back-char))
+      t)
+     (; ^[other]
+      (and (= fore-to (or position (point))) (-other-p fore-char))
+      t)
+     (; [other lang][blank or not][^][blank or not][not english] 
+      (and (-other-p back-char) (-not-english-p fore-char))
+      t)
+     (; [not english][blank or not][^][blank or not][other lang] 
+      (and (-not-english-p back-char) (-other-p fore-char))
+      t)
+     (; [other lang: to the previous line][blank][^]
+      (and (or follow-context-aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
            (-other-p cross-line-back-char))
-      'other)
+      t))))
 
-     ;; [^][blank][english: include the next line]
-     ((and (or follow-context-aggressive-line
-               (< cross-line-fore-to (line-end-position 2)))
-           (> cross-line-fore-to (line-end-position))
-           (-english-p cross-line-fore-char))
+(defun -context-english-p (back-detect fore-detect &optional position)
+  "Predicate for context of English.
+
+`back-detect' BACK-DETECT and `fore-detect' FORE-DETECT are required.
+If POSITION is not provided, then default to be the current position."
+  (let* ((back-to (back-detect-to back-detect))
+         (back-char (back-detect-char back-detect))
+         (cross-line-back-to (back-detect-cross-line-to back-detect))
+         (cross-line-back-char (back-detect-cross-line-char back-detect))
+
+         (fore-to (fore-detect-to fore-detect))
+         (fore-char (fore-detect-char fore-detect))
+         (cross-line-fore-to (fore-detect-cross-line-to fore-detect))
+         (cross-line-fore-char (fore-detect-cross-line-char fore-detect)))
+    (cond
+     (; [english]^
+      (and (= back-to (or position (point))) (-english-p back-char))
+      t)
+     (; ^[english]
+      (and (= fore-to (or position (point))) (-english-p fore-char))
+      t)
+     (; [english][blank or not][^][blank or not][not other] 
+      (and (-english-p back-char) (-not-other-p fore-char))
+      t)
+     (; [not other][blank or not][^][blank or not][english] 
+      (and (-not-other-p back-char) (-english-p fore-char))
+      t)
+     (; [english: to the previous line][blank][^]
+      (and (or follow-context-aggressive-line
+               (> cross-line-back-to (line-beginning-position 0)))
+           (< cross-line-back-to (line-beginning-position))
+           (-english-p cross-line-back-char))
+      t))))
+
+(defun -context-guess ()
+  "Guest the lang context for the current point."
+  (let* ((back-detect (-back-detect-chars))
+         (fore-detect (-fore-detect-chars)))
+    (cond
+     (; context is fixed.
+      follow-context-fixed
+      follow-context-fixed)
+     (; english context
+      (-context-english-p back-detect fore-detect)
       'english)
-
-     ;; [^][blank][other lang: include the next line]
-     ((and (or follow-context-aggressive-line
-               (< cross-line-fore-to (line-end-position 2)))
-           (> cross-line-fore-to (line-end-position))
-           (-other-p cross-line-fore-char))
+     (; other lang context
+      (-context-other-p back-detect fore-detect)
       'other))))
-
 
 :autoload
 (define-minor-mode follow-context-mode
@@ -872,7 +871,7 @@ meanings as `string-match-p'."
 
 (defun follow-context ()
   "Follow the context to switch input source."
-  (let ((context (-guess-context)))
+  (let ((context (-context-guess)))
     (when context
       (-set context))))
 
@@ -948,11 +947,7 @@ input source to English."
      (;if effective space inserted
       effective-space
       (let* ((back-detect (-back-detect-chars))
-             (back-to (back-detect-to back-detect))
-             (back-char (back-detect-char back-detect))
-             (fore-detect (-fore-detect-chars))
-             (fore-to (fore-detect-to fore-detect))
-             (fore-char (fore-detect-char fore-detect)))
+             (fore-detect (-fore-detect-chars)))
 
         (unless -inline-first-space-point
           (setq -inline-first-space-point (point)))
@@ -960,36 +955,18 @@ input source to English."
         (cond
          (;inline english region
           (and inline-with-english
-               (or ;; [other lang][space][^][not none-english]
-                (and (> back-to (line-beginning-position))
-                     (< back-to (point))
-                     (-other-p back-char)
-                     (not (and (< (1+ back-to) (point))
-                               (= fore-to (point))
-                               (-not-english-p fore-char))))
-                ;; [not none-english][space][^][other lang]
-                (and (< fore-to (line-end-position))
-                     (-other-p fore-char)
-                     (not (and (> fore-to (point))
-                               (-not-english-p back-char))))))
+               ;; to filter unecessary (-get)
+               (-context-other-p back-detect fore-detect (1- (point)))
+               (equal (-get) other))
           (setq -inline-lang 'english)
           (-inline-activate (1- (point))))
 
          (;inline other lang region
           (and inline-with-other
                (= (1+ -inline-first-space-point) (point))
-               (or ;; [not other][double space][^][not english]
-                (and (> back-to (line-beginning-position))
-                     (< (1+ back-to) (point))
-                     (-not-other-p back-char)
-                     (not (and (< (+ back-to 2) (point))
-                               (= fore-to (point))
-                               (-not-other-p fore-char))))
-                ;; [not none-english][^][space][other lang]
-                (and (< (1+ fore-to) (line-end-position))
-                     (-not-other-p fore-char)
-                     (not (and (> (1+ fore-to) (point))
-                               (-not-other-p back-char))))))
+               ;; to filter unecessary (-get)
+               (-context-english-p back-detect fore-detect (- (point) 2))
+               (equal (-get) english))
           (setq -inline-lang 'other)
           (-inline-activate (- (point) 2)))))))))
 
