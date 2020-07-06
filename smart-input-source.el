@@ -786,28 +786,26 @@ meanings as `string-match-p'."
 
      ;; [line beginning][^][english]
      ;; [english][^][english]
-     ;; [not english][blank][^][english]
+     ;; [not english][blank][^][blank or not][english]
      ((and (or (= back-to (line-beginning-position))
                (and (= back-to (point))
                     (-english-p back-char))
                (and (< back-to (point))
                     (-not-english-p back-char)))
            (< fore-to (line-end-position))
-           (= fore-to (point))
            (-english-p fore-char))
       'english)
 
-     ;; [english][^][blank][not english]
+     ;; [english][blank or not][^][blank][not english]
      ((and (and (> fore-to (point))
                 (-not-english-p fore-char))
            (> back-to (line-beginning-position))
-           (= back-to (point))
            (-english-p back-char))
       'english)
 
-     ;; [:other lang:][^]
-     ;; [^][:other lang:]
-     ;; [:other lang:][:blank or not:][^][:blank or not:][:other lang:]
+     ;; [other lang][^]
+     ;; [^][other lang]
+     ;; [other lang][blank or not][^][blank or not][other lang]
      ((or (and (= back-to (point))
                (-other-p back-char))
           (and (= fore-to (point))
@@ -962,38 +960,38 @@ input source to English."
         (cond
          (;inline english region
           (and inline-with-english
-               (or ;; [other lang][:space:][^][:not none-english:]
+               (or ;; [other lang][space][^][not none-english]
                 (and (> back-to (line-beginning-position))
                      (< back-to (point))
                      (-other-p back-char)
                      (not (and (< (1+ back-to) (point))
                                (= fore-to (point))
                                (-not-english-p fore-char))))
-                ;; [:not none-english:][:space:][^][other lang]
+                ;; [not none-english][space][^][other lang]
                 (and (< fore-to (line-end-position))
                      (-other-p fore-char)
                      (not (and (> fore-to (point))
                                (-not-english-p back-char))))))
-          (-inline-activate (1- (point)))
-          (setq -inline-lang 'english))
+          (setq -inline-lang 'english)
+          (-inline-activate (1- (point))))
 
          (;inline other lang region
           (and inline-with-other
                (= (1+ -inline-first-space-point) (point))
-               (or ;; [not other][:double space:][^][:not english:]
+               (or ;; [not other][double space][^][not english]
                 (and (> back-to (line-beginning-position))
                      (< (1+ back-to) (point))
                      (-not-other-p back-char)
                      (not (and (< (+ back-to 2) (point))
                                (= fore-to (point))
                                (-not-other-p fore-char))))
-                ;; [:not none-english:][^][:space:][other lang]
+                ;; [not none-english][^][space][other lang]
                 (and (< (1+ fore-to) (line-end-position))
                      (-not-other-p fore-char)
                      (not (and (> (1+ fore-to) (point))
                                (-not-other-p back-char))))))
-          (-inline-activate (- (point) 2))
-          (setq -inline-lang 'other))))))))
+          (setq -inline-lang 'other)
+          (-inline-activate (- (point) 2)))))))))
 
 (defun -inline-activate (start)
   "Activate the inline region overlay from START."
@@ -1079,8 +1077,8 @@ input source to English."
     (cond
      (; inline english region
       (eq -inline-lang 'english)
-      ;; [other lang][:blank inline overlay:]^
-      ;; [:overlay with trailing blank :]^
+      ;; [other lang][blank inline overlay]^
+      ;; [overlay with trailing blank]^
       (when (or (and (= back-to (-inline-overlay-start))
                      (-other-p back-char))
                 (and (> back-to (-inline-overlay-start))
@@ -1090,8 +1088,8 @@ input source to English."
 
      (; inline english region
       (eq -inline-lang 'other)
-      ;; [:not-other:][:blank inline overlay:]^
-      ;; [:overlay with trailing blank :]^
+      ;; [not-other][blank inline overlay]^
+      ;; [overlay with trailing blank]^
       (when (or (and (= back-to (-inline-overlay-start))
                      (-not-other-p back-char))
                 (and (> back-to (-inline-overlay-start))
