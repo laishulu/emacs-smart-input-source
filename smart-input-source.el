@@ -56,6 +56,24 @@ Should accept a string which is the id of the input source.")
 (defvar english "com.apple.keylayout.US"
   "Input source for english.")
 
+(defvar other-pattern "\\cc"
+  "Pattern to identify a character as other lang.")
+(make-variable-buffer-local 'smart-input-source-other-pattern)
+
+(defvar other "com.sogou.inputmethod.sogou.pinyin"
+  "Input source for other lang.")
+(make-variable-buffer-local 'smart-input-source-other)
+
+(defvar blank-pattern "[:blank:]"
+  "Pattern to identify a character as blank.")
+(make-variable-buffer-local 'smart-input-source-blank-pattern)
+
+(defvar set-english-hook nil
+  "Hook to run after set input source to English.")
+
+(defvar set-other-hook nil
+  "Hook to run after set input source to other language.")
+
 (defvar default-cursor-color nil
   "Default cursor color, used for English.
 
@@ -69,45 +87,14 @@ Should accept a string which is the id of the input source.")
 
 `nil' to disable the timer.")
 
-(defvar fixed-context nil
-  "Context is fixed to a specific language.
+(defvar respect-start 'english
+  "Switch to specific input source when `global-respect-mode' enabled.")
 
-Possible values:
-nil: dynamic context
-'english: English context
-'other: other language context.")
-(make-variable-buffer-local 'smart-input-source-fixed-context)
-
-(defvar with-english t
-  "Switch to english when `global-respect-mode' enabled.")
-
-(defvar with-evil-normal-escape t
+(defvar respect-evil-normal-escape t
   "<escape> to english in normal state when `global-respect-mode' enabled.")
 
-(defvar with-prefix-and-buffer t
+(defvar respect-prefix-and-buffer t
   "Preserve buffer input source when `global-respect-mode' enabled.")
-
-(defvar other-pattern "\\cc"
-  "Pattern to identify a character as other lang.")
-(make-variable-buffer-local 'smart-input-source-other-pattern)
-
-(defvar blank-pattern "[:blank:]"
-  "Pattern to identify a character as blank.")
-(make-variable-buffer-local 'smart-input-source-blank-pattern)
-
-(defvar other "com.sogou.inputmethod.sogou.pinyin"
-  "Input source for other lang.")
-(make-variable-buffer-local 'smart-input-source-other)
-
-(defvar set-english-hook nil
-  "Hook to run after set input source to English.")
-
-(defvar set-other-hook nil
-  "Hook to run after set input source to other language.")
-
-(defvar aggressive-line t
-  "Aggressively detect context across blank lines.")
-(make-variable-buffer-local 'smart-input-source-aggressive-line)
 
 (defvar preserve-save-triggers
   (list 'counsel-M-x 'org-capture
@@ -135,6 +122,19 @@ nil: dynamic context
   "Commands trigger the recap of the prefix override.
 
 Some functions take precedence of the override, need to recap after.")
+
+(defvar follow-context-fixed nil
+  "Context is fixed to a specific language in `follow-context-mode'.
+
+Possible values:
+nil: dynamic context
+'english: English context
+'other: other language context.")
+(make-variable-buffer-local 'smart-input-source-follow-context-fixed)
+
+(defvar follow-context-aggressive-line t
+  "Aggressively detect context across blank lines.")
+(make-variable-buffer-local 'smart-input-source-follow-context-aggressive-line)
 
 (defvar follow-context-hooks
   '(evil-insert-state-entry-hook)
@@ -622,7 +622,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (define-minor-mode global-respect-mode
   "Respect buffer/mode by proper input source.
 
-- Respect self: optional start this mode with English
+- Respect start: start this mode with specific input source.
 - Respect ~evil~: switch to English when leaving ~evil~ ~insert~ mode.
 - Respect prefix key: switch to English for ~C-c~/ ~C-x~/ ~C-h~.
 - Respect buffer: recover buffer input source when it regain focus."
@@ -633,13 +633,13 @@ Possible values: 'normal, 'prefix, 'sequence.")
     global-respect-mode
     (-ensure-ism
      ;; set english when mode enabled
-     (when with-english (set-english))
+     (when respect-start (-set respect-start))
 
-     (when with-prefix-and-buffer
+     (when respect-prefix-and-buffer
        ;; set english when exit evil insert state
        (when (featurep 'evil)
          (add-hook 'evil-insert-state-exit-hook #'set-english)
-         (when with-evil-normal-escape
+         (when respect-evil-normal-escape
            (define-key evil-normal-state-map (kbd "<escape>") #'set-english)))
 
        ;; preserve buffer input source
@@ -675,10 +675,10 @@ Possible values: 'normal, 'prefix, 'sequence.")
     ;; for evil
     (when (featurep 'evil)
       (remove-hook 'evil-insert-state-exit-hook #'set-english)
-      (when with-evil-normal-escape
+      (when respect-evil-normal-escape
         (define-key evil-normal-state-map (kbd "<escape>") nil)))
 
-    (when with-prefix-and-buffer
+    (when respect-prefix-and-buffer
       ;; for preserving buffer input source
       (remove-hook 'pre-command-hook #'-preserve-pre-command-handler)
       (remove-hook 'post-command-hook #'-preserve-post-command-handler)
@@ -782,7 +782,7 @@ meanings as `string-match-p'."
 
     (cond
      ;; context is fixed.
-     (fixed-context fixed-context)
+     (follow-context-fixed follow-context-fixed)
 
      ;; [line beginning][^][english]
      ;; [english][^][english]
@@ -821,28 +821,28 @@ meanings as `string-match-p'."
       'english)
 
      ;; [english: include the previous line][blank][^]
-     ((and (or aggressive-line
+     ((and (or follow-context-aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
            (-english-p cross-line-back-char))
       'english)
 
      ;; [other lang: include the previous line][blank][^]
-     ((and (or aggressive-line
+     ((and (or follow-context-aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
            (-other-p cross-line-back-char))
       'other)
 
      ;; [^][blank][english: include the next line]
-     ((and (or aggressive-line
+     ((and (or follow-context-aggressive-line
                (< cross-line-fore-to (line-end-position 2)))
            (> cross-line-fore-to (line-end-position))
            (-english-p cross-line-fore-char))
       'english)
 
      ;; [^][blank][other lang: include the next line]
-     ((and (or aggressive-line
+     ((and (or follow-context-aggressive-line
                (< cross-line-fore-to (line-end-position 2)))
            (> cross-line-fore-to (line-end-position))
            (-other-p cross-line-fore-char))

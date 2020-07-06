@@ -7,7 +7,7 @@ source smartly:
 
 - A global mode: ~smart-input-source-global-respect-mode~ to respect buffer/mode
   by proper input source
-  1. Respect self: start Emacs with specified language.
+  1. Respect start: start Emacs with specified language.
   2. Respect ~evil~: switch to English when leaving ~evil~ ~insert~ mode.
   3. Respect ~minibuffer~: switch to English when enter ~minibuffer~.
   4. Respect prefix key: switch to English for ~C-c~ / ~C-x~ / ~C-h~ and more.
@@ -27,7 +27,6 @@ source smartly:
   change cursor color according to current input source.
 
 * Features
-** In English
 1. Ease the use of OS-native input source, no need to change use experience.
 2. Ease the use of Emacs-native input source, for further compatibility. 
 3. Support GUI Emacs, as well as Terminal Emacs.
@@ -35,7 +34,7 @@ source smartly:
    ~GUI Emacs Mac Port~ with ~Sogou Input~.
 5. Automatically change cursor color according to current input source.
 6. Respect buffer/mode by proper input source:
-   1) Respect self: start Emacs with specified language.
+   1) Respect start: start Emacs with specified language.
    2) Respect ~evil~: switch to English when leaving ~evil~ ~insert~ mode.
    3) Respect ~minibuffer~: switch to English when enter ~minibuffer~.
    4) Respect prefix key: switch to English for ~C-c~ / ~C-x~ / ~C-h~ and more.
@@ -254,15 +253,15 @@ You can change some of the behaviors by configuring related variables, note:
 |-------------------------------------------+--------+--------------------------------------------------------+--------------------------|
 
 ** About /respect mode/
-| Variable                                            | Buffer | Description                                        | Default              |
-|-----------------------------------------------------+--------+----------------------------------------------------+----------------------|
-| ~smart-input-source-with-english~                   | no     | Switch to English when mode enabled                | ~t~                  |
-| ~smart-input-source-with-evil-normal-escape~        | no     | esc to English from evil normal sate               | ~t~                  |
-| ~smart-input-source-with-prefix-and-buffer~         | no     | Handle prefix key and buffer                       | ~t~                  |
-| ~smart-input-source-prefix-override-keys~           | no     | Prefix keys to be respected                        | '("C-c" "C-x" "C-h") |
-| ~smart-input-source-prefix-override-recap-triggers~ | no     | Functions trigger the recap of the prefix override | see variable doc     |
-| ~smart-input-source-preserve-save-triggers~         | no     | Commands trigger the save of input source          | see variable doc     |
-|-----------------------------------------------------+--------+----------------------------------------------------+----------------------|
+| Variable                                            | Buffer | Description                                        | Default                |
+|-----------------------------------------------------+--------+----------------------------------------------------+------------------------|
+| ~smart-input-source-respect-start~                  | no     | Switch to specific input source when mode enabled  | ~'english~             |
+| ~smart-input-source-respect-evil-normal-escape~     | no     | esc to English from evil normal sate               | ~t~                    |
+| ~smart-input-source-respect-prefix-and-buffer~      | no     | Handle prefix key and buffer                       | ~t~                    |
+| ~smart-input-source-prefix-override-keys~           | no     | Prefix keys to be respected                        | ~'("C-c" "C-x" "C-h")~ |
+| ~smart-input-source-prefix-override-recap-triggers~ | no     | Functions trigger the recap of the prefix override | see variable doc       |
+| ~smart-input-source-preserve-save-triggers~         | no     | Commands trigger the save of input source          | see variable doc       |
+|-----------------------------------------------------+--------+----------------------------------------------------+------------------------|
 
 ** About language pattern
 | Variable                             | Buffer | Description                                    | Default                  |
@@ -270,27 +269,27 @@ You can change some of the behaviors by configuring related variables, note:
 | ~smart-input-source-english-pattern~ | no     | Pattern to identify a character as English     | ~[a-zA-Z]~               |
 | ~smart-input-source-other-pattern~   | yes    | Pattern to identify a character as other       | ~\cc~ , see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]] |
 | ~smart-input-source-blank-pattern~   | yes    | Pattern to identify a character as blank       | ~[:blank:]~              |
-| ~smart-input-source-aggressive-line~ | yes    | Aggressively detect context across blank lines | ~t~                      |
 |--------------------------------------+--------+------------------------------------------------+--------------------------|
 
 ** About /follow context mode/
-| Variable                                  | Buffer | Description                             | Default          |
-|-------------------------------------------+--------+-----------------------------------------+------------------|
-| ~smart-input-source-fixed-context~        | yes    | Context is fixed to a specific language | ~nil~            |
-| ~smart-input-source-follow-context-hooks~ | no     | Hooks trigger the context following     | see variable doc |
-|-------------------------------------------+--------+-----------------------------------------+------------------|
+| Variable                                            | Buffer | Description                                    | Default          |
+|-----------------------------------------------------+--------+------------------------------------------------+------------------|
+| ~smart-input-source-follow-context-contxt~          | yes    | Context is fixed to a specific language        | ~nil~            |
+| ~smart-input-source-follow-context-aggressive-line~ | yes    | Aggressively detect context across blank lines | ~t~              |
+| ~smart-input-source-follow-context-hooks~           | no     | Hooks trigger the context following            | see variable doc |
+|-----------------------------------------------------+--------+------------------------------------------------+------------------|
 
 ** About /inline mode/
 
-| Face Name                                 | Buffer | Description                                                | Default |
-|-------------------------------------------+--------+------------------------------------------------------------+---------|
-| ~smart-input-source-inline-face~          | no     | Face for the inline region overlay                         |         |
-| ~smart-input-source-inline-not-max-point~ | no     | Insert new line when the whole buffer ends with the region | ~t~     |
-| ~smart-input-source-inline-tighten-all~   | yes    | Delete all blanks around, default to delete 1 respectively | ~nil~   |
-| ~smart-input-source-single-space-close~   | yes    | 1 space to close the region, default is 2 spaces/return    | ~t~     |
-| ~smart-input-source-with-english~         | yes    | enable the ~inline english~ region feature                 | ~t~     |
-| ~smart-input-source-with-other~           | yes    | enable the ~inline other language~ region feature          | ~nil~   |
-|-------------------------------------------+--------+------------------------------------------------------------+---------|
+| Face Name                                      | Buffer | Description                                                | Default |
+|------------------------------------------------+--------+------------------------------------------------------------+---------|
+| ~smart-input-source-inline-face~               | no     | Face for the inline region overlay                         |         |
+| ~smart-input-source-inline-not-max-point~      | no     | Insert new line when the whole buffer ends with the region | ~t~     |
+| ~smart-input-source-inline-tighten-all~        | yes    | Delete all blanks around, default to delete 1 respectively | ~nil~   |
+| ~smart-input-source-inline-single-space-close~ | yes    | 1 space to close the region, default is 2 spaces/return    | ~t~     |
+| ~smart-input-source-inline-with-english~       | yes    | enable the ~inline english~ region feature                 | ~t~     |
+| ~smart-input-source-inline-with-other~         | yes    | enable the ~inline other language~ region feature          | ~nil~   |
+|------------------------------------------------+--------+------------------------------------------------------------+---------|
 
 * How to
 **  How to get the input source id
