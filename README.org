@@ -50,10 +50,9 @@ source smartly:
       c. Two consecutive ~space~ are input (can be configured to one ~space~).
    4) If the region ends with space, none-English input source will be
       selected, otherwise English input source is retained.
-   5) After the close of the region, one space (can be configured to all spaces)
-      in the head and tail respectively (if exists) of the region will be
-      deleted. But if the whole region is blank, the no character will be
-      deleted.
+   5) After the close of the region, one space (can be configured) in the head
+      and tail respectively (if exists) of the region will be deleted. But if
+      the whole region is blank, the no character will be deleted.
 8. Switch input source according to context:
    1) Pre-configured for entering evil insert mode.
    2) For native emacs user, you can configure by easily set a variable.
@@ -186,11 +185,11 @@ its all in English.
 (use-package smart-input-source
   :init
   ;; set the english input source
-  (setq smart-input-source-english
-        "com.apple.keylayout.US")
+  ;;(setq smart-input-source-english "com.apple.keylayout.ABC")
+  (setq smart-input-source-english "com.apple.keylayout.US")
   ;; set the default other language input source for all buffer
-  (setq-default smart-input-source-other
-                "com.sogou.inputmethod.sogou.pinyin")
+  (setq-default smart-input-source-other "com.sogou.inputmethod.sogou.pinyin")
+ 
   ;; customize your own triggers, the /hint-mode/ may help.
   ;; (push 'YOUR-COMMAND smart-input-source-preserve-save-triggers)
 
