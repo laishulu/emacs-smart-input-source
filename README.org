@@ -285,7 +285,8 @@ You can change some of the behaviors by configuring related variables, note:
 |------------------------------------------------+--------+------------------------------------------------------------+---------|
 | ~smart-input-source-inline-face~               | no     | Face for the inline region overlay                         |         |
 | ~smart-input-source-inline-not-max-point~      | no     | Insert new line when the whole buffer ends with the region | ~t~     |
-| ~smart-input-source-inline-tighten-all~        | yes    | Delete all blanks around, default to delete 1 respectively | ~nil~   |
+| ~smart-input-source-inline-tighten-head-rule~  | yes    | Rule to delete the head spaces                             | ~1~     |
+| ~smart-input-source-inline-tighten-tail-rule~  | yes    | Rule to delete the tail spaces                             | ~1~     |
 | ~smart-input-source-inline-single-space-close~ | yes    | 1 space to close the region, default is 2 spaces/return    | ~t~     |
 | ~smart-input-source-inline-with-english~       | yes    | enable the ~inline english~ region feature                 | ~t~     |
 | ~smart-input-source-inline-with-other~         | yes    | enable the ~inline other language~ region feature          | ~nil~   |

@@ -156,9 +156,23 @@ nil: dynamic context
 Insert new line when the whole buffer ends with the region, to avoid
 autocomplete rendering a large area with the region background.")
 
-(defvar inline-tighten-all nil
-  "Delete all blanks around the inline region.")
-(make-variable-buffer-local 'smart-input-source-inline-with-tighten-all)
+(defvar inline-tighten-head-rule 1
+  "Rule to delete head spaces.
+
+Possible values:
+1: delete 1 space if exists
+0: don't delete space
+'all: delete all space.")
+(make-variable-buffer-local 'smart-input-source-inline-tighten-head-rule)
+
+(defvar inline-tighten-tail-rule 1
+  "Rule to delete tail spaces.
+
+Possible values:
+1: delete 1 space if exists
+0: don't delete space
+'all: delete all space.")
+(make-variable-buffer-local 'smart-input-source-inline-tighten-tail-rule)
 
 (defvar inline-single-space-close nil
   "Single space closes the inline region.")
@@ -1082,18 +1096,32 @@ input source to English."
                (tighten-back-to (back-detect-to tighten-back-detect)))
           (when (and (< tighten-back-to (-inline-overlay-end))
                      (> tighten-back-to (-inline-overlay-start)))
-            (if inline-tighten-all
-                (delete-region (point) tighten-back-to)
-              (delete-char -1)))))
+            (cond
+             (; just delete one space
+              (eq inline-tighten-tail-rule 1)
+              (delete-char -1))
+             (; don't delete space
+              (eq inline-tighten-tail-rule 0)
+              t)
+             (; don't delete space
+              (eq inline-tighten-tail-rule 'all)
+              (delete-region (point) tighten-back-to))))))
 
       (save-excursion
         (goto-char (-inline-overlay-start))
         (let* ((tighten-fore-detect (-fore-detect-chars))
                (tighten-fore-to (fore-detect-to tighten-fore-detect)))
           (when (> tighten-fore-to (-inline-overlay-start))
-            (if inline-tighten-all
-                (delete-region (point) tighten-fore-to)
-              (delete-char 1)))))))
+            (cond
+             (; just delete one space
+              (eq inline-tighten-head-rule 1)
+              (delete-char 1))
+             (; don't delete space
+              (eq inline-tighten-head-rule 0)
+              t)
+             (; don't delete space
+              (eq inline-tighten-head-rule 'all)
+              (delete-region (point) tighten-fore-to))))))))
   (delete-overlay -inline-overlay)
   (setq -inline-overlay nil))
 
