@@ -365,17 +365,15 @@ Unnecessary switching is avoided internally."
   (-ensure-ism
    (when (and lang (functionp do-set))
      ;; swith only when required
-     (pcase (-get)
+     (cond
        (; set to english
-        (pred (equal english))
-        (when (member lang (list 'other other))
-          (setq -current 'other)
-          (funcall do-set other)))
+        (member lang (list 'english english))
+        (funcall do-set english)
+        (setq -current 'english))
        (; set to other
-        (pred (equal other))
-        (when (member lang (list 'english english))
-          (setq -current 'english)
-          (funcall do-set english))))
+        (member lang (list 'other other))
+        (funcall do-set other)
+        (setq -current 'other)))
 
      ;; run hook whether switched or not
      (if (member lang (list 'other other))
