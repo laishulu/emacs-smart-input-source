@@ -96,15 +96,6 @@ Should accept a string which is the id of the input source.")
 (defvar respect-prefix-and-buffer t
   "Preserve buffer input source when `global-respect-mode' enabled.")
 
-(defvar preserve-save-triggers
-  (list 'counsel-M-x 'org-capture
-        'next-buffer 'previous-buffer
-        'other-window 'windmove-last
-        'ace-window
-        'windmove-up 'windmove-down 'windmove-left 'windmove-right
-        'centaur-tabs-forward 'centaur-tabs-backward 'centaur-tabs-do-select)
-  "Triggers to save the input source for buffer.")
-
 (defvar preserve-save-hooks
   (list 'focus-out-hook)
   "Hooks to save the input source for buffer.")
@@ -502,10 +493,6 @@ Possible values: 'normal, 'prefix, 'sequence.")
           (append (mapcar (lambda (e) `(t . ,e)) (listify-key-sequence keys))
                   unread-command-events))))
 
-(defun -save-trigger-p (cmd)
-  "CMD is a save trigger."
-  (memq -real-this-command preserve-save-triggers))
-
 (defun -preserve-save-handler ()
   "Handler for `preserve-save-hooks'"
   (when log-mode
@@ -541,18 +528,11 @@ Possible values: 'normal, 'prefix, 'sequence.")
      (cond
       (; not prefix key
        (not (eq -real-this-command #'-prefix-override-handler))
-       (when (and (not (-preserve-assume-english-p (current-buffer)))
-                  (-save-trigger-p -real-this-command))
-         (-save-to-buffer)
-         (when log-mode
-           (message (format "[%s] is a save trigger, save input source: [%s]."
-                            -real-this-command -for-buffer)))))
+       t)
 
       (; for prefix key
        (eq -real-this-command #'-prefix-override-handler)
-       (when log-mode
-         (message (format "[%s] is a prefix key, shortcut to pre@[prefix]."
-                          (this-command-keys))))
+      
        ;; go to pre@[prefix] directly
        (setq -prefix-handle-stage 'prefix)
        (-preserve-pre-command-handler))))
@@ -608,42 +588,17 @@ Possible values: 'normal, 'prefix, 'sequence.")
       (; key sequence is canceled
        (not -real-this-command)
        (when log-mode (message "Key sequence canceled."))
-       (-to-normal-stage t)
-       (when (and preserve-hint-mode
-                  (not (-save-trigger-p -real-this-command)))
-         (message
-          (format "!! cmd [%s] switched %s to %s, add it to `save-triggers'\?"
-                  -real-this-command
-                  -buffer-before-command (current-buffer)))))
+       (-to-normal-stage t))
 
       (; end key sequence
        t
        (when log-mode (message "Key sequence ended."))
        (let ((restore (not (-preserve-assume-english-p (current-buffer)))))
-         (-to-normal-stage restore)
-
-         (when (and preserve-hint-mode restore
-                    (not (-save-trigger-p -real-this-command)))
-           (message
-            (format "!! cmd [%s] switched %s to %s, add it to `save-triggers'\?"
-                    -real-this-command
-                    -buffer-before-command (current-buffer))))))))
+         (-to-normal-stage restore)))))
     (; current is normal stage
      'normal
      (let ((restore (not (eq -buffer-before-command (current-buffer)))))
-       (-to-normal-stage restore)
-
-       (when (and preserve-hint-mode restore
-                  (not (-save-trigger-p -real-this-command)))
-         (message
-          (format "!! cmd [%s] switched %s to %s, add it to `save-triggers'\?"
-                  -real-this-command
-                  -buffer-before-command (current-buffer))))))))
-
-(define-minor-mode preserve-hint-mode
-  "Hint to add command to related variables."
-  :global t
-  :init-value nil)
+       (-to-normal-stage restore)))))
 
 (define-minor-mode log-mode
   "Log the execution of this package."
