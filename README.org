@@ -189,9 +189,6 @@ its all in English.
   (setq smart-input-source-english "com.apple.keylayout.US")
   ;; set the default other language input source for all buffer
   (setq-default smart-input-source-other "com.sogou.inputmethod.sogou.pinyin")
- 
-  ;; customize your own triggers, the /hint-mode/ may help.
-  ;; (push 'YOUR-COMMAND smart-input-source-preserve-save-triggers)
 
   ;; :hook
   ;; enable the /follow context/ and /inline region/ mode for specific buffers
@@ -259,7 +256,6 @@ You can change some of the behaviors by configuring related variables, note:
 | ~smart-input-source-respect-prefix-and-buffer~      | no     | Handle prefix key and buffer                       | ~t~                    |
 | ~smart-input-source-prefix-override-keys~           | no     | Prefix keys to be respected                        | ~'("C-c" "C-x" "C-h")~ |
 | ~smart-input-source-prefix-override-recap-triggers~ | no     | Functions trigger the recap of the prefix override | see variable doc       |
-| ~smart-input-source-preserve-save-triggers~         | no     | Commands trigger the save of input source          | see variable doc       |
 |-----------------------------------------------------+--------+----------------------------------------------------+------------------------|
 
 ** About language pattern
@@ -299,9 +295,10 @@ input source id/ by evaluating the following expression in Emacs:
 (smart-input-source--get)
 #+END_SRC
 
-**  How to preserve input source
-Turn on ~smart-input-source-preserve-hint-mode~, replay the actions that the
-input resources are not preserved, and and check message buffer for hints.
-
-Turn on ~smart-input-source-preserve-log-mode~ to log and analysis by
-yourself, or reach the author for help.
+**  How to make the package know the input source status precisely.
+1. If your input source is switched from ~smart-input-source~, then everything
+   should be OK naturally. And your ~smart-input-source-cursor-color-seconds~
+   can even be set to ~nil~.
+2. If your input source is switched from OS,
+   ~smart-input-source-cursor-color-seconds~ should be small enough to timely
+   detect the change of input source.
