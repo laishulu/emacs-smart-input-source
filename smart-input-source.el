@@ -200,13 +200,159 @@ Possible values:
 (declare-function mac-select-input-source "ext:macfns.c"
                   (SOURCE &optional SET-KEYBOARD-LAYOUT-OVERRIDE-P) t)
 
-;; Following codes are mainly about cursor color mode
+;;
+;; Following codes are mainly about input source manager
+;;
+
+(defvar -ism nil "The input source manager.")
+(defvar -ism-inited nil "Input source manager initialized.")
 
 (defvar -current nil
   "Current input source.")
 
 (defvar -previous nil
   "Previous input source.")
+
+(defvar -for-buffer nil
+  "Saved buffer input source.")
+(make-variable-buffer-local 'smart-input-source--for-buffer)
+
+(defvar -for-buffer-locked nil
+  "Buffer input source is locked.")
+(make-variable-buffer-local 'smart-input-source--for-buffer-locked)
+
+(defun -init-ism ()
+  "Init input source manager."
+  ;; `do-get'and `do-set' takes the first precedence.
+  (unless (and (functionp do-get)
+               (functionp do-set))
+    ;; EMP
+    (when (and (string= (window-system) "mac")
+               (fboundp 'mac-input-source))
+      ;; EMP
+      (setq -ism 'emp))
+
+    ;; external ism
+    (when (and (not -ism) (stringp external-ism))
+      (let ((ism-path (executable-find external-ism)))
+        (when ism-path (setq -ism ism-path))))
+
+    ;; make `do-set' and `do-get'
+    (when -ism
+      ;; avoid override user customized do-get
+      (unless (functionp do-get)
+        (setq do-get (-mk-get-fn)))
+      ;; avoid override user customized do-set
+      (unless (functionp do-set)
+        (setq do-set (-mk-set-fn)))))
+
+  ;; successfully inited
+  (when (and (functionp do-get)
+             (functionp do-set))
+    ;; a t `-ism' means customized by `do-get' and `do-set'
+    (unless -ism (setq -ism t)))
+
+  ;; just inited, successfully or not
+  (setq -ism-inited t))
+
+(defmacro -ensure-ism (&rest body)
+  "Only run BODY with valid ism."
+  `(progn
+     (unless smart-input-source--ism-inited
+       (smart-input-source--init-ism))
+     (when smart-input-source--ism
+       ,@body)))
+
+(defun -mk-get-fn ()
+  "Make a function to be bound to `do-get'."
+  (if (equal -ism 'emp)
+      #'mac-input-source
+    (lambda ()
+      (string-trim (shell-command-to-string -ism)))))
+
+(defun -mk-set-fn ()
+  "Make a function to be bound to `do-set'."
+  (if (equal -ism 'emp)
+      (lambda (source) (mac-select-input-source source))
+    (lambda (source)
+      (string-trim
+       (shell-command-to-string (concat -ism " " source))))))
+
+(defun -update-state (source)
+  "Update input source state.
+
+SOURCE should be 'english or 'other."
+  (setq -current source)
+  (unless -for-buffer-locked
+    (setq -for-buffer source)))
+
+(defun -get ()
+  "Get the input source id."
+  (-ensure-ism
+   (when (functionp do-get)
+     (let ((source (funcall do-get)))
+       (pcase source
+         ((pred (equal english))
+          (-update-state 'english))
+         ((pred (equal other))
+          (-update-state 'other)))
+       source))))
+
+(defun -set (lang)
+  "Set the input source according to lang LANG.
+
+Unnecessary switching is avoided internally."
+  (-ensure-ism
+   (when (and lang (functionp do-set))
+     ;; swith only when required
+     (cond
+       (; set to english
+        (member lang (list 'english english))
+        (funcall do-set english)
+        (-update-state 'english))
+       (; set to other
+        (member lang (list 'other other))
+        (funcall do-set other)
+        (-update-state 'other)))
+
+     ;; run hook whether switched or not
+     (if (member lang (list 'other other))
+         (run-hooks 'smart-input-source-set-other-hook)
+       (run-hooks 'smart-input-source-set-english-hook)))
+   (when log-mode (message (format "Do set input source: [%s]" lang)))))
+
+:autoload
+(defun set-english ()
+  "Set input source to `english'."
+  (interactive)
+  (-set 'english))
+
+:autoload
+(defun set-other ()
+  "Set input source to `other'."
+  (interactive)
+  (-set 'other))
+
+:autoload
+(defun switch ()
+  "Switch input source between english and other."
+  (interactive)
+  (-ensure-ism
+   (pcase (-get)
+     (; current is english
+      (pred (equal english))
+      (funcall do-set other)
+      (run-hooks 'smart-input-source-set-other-hook)
+      other)
+     (; current is other
+      (pred (equal other))
+      (funcall do-set english)
+      (run-hooks 'smart-input-source-set-english-hook)
+      other))))
+
+;;
+;; Following codes are mainly about cursor color mode
+;;
 
 (defun -set-cursor-color-advice (fn color)
   "Advice for FN of `set-cursor-color'.
@@ -289,7 +435,9 @@ way."
       (run-with-idle-timer cursor-color-seconds t
                            #'-cursor-color-timer-restart)))
    (; turn off the mode
-    (not global-cursor-color-mode)
+    (and (not global-cursor-color-mode)
+         ;; /respect mode/ depends on /cursor color mode/
+         (not global-respect-mode))
     (advice-remove 'set-cursor-color #'-set-cursor-color-advice)
     (remove-hook 'smart-input-source-set-english-hook
                  #'-update-cursor-color)
@@ -298,146 +446,18 @@ way."
     (when -cursor-color-timer (cancel-timer -cursor-color-timer)))))
 
 ;;
-;; Following codes are mainly about input source manager
-;;
-(defvar -ism nil "The input source manager.")
-(defvar -ism-inited nil "Input source manager initialized.")
-
-(defun -init-ism ()
-  "Init input source manager."
-  ;; `do-get'and `do-set' takes the first precedence.
-  (unless (and (functionp do-get)
-               (functionp do-set))
-    ;; EMP
-    (when (and (string= (window-system) "mac")
-               (fboundp 'mac-input-source))
-      ;; EMP
-      (setq -ism 'emp))
-
-    ;; external ism
-    (when (and (not -ism) (stringp external-ism))
-      (let ((ism-path (executable-find external-ism)))
-        (when ism-path (setq -ism ism-path))))
-
-    ;; make `do-set' and `do-get'
-    (when -ism
-      ;; avoid override user customized do-get
-      (unless (functionp do-get)
-        (setq do-get (-mk-get-fn)))
-      ;; avoid override user customized do-set
-      (unless (functionp do-set)
-        (setq do-set (-mk-set-fn)))))
-
-  ;; successfully inited
-  (when (and (functionp do-get)
-             (functionp do-set))
-    ;; a t `-ism' means customized by `do-get' and `do-set'
-    (unless -ism (setq -ism t)))
-
-  ;; just inited, successfully or not
-  (setq -ism-inited t))
-
-(defmacro -ensure-ism (&rest body)
-  "Only run BODY with valid ism."
-  `(progn
-     (unless smart-input-source--ism-inited
-       (smart-input-source--init-ism))
-     (when smart-input-source--ism
-       ,@body)))
-
-(defun -mk-get-fn ()
-  "Make a function to be bound to `do-get'."
-  (if (equal -ism 'emp)
-      #'mac-input-source
-    (lambda ()
-      (string-trim (shell-command-to-string -ism)))))
-
-(defun -mk-set-fn ()
-  "Make a function to be bound to `do-set'."
-  (if (equal -ism 'emp)
-      (lambda (source) (mac-select-input-source source))
-    (lambda (source)
-      (string-trim
-       (shell-command-to-string (concat -ism " " source))))))
-
-(defun -get ()
-  "Get the input source id."
-  (-ensure-ism
-   (when (functionp do-get)
-     (let ((source (funcall do-get)))
-       (pcase source
-         ((pred (equal english))
-          (setq -current 'english))
-         ((pred (equal other))
-          (setq -current 'other)))
-       source))))
-
-(defun -set (lang)
-  "Set the input source according to lang LANG.
-
-Unnecessary switching is avoided internally."
-  (-ensure-ism
-   (when (and lang (functionp do-set))
-     ;; swith only when required
-     (cond
-       (; set to english
-        (member lang (list 'english english))
-        (funcall do-set english)
-        (setq -current 'english))
-       (; set to other
-        (member lang (list 'other other))
-        (funcall do-set other)
-        (setq -current 'other)))
-
-     ;; run hook whether switched or not
-     (if (member lang (list 'other other))
-         (run-hooks 'smart-input-source-set-other-hook)
-       (run-hooks 'smart-input-source-set-english-hook)))
-   (when log-mode (message (format "Do set input source: [%s]" lang)))))
-
-:autoload
-(defun set-english ()
-  "Set input source to `english'."
-  (interactive)
-  (-set 'english))
-
-:autoload
-(defun set-other ()
-  "Set input source to `other'."
-  (interactive)
-  (-set 'other))
-
-:autoload
-(defun switch ()
-  "Switch input source between english and other."
-  (interactive)
-  (-ensure-ism
-   (pcase (-get)
-     (; current is english
-      (pred (equal english))
-      (funcall do-set other)
-      (run-hooks 'smart-input-source-set-other-hook)
-      other)
-     (; current is other
-      (pred (equal other))
-      (funcall do-set english)
-      (run-hooks 'smart-input-source-set-english-hook)
-      other))))
-
-;;
 ;; Following codes are mainly about respect mode
 ;;
 
-(defvar -for-buffer nil
-  "Saved buffer input source.")
-(make-variable-buffer-local 'smart-input-source--for-buffer)
-
-(defun -save-to-buffer ()
-  "Save buffer input source."
-  (setq -for-buffer (-get)))
+(defun -save-to-buffer (&optional lock-after)
+  "Save buffer input source, optional LOCK-AFTER save."
+  (-get)
+  (when lock-after
+    (setq -for-buffer-locked t)))
 
 (defun -restore-from-buffer ()
   "Restore buffer input source."
+  (setq -for-buffer-locked nil)
   (-set (or -for-buffer 'english)))
 
 (defvar -prefix-override-map-enable nil
@@ -540,7 +560,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
      'prefix
      (setq -prefix-override-map-enable nil)
      (setq -buffer-before-prefix (current-buffer))
-     (-save-to-buffer)
+     (-save-to-buffer t)
      (set-english)
      (when log-mode
        (message (format "Input source: [%s] (saved) => [%s]."
@@ -644,6 +664,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
    (; turn on the mode
     global-respect-mode
     (-ensure-ism
+     ;; /respect mode/ depends on /cursor color mode/
+     (global-cursor-color-mode t)
      ;; set english when mode enabled
      (when respect-start (-set respect-start))
 
