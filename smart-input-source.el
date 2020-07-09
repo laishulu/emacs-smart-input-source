@@ -367,18 +367,18 @@ Unnecessary switching is avoided internally."
           (run-with-idle-timer
            ;; every time the wait period increases by auto-refresh-seconds
            (time-add (current-idle-time)
-                     (* auto-refresh-seconds -auto-refresh-timer-count))
+                     (* auto-refresh-seconds -auto-refresh-timer-scale))
            nil
            #'-auto-refresh-timer-function))
-    (setq -auto-refresh-timer-count (1+ -auto-refresh-timer-count))))
+    (setq -auto-refresh-timer-scale (* 1.05 -auto-refresh-timer-scale))))
 
-(defvar -auto-refresh-timer-count 0
-  "Execution count of `-auto-refresh-timer-count' in this idle period.")
+(defvar -auto-refresh-timer-scale 1
+  "Interval scale during this idle period.")
 
 (defun -auto-refresh-timer-restart ()
   "Restart `-auto-refresh-timer'."
   (when (and auto-refresh-seconds -auto-refresh-mode)
-    (setq -auto-refresh-timer-count 0)
+    (setq -auto-refresh-timer-scale 1)
     (-auto-refresh-timer-function)))
 
 (define-minor-mode -auto-refresh-mode
