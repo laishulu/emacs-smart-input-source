@@ -63,104 +63,57 @@ source smartly:
 Just install ~smart-input-source~ from ~melpa~.
 
 * Prepare /input source manager (ISM)/
-*input source manager (ISM)* can be prepared by any of the following ways:
-- For GUI Emacs Mac Port (EMP) on MacOS, no need to configure ISM. You can
-  install ~EMP~ by the following commands:
-  #+BEGIN_SRC bash
-  brew tap railwaycat/emacsmacport
-  brew install emacs-mac --with-modules --with-rsvg --with-imagemagick --with-natural-title-bar
-  #+END_SRC
-- Emacs other than GUI EMP on MacOS, no need to configure ISM by using ~macism~.
-  You can install ~macism~ by the following commands:
-  #+BEGIN_SRC bash
-  brew tap laishulu/macism
-  brew install macism
-  #+END_SRC
-  Note:
-  a. The first time when you use ~macism SOME_INPUT_SOURCE_ID~ in your app,
-  MacOS will popup a window asking you to grant permission of Accessibility, you
-  can also grant the permission manually following the instructions in [[https://github.com/laishulu/macism/][macism]].
-  b. Don't use ~Alacritty~ for TUI Emacs, because it can't handle deleting
-  as well as ~Option~ and ~Command~ key properly when input method is on. I just
-  recommend ~kitty~ until ~Alacirtty~ fixed those long existing bugs.
-
-  If you have problems on granting permission of Accessibility for Emacs, see
-  below:
-  #+BEGIN_QUOTE
-  Some Emacs "distributions" package together a number of Emacs binaries for
-  various macOS versions in a single folder, and dynamically at runtime chooses
-  the right one for your system. This means that the icon you click to start the
-  program is really a "placeholder" that is not Emacs itself, but rather just
-  starts up Emacs. This "placeholder" often takes the form of a Ruby script. If
-  this is the case, you'll need to drag the Ruby program on to the list. Ruby
-  comes with macOS by default. You can find the program by opening Finder, and
-  then from the "Go" menu choose "Go to Folder". Enter "/usr/bin" and you'll get
-  that folder opened in Finder. In the folder, you'll find the ruby program that
-  you can drag on to the Accessibility list.
-  #+END_QUOTE
-- If you have a ISM ~YOUR_ISM~:
-  + Run ~YOUR_ISM~ will output the current input source
-  + Run ~YOUR_ISM INPUT_SOURCE_ID~ will select ~INPUT_SOURCE_ID~.
-
-  Then you can simply configure the ISM
-  #+BEGIN_SRC lisp
-  (setq-default smart-input-source-external-ism "YOUR_ISM")
-  #+END_SRC
-- The most flexible way to specify ISM is defining the following functions:
-  #+BEGIN_SRC lisp
-  (setq-default smart-input-source-do-get
-        #'YOUR_DO_GET_INPUT_SOURCE_FUNCTION)
-  (setq-default smart-input-source-do-set
-        #'YOUR_DO_SET_INPUT_SOURCE_FUNCTION)
-  #+END_SRC
-
-** Example: Emacs-native input source
-~rime~ and ~pyim~ are two fabulous Emacs-native input methods. The former is
-powerful while the later is easy to install and use.
+** Emacs-native input method
+Any Emacs-native input method can be configured in the same way, here uses
+~rime~ as an example:
 #+BEGIN_SRC lisp
 (setq-default smart-input-source-english nil)
 (setq-default smart-input-source-other "rime")
-;; for pyim
-;; (setq-default smart-input-source-other "pyim")
 (setq-default smart-input-source-do-get (lambda() current-input-method))
 (setq-default smart-input-source-do-set (lambda(source) (set-input-method source)))
 #+END_SRC
 
-** Example: ~fcitx~
-~fcitx~ is a input method framework popular among Chinese Linux users.
-~fcitx-remote~ can serve as an input source manager for `fcitx`, and you can
-configure as following:
-#+BEGIN_SRC lisp
-(require 'subr-x)
-(setq-default smart-input-source-english "1")
-(setq-default smart-input-source-other "2")
-(setq-default smart-input-source-do-get
-      (lambda() (string-trim (shell-command-to-string "fcitx-remote"))))
-(setq-default smart-input-source-do-set
-      (lambda(source)
-        (pcase source
-          ("1" (string-trim (shell-command-to-string "fcitx-remote -c")))
-          ("2" (string-trim (shell-command-to-string "fcitx-remote -o"))))))
+** MacOS
+*** GUI Emacs Mac Port (EMP)
+EMP has native API to interact input sources efficiently, thus no extra steps
+needed to prepare ISM. You can install EMP by the following commands:
+#+BEGIN_SRC bash
+brew tap railwaycat/emacsmacport
+brew install emacs-mac --with-modules --with-rsvg --with-imagemagick --with-natural-title-bar
 #+END_SRC
 
-** Example: ~ibus~
-~ibus~ is another popular input method framework in the Linux world.
-You can configure as following:
-#+BEGIN_SRC lisp
-(require 'subr-x)
-(setq-default smart-input-source-english "xkb:us::eng")
-(setq-default smart-input-source-other "OTHER_INPUT_SOURCE")
-(setq-default smart-input-source-do-get
-      (lambda() (string-trim (shell-command-to-string "ibus engine"))))
-(setq-default smart-input-source-do-set
-      (lambda(source)
-        (string-trim (shell-command-to-string (concat "ibus engine " source)))))
+*** ~macism~
+If your Emacs is not GUI EMP, the pre-configured ~macism~ should be installed.
+#+BEGIN_SRC bash
+brew tap laishulu/macism
+brew install macism
 #+END_SRC
+Note:
+a. The first time when you use ~macism SOME_INPUT_SOURCE_ID~ in your app,
+MacOS will popup a window asking you to grant permission of Accessibility, you
+can also grant the permission manually following the instructions in [[https://github.com/laishulu/macism/][macism]].
+b. Don't use ~Alacritty~ for TUI Emacs, because it can't handle deleting
+as well as ~Option~ and ~Command~ key properly when input method is on. I just
+recommend ~kitty~ until ~Alacirtty~ fixed those long existing bugs.
 
-** Example: ~im-select~
-[[https://github.com/daipeihust/im-select][im-select]] can be used as input source manager in Microsoft Windows.
-It fulfills the requirements as a drop-in replacement of ~macism~, thus its
-configuration is simpler than other input source managers.
+If you have problems on granting permission of Accessibility for Emacs, see
+below:
+#+BEGIN_QUOTE
+Some Emacs "distributions" package together a number of Emacs binaries for
+various macOS versions in a single folder, and dynamically at runtime chooses
+the right one for your system. This means that the icon you click to start the
+program is really a "placeholder" that is not Emacs itself, but rather just
+starts up Emacs. This "placeholder" often takes the form of a Ruby script. If
+this is the case, you'll need to drag the Ruby program on to the list. Ruby
+comes with macOS by default. You can find the program by opening Finder, and
+then from the "Go" menu choose "Go to Folder". Enter "/usr/bin" and you'll get
+that folder opened in Finder. In the folder, you'll find the ruby program that
+you can drag on to the Accessibility list.
+#+END_QUOTE
+
+** Microsoft Windows
+*** ~im-select~
+[[https://github.com/daipeihust/im-select][im-select]] can be used as a drop-in replacement of ~macism~ in Microsoft Windows.
 #+BEGIN_SRC lisp
 (setq-default smart-input-source-external-ism "im-select.exe")
 ;; 1033 is for English
@@ -176,7 +129,52 @@ method, just like the following screenshot.
 
 #+CAPTION: Smart input source
 [[./screenshots/windows-im-select.jpg]]
- 
+
+** Linux
+*** ~fcitx~
+~fcitx-remote~ can be used for ~fcitx~:
+#+BEGIN_SRC lisp
+(require 'subr-x)
+(setq-default smart-input-source-english "1")
+(setq-default smart-input-source-other "2")
+(setq-default smart-input-source-do-get
+      (lambda() (string-trim (shell-command-to-string "fcitx-remote"))))
+(setq-default smart-input-source-do-set
+      (lambda(source)
+        (pcase source
+          ("1" (string-trim (shell-command-to-string "fcitx-remote -c")))
+          ("2" (string-trim (shell-command-to-string "fcitx-remote -o"))))))
+#+END_SRC
+
+*** ~ibus~
+#+BEGIN_SRC lisp
+(require 'subr-x)
+(setq-default smart-input-source-english "xkb:us::eng")
+(setq-default smart-input-source-other "OTHER_INPUT_SOURCE")
+(setq-default smart-input-source-do-get
+      (lambda() (string-trim (shell-command-to-string "ibus engine"))))
+(setq-default smart-input-source-do-set
+      (lambda(source)
+        (string-trim (shell-command-to-string (concat "ibus engine " source)))))
+#+END_SRC
+
+** Internals for external ISM
+- If you have a ISM ~YOUR_ISM~:
+  + Run ~YOUR_ISM~ will output the current input source
+  + Run ~YOUR_ISM INPUT_SOURCE_ID~ will select ~INPUT_SOURCE_ID~.
+
+  Then you can simply configure the ISM
+  #+BEGIN_SRC lisp
+  (setq-default smart-input-source-external-ism "YOUR_ISM")
+  #+END_SRC
+- The most flexible way to specify ISM is defining the following functions:
+  #+BEGIN_SRC lisp
+  (setq-default smart-input-source-do-get
+        #'YOUR_DO_GET_INPUT_SOURCE_FUNCTION)
+  (setq-default smart-input-source-do-set
+        #'YOUR_DO_SET_INPUT_SOURCE_FUNCTION)
+  #+END_SRC
+  
 * Configure
 The mode is designed carefully, so it's safe to enable for all buffers even
 its all in English.
