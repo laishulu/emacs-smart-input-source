@@ -104,13 +104,13 @@ Just install ~smart-input-source~ from ~melpa~.
 
   Then you can simply configure the ISM
   #+BEGIN_SRC lisp
-  (setq smart-input-source-external-ism "YOUR_ISM")
+  (setq-default smart-input-source-external-ism "YOUR_ISM")
   #+END_SRC
 - The most flexible way to specify ISM is defining the following functions:
   #+BEGIN_SRC lisp
-  (setq smart-input-source-do-get
+  (setq-default smart-input-source-do-get
         #'YOUR_DO_GET_INPUT_SOURCE_FUNCTION)
-  (setq smart-input-source-do-set
+  (setq-default smart-input-source-do-set
         #'YOUR_DO_SET_INPUT_SOURCE_FUNCTION)
   #+END_SRC
 
@@ -118,12 +118,12 @@ Just install ~smart-input-source~ from ~melpa~.
 ~rime~ and ~pyim~ are two fabulous Emacs-native input methods. The former is
 powerful while the later is easy to install and use.
 #+BEGIN_SRC lisp
-(setq smart-input-source-english nil)
+(setq-default smart-input-source-english nil)
 (setq-default smart-input-source-other "rime")
 ;; for pyim
 ;; (setq-default smart-input-source-other "pyim")
-(setq smart-input-source-do-get (lambda() current-input-method))
-(setq smart-input-source-do-set (lambda(source) (set-input-method source)))
+(setq-default smart-input-source-do-get (lambda() current-input-method))
+(setq-default smart-input-source-do-set (lambda(source) (set-input-method source)))
 #+END_SRC
 
 ** Example: ~fcitx~
@@ -132,11 +132,11 @@ powerful while the later is easy to install and use.
 configure as following:
 #+BEGIN_SRC lisp
 (require 'subr-x)
-(setq smart-input-source-english "1")
+(setq-default smart-input-source-english "1")
 (setq-default smart-input-source-other "2")
-(setq smart-input-source-do-get
+(setq-default smart-input-source-do-get
       (lambda() (string-trim (shell-command-to-string "fcitx-remote"))))
-(setq smart-input-source-do-set
+(setq-default smart-input-source-do-set
       (lambda(source)
         (pcase source
           ("1" (string-trim (shell-command-to-string "fcitx-remote -c")))
@@ -148,11 +148,11 @@ configure as following:
 You can configure as following:
 #+BEGIN_SRC lisp
 (require 'subr-x)
-(setq smart-input-source-english "xkb:us::eng")
+(setq-default smart-input-source-english "xkb:us::eng")
 (setq-default smart-input-source-other "OTHER_INPUT_SOURCE")
-(setq smart-input-source-do-get
+(setq-default smart-input-source-do-get
       (lambda() (string-trim (shell-command-to-string "ibus engine"))))
-(setq smart-input-source-do-set
+(setq-default smart-input-source-do-set
       (lambda(source)
         (string-trim (shell-command-to-string (concat "ibus engine " source)))))
 #+END_SRC
@@ -162,9 +162,9 @@ You can configure as following:
 It fulfills the requirements as a drop-in replacement of ~macism~, thus its
 configuration is simpler than other input source managers.
 #+BEGIN_SRC lisp
-(setq smart-input-source-external-ism "im-select.exe")
+(setq-default smart-input-source-external-ism "im-select.exe")
 ;; 1033 is for English
-(setq smart-input-source-english "1033")
+(setq-default smart-input-source-english "1033")
 ;; 2052 is for Chinese
 (setq-default smart-input-source-other "2052")
 #+END_SRC
@@ -185,8 +185,8 @@ its all in English.
 (use-package smart-input-source
   :init
   ;; set the english input source
-  ;;(setq smart-input-source-english "com.apple.keylayout.ABC")
-  (setq smart-input-source-english "com.apple.keylayout.US")
+  ;;(setq-default smart-input-source-english "com.apple.keylayout.ABC")
+  (setq-default smart-input-source-english "com.apple.keylayout.US")
   ;; set the default other language input source for all buffer
   (setq-default smart-input-source-other "com.sogou.inputmethod.sogou.pinyin")
 

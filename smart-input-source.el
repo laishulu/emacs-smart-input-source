@@ -297,14 +297,14 @@ Unnecessary switching is avoided internally."
    (when (and lang (functionp do-set))
      ;; swith only when required
      (cond
-       (; set to english
-        (member lang (list 'english english))
-        (funcall do-set english)
-        (-update-state 'english))
-       (; set to other
-        (member lang (list 'other other))
-        (funcall do-set other)
-        (-update-state 'other)))
+      (; set to english
+       (member lang (list 'english english))
+       (funcall do-set english)
+       (-update-state 'english))
+      (; set to other
+       (member lang (list 'other other))
+       (funcall do-set other)
+       (-update-state 'other)))
 
      ;; run hook whether switched or not
      (if (member lang (list 'other other))
@@ -532,7 +532,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
       (; for prefix key
        (eq -real-this-command #'-prefix-override-handler)
-      
+
        ;; go to pre@[prefix] directly
        (setq -prefix-handle-stage 'prefix)
        (-preserve-pre-command-handler))))
