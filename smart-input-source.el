@@ -68,24 +68,21 @@ Should accept a string which is the id of the input source.")
   "Pattern to identify a character as blank.")
 (make-variable-buffer-local 'smart-input-source-blank-pattern)
 
-(defvar set-english-hook nil
-  "Hook to run after set input source to English.")
+(defvar auto-refresh-seconds 0.5
+  "Idle timer interval to auto refresh input source status from OS.
 
-(defvar set-other-hook nil
-  "Hook to run after set input source to other language.")
+Emacs-nativ input method don't need it. nil to disable the timer.")
+
+(defvar change-hook nil
+  "Hook to run when input source changes.")
 
 (defvar default-cursor-color nil
   "Default cursor color, used for English.
 
-`nil' means obtained from the envrionment.")
+nil means obtained from the envrionment.")
 
 (defvar other-cursor-color "green"
   "Cursor color for other language.")
-
-(defvar cursor-color-seconds 0.5
-  "Idle timer interval to update cursor color.
-
-`nil' to disable the timer.")
 
 (defvar respect-start 'english
   "Switch to specific input source when `global-respect-mode' enabled.")
@@ -273,9 +270,13 @@ Possible values:
   "Update input source state.
 
 SOURCE should be 'english or 'other."
+
+  (setq -previous -current)
   (setq -current source)
   (unless -for-buffer-locked
-    (setq -for-buffer source)))
+    (setq -for-buffer source))
+  (when (not (eq -previous -current))
+    (run-hooks 'smart-input-source-change-hook)))
 
 (defun -get ()
   "Get the input source id."
@@ -294,7 +295,7 @@ SOURCE should be 'english or 'other."
 
 Unnecessary switching is avoided internally."
   (-ensure-ism
-   (when (and lang (functionp do-set))
+   (when lang
      ;; swith only when required
      (cond
       (; set to english
@@ -305,12 +306,7 @@ Unnecessary switching is avoided internally."
        (member lang (list 'other other))
        (funcall do-set other)
        (-update-state 'other)))
-
-     ;; run hook whether switched or not
-     (if (member lang (list 'other other))
-         (run-hooks 'smart-input-source-set-other-hook)
-       (run-hooks 'smart-input-source-set-english-hook)))
-   (when log-mode (message (format "Do set input source: [%s]" lang)))))
+   (when log-mode (message (format "Do set input source: [%s]" lang))))))
 
 :autoload
 (defun set-english ()
@@ -333,13 +329,69 @@ Unnecessary switching is avoided internally."
      (; current is english
       (pred (equal english))
       (funcall do-set other)
-      (run-hooks 'smart-input-source-set-other-hook)
       other)
      (; current is other
       (pred (equal other))
       (funcall do-set english)
-      (run-hooks 'smart-input-source-set-english-hook)
       other))))
+
+;;
+;; Following codes are mainly about auto update mode
+;;
+
+(defvar -auto-refresh-timer nil
+  "Timer for `-auto-refresh-timer-function'.")
+
+(defvar -auto-refresh-manager-timer nil
+  "Timer to manage `-auto-refresh-timer'.")
+
+(defun -auto-refresh-timer-function ()
+  "Auto refresh input source on idle timer."
+  (when -auto-refresh-timer
+    (cancel-timer -auto-refresh-timer))
+
+  (-get)
+
+  (setq -auto-refresh-timer
+        (run-with-idle-timer
+         ;; every time the wait period increases by auto-refresh-seconds
+         (time-add (current-idle-time)
+                   (* auto-refresh-seconds -auto-refresh-timer-count))
+         nil
+         #'-auto-refresh-timer-function))
+  (setq -auto-refresh-timer-count (1+ -auto-refresh-timer-count)))
+
+(defvar -auto-refresh-timer-count 0
+  "Execution count of `-auto-refresh-timer-count' in this idle period.")
+
+(defun -auto-refresh-timer-restart ()
+  "Restart `-auto-refresh-timer'."
+  (setq -auto-refresh-timer-count 0)
+  (-auto-refresh-timer-function))
+
+:autoload
+(define-minor-mode -auto-refresh-mode
+  "Automaticly refresh input source."
+  :global t
+  :init-value nil
+  (cond
+   (; turn on the mode
+    -auto-refresh-mode
+    (when auto-refresh-seconds
+      (when -auto-refresh-manager-timer
+        (cancel-timer -auto-refresh-manager-timer))
+      (setq -auto-refresh-manager-timer
+            (run-with-idle-timer auto-refresh-seconds t
+                                 #'-auto-refresh-timer-restart))))
+   (; turn off the mode
+    (and (not -auto-refresh-mode)
+         ;; /cusor color mode/ depends on this mode
+         (not global-cursor-color-mode)
+         ;; /respect mode/ depends on this mode
+         (not global-respect-mode))
+    (when -auto-refresh-manager-timer
+      (cancel-timer -auto-refresh-manager-timer))
+    (when -auto-refresh-timer (cancel-timer -auto-refresh-timer)))))
 
 ;;
 ;; Following codes are mainly about cursor color mode
@@ -360,49 +412,19 @@ way."
 
 (defun -update-cursor-color()
   "Update cursor color according to input source."
-  (-get)
+  ;; for GUI
+  (when (display-graphic-p)
+    ;; actually which color passed to the function does not matter,
+    ;; the advice will take care of it.
+    (set-cursor-color default-cursor-color))
 
-  (unless (eq -current -previous)
-    (setq -previous -current)
-
-    ;; for GUI
-    (when (display-graphic-p)
-      ;; actually which color passed to the function does not matter,
-      ;; the advice will take care of it.
-      (set-cursor-color default-cursor-color))
-
-    ;; for TUI
-    (unless (display-graphic-p)
-      (pcase -current
-        ('english
-         (send-string-to-terminal (format "\e]12;%s\a" default-cursor-color)))
-        ('other
-         (send-string-to-terminal (format "\e]12;%s\a" other-cursor-color)))))))
-
-(defvar -cursor-color-timer nil
-  "Timer for `-cursor-color-timer-function'.")
-
-(defun -cursor-color-timer-function ()
-  "Update cursor color on idle timer."
-  (when -cursor-color-timer
-    (cancel-timer -cursor-color-timer))
-  (-update-cursor-color)
-  (setq -cursor-color-timer
-        (run-with-idle-timer
-         ;; every time the wait period increases by cursor-color-seconds
-         (time-add (current-idle-time)
-                   (* cursor-color-seconds -cursor-color-timer-count))
-         nil
-         #'-cursor-color-timer-function))
-  (setq -cursor-color-timer-count (1+ -cursor-color-timer-count)))
-
-(defvar -cursor-color-timer-count 0
-  "Execution count of `-cursor-color-timer-function' in this idle period.")
-
-(defun -cursor-color-timer-restart ()
-  "Restart `-cursor-color-timer'."
-  (setq -cursor-color-timer-count 0)
-  (-cursor-color-timer-function))
+  ;; for TUI
+  (unless (display-graphic-p)
+    (pcase -current
+      ('english
+       (send-string-to-terminal (format "\e]12;%s\a" default-cursor-color)))
+      ('other
+       (send-string-to-terminal (format "\e]12;%s\a" other-cursor-color))))))
 
 :autoload
 (define-minor-mode global-cursor-color-mode
@@ -420,21 +442,13 @@ way."
                       (face-background 'cursor)))
                 "white")))
     (advice-add 'set-cursor-color :around #'-set-cursor-color-advice)
-    (add-hook 'smart-input-source-set-english-hook #'-update-cursor-color)
-    (add-hook 'smart-input-source-set-other-hook #'-update-cursor-color)
-    (when cursor-color-seconds
-      (run-with-idle-timer cursor-color-seconds t
-                           #'-cursor-color-timer-restart)))
+    (add-hook 'smart-input-source-change-hook #'-update-cursor-color))
    (; turn off the mode
     (and (not global-cursor-color-mode)
          ;; /respect mode/ depends on /cursor color mode/
          (not global-respect-mode))
     (advice-remove 'set-cursor-color #'-set-cursor-color-advice)
-    (remove-hook 'smart-input-source-set-english-hook
-                 #'-update-cursor-color)
-    (remove-hook 'smart-input-source-set-other-hook
-                 #'-update-cursor-color)
-    (when -cursor-color-timer (cancel-timer -cursor-color-timer)))))
+    (remove-hook 'smart-input-source-change-hook #'-update-cursor-color))))
 
 ;;
 ;; Following codes are mainly about respect mode
@@ -494,7 +508,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
                   unread-command-events))))
 
 (defun -preserve-save-handler ()
-  "Handler for `preserve-save-hooks'"
+  "Handler for `preserve-save-hooks'."
   (when log-mode
     (message (format "Handle save hook, save [%s] to [%s]."
                      (-get) (current-buffer))))
@@ -503,7 +517,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (set-english)))
 
 (defun -preserve-restore-handler ()
-  "Handler for `preserve-restore-hooks'"
+  "Handler for `preserve-restore-hooks'."
   (when log-mode
     (message (format "Handle restore hook, restore [%s] from [%s] ."
                      -for-buffer (current-buffer))))
@@ -619,8 +633,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
    (; turn on the mode
     global-respect-mode
     (-ensure-ism
-     ;; /respect mode/ depends on /cursor color mode/
-     (global-cursor-color-mode t)
+     ;; /respect mode/ depends on /auto refresh mode/
+     (-auto-refresh-mode t)
      ;; set english when mode enabled
      (when respect-start (-set respect-start))
 

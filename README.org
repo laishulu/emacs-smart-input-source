@@ -219,16 +219,16 @@ You can change some of the behaviors by configuring related variables, note:
 
 * Variables and commands
 ** About input source
-| Variable                             | Buffer | Description                                   | Default                              |
-|--------------------------------------+--------+-----------------------------------------------+--------------------------------------|
-| ~smart-input-source-english~         | no     | Input source for English                      | ~com.apple.keylayout.US~             |
-| ~smart-input-source-other~           | yes    | Input source for other language               | ~com.sogou.inputmethod.sogou.pinyin~ |
-| ~smart-input-source-external-ism~    | no     | input resource manager                        |                                      |
-| ~smart-input-source-do-get~          | no     | Function to get the current input source      | determined from the environment      |
-| ~smart-input-source-do-set~          | no     | Function to set the input source              | determined from the environment      |
-| ~smart-inpu-source-set-english-hook~ | no     | Hook to run after set input source to English | ~nil~                                |
-| ~smart-inpu-source-set-other-hook~   | no     | Hook to run after set input source to other   | ~nil~                                |
-|--------------------------------------+--------+-----------------------------------------------+--------------------------------------|
+| Variable                                  | Buffer | Description                                        | Default                              |
+|-------------------------------------------+--------+----------------------------------------------------+--------------------------------------|
+| ~smart-input-source-english~              | no     | Input source for English                           | ~com.apple.keylayout.US~             |
+| ~smart-input-source-other~                | yes    | Input source for other language                    | ~com.sogou.inputmethod.sogou.pinyin~ |
+| ~smart-input-source-external-ism~         | no     | input resource manager                             |                                      |
+| ~smart-input-source-do-get~               | no     | Function to get the current input source           | determined from the environment      |
+| ~smart-input-source-do-set~               | no     | Function to set the input source                   | determined from the environment      |
+| ~smart-inpu-source-change-hook~           | no     | Hook to run after input source changes             | ~nil~                                |
+| ~smart-input-source-auto-refresh-seconds~ | no     | Idle interval to auto refresh input source from OS | ~0.5~, ~nil~ to disable              |
+|-------------------------------------------+--------+----------------------------------------------------+--------------------------------------|
 
 
 | Command Name                     | Description                                                |
@@ -243,7 +243,6 @@ You can change some of the behaviors by configuring related variables, note:
 |-------------------------------------------+--------+--------------------------------------------------------+--------------------------|
 | ~smart-input-source-default-cursor-color~ | no     | Default cursor color, also used for English            | ~nil~ (from envrionment) |
 | ~smart-input-source-other-cursor-color~   | no     | Cursor color for other input source                    | ~green~                  |
-| ~smart-input-source-cursor-color-seconds~ | no     | Idle to update cursor color, auto increased along time | ~0.5~, ~nil~ to disable  |
 |-------------------------------------------+--------+--------------------------------------------------------+--------------------------|
 
 ** About /respect mode/
