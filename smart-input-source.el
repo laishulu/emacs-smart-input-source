@@ -68,7 +68,7 @@ Should accept a string which is the id of the input source.")
   "Pattern to identify a character as blank.")
 (make-variable-buffer-local 'smart-input-source-blank-pattern)
 
-(defvar auto-refresh-seconds 0.5
+(defvar auto-refresh-seconds 0.2
   "Idle timer interval to auto refresh input source status from OS.
 
 Emacs-nativ input method don't need it. nil to disable the timer.")
@@ -187,6 +187,12 @@ Possible values:
 (declare-function mac-input-source "ext:macfns.c" (&optional SOURCE FORMAT) t)
 (declare-function mac-select-input-source "ext:macfns.c"
                   (SOURCE &optional SET-KEYBOARD-LAYOUT-OVERRIDE-P) t)
+
+
+(define-minor-mode log-mode
+  "Log the execution of this package."
+  :global t
+  :init-value nil)
 
 ;;
 ;; Following codes are mainly about input source manager
@@ -331,15 +337,13 @@ Unnecessary switching is avoided internally."
   "Switch input source between english and other."
   (interactive)
   (-ensure-ism
-   (pcase (-get)
-     (; current is english
-      (pred (equal english))
-      (funcall do-set other)
-      other)
-     (; current is other
-      (pred (equal other))
-      (funcall do-set english)
-      other))))
+   (cond
+    (; current is english
+     (eq -current 'english)
+     (-set 'other))
+    (; current is other
+     (eq -current 'other)
+     (-set 'english)))))
 
 ;;
 ;; Following codes are mainly about auto update mode
@@ -403,7 +407,7 @@ Unnecessary switching is avoided internally."
 ;;
 
 (defun -set-cursor-color-advice (fn color)
-  "Advice for FN of `set-cursor-color'.
+  "Advice for FN of `set-cursor-color' with COLOR.
 
 The advice is needed, because other packages may set cursor color in their only
 way."
@@ -618,11 +622,6 @@ Possible values: 'normal, 'prefix, 'sequence.")
      'normal
      (let ((restore (not (eq -buffer-before-command (current-buffer)))))
        (-to-normal-stage restore)))))
-
-(define-minor-mode log-mode
-  "Log the execution of this package."
-  :global t
-  :init-value nil)
 
 :autoload
 (define-minor-mode global-respect-mode

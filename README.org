@@ -227,7 +227,7 @@ You can change some of the behaviors by configuring related variables, note:
 | ~smart-input-source-do-get~               | no     | Function to get the current input source           | determined from the environment      |
 | ~smart-input-source-do-set~               | no     | Function to set the input source                   | determined from the environment      |
 | ~smart-inpu-source-change-hook~           | no     | Hook to run after input source changes             | ~nil~                                |
-| ~smart-input-source-auto-refresh-seconds~ | no     | Idle interval to auto refresh input source from OS | ~0.5~, ~nil~ to disable              |
+| ~smart-input-source-auto-refresh-seconds~ | no     | Idle interval to auto refresh input source from OS | ~0.2~, ~nil~ to disable              |
 |-------------------------------------------+--------+----------------------------------------------------+--------------------------------------|
 
 Note:
@@ -295,11 +295,10 @@ input source id/ by the command ~smart-input-source-get~.
 
 **  How the package know the input source change.
 1. If your input source is switched from ~smart-input-source~, then everything
-   should be OK naturally. And your ~smart-input-source-cursor-color-seconds~
+   should be OK naturally. And your ~smart-input-source-auto-refresh-seconds~
    can even be set to ~nil~.
-2. If your input source is switched from OS,
-   ~smart-input-source-cursor-color-seconds~ should be small enough to timely
-   detect the change of input source.
+2. If your input source is switched from OS, to detect the switch timely,
+   ~smart-input-source-auto-refresh-seconds~ should not be too large.
 3. To save energy, if the input source is switched from OS during a long idle
    period of Emacs, the package won't be aware in time. Then you can manually
    inform the package by doing anything in Emacs to exit the long idle period,
