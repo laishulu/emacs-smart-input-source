@@ -230,9 +230,13 @@ You can change some of the behaviors by configuring related variables, note:
 | ~smart-input-source-auto-refresh-seconds~ | no     | Idle interval to auto refresh input source from OS | ~0.5~, ~nil~ to disable              |
 |-------------------------------------------+--------+----------------------------------------------------+--------------------------------------|
 
+Note:
+- To save energy, actual interval to refresh input source from OS in a long idle
+  period is increased automatically.
 
 | Command Name                     | Description                                                |
 |----------------------------------+------------------------------------------------------------|
+| ~smart-input-source-get~         | Get the input source                                       |
 | ~smart-input-source-set-english~ | Set the input source to English                            |
 | ~smart-input-source-set-other~   | Set the input source to other language                     |
 | ~smart-input-source-switch~      | Switch the input source between English and other language |
@@ -287,15 +291,16 @@ You can change some of the behaviors by configuring related variables, note:
 * How to
 **  How to get the input source id
 After /input source manager/ is configured, you can get your /current
-input source id/ by evaluating the following expression in Emacs:
-#+BEGIN_SRC lisp
-(smart-input-source--get)
-#+END_SRC
+input source id/ by the command ~smart-input-source-get~.
 
-**  How to make the package know the input source status precisely.
+**  How the package know the input source change.
 1. If your input source is switched from ~smart-input-source~, then everything
    should be OK naturally. And your ~smart-input-source-cursor-color-seconds~
    can even be set to ~nil~.
 2. If your input source is switched from OS,
    ~smart-input-source-cursor-color-seconds~ should be small enough to timely
    detect the change of input source.
+3. To save energy, if the input source is switched from OS during a long idle
+   period of Emacs, the package won't be aware in time. Then you can manually
+   inform the package by doing anything in Emacs to exit the long idle period,
+   or invoke the command ~smart-input-source-get~ directly.

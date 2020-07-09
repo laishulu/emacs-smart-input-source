@@ -309,6 +309,12 @@ Unnecessary switching is avoided internally."
    (when log-mode (message (format "Do set input source: [%s]" lang))))))
 
 :autoload
+(defun set ()
+  "Get input source."
+  (interactive)
+  (-get))
+
+:autoload
 (defun set-english ()
   "Set input source to `english'."
   (interactive)
