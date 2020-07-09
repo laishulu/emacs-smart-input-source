@@ -362,14 +362,15 @@ Unnecessary switching is avoided internally."
 
   (-get)
 
-  (setq -auto-refresh-timer
-        (run-with-idle-timer
-         ;; every time the wait period increases by auto-refresh-seconds
-         (time-add (current-idle-time)
-                   (* auto-refresh-seconds -auto-refresh-timer-count))
-         nil
-         #'-auto-refresh-timer-function))
-  (setq -auto-refresh-timer-count (1+ -auto-refresh-timer-count)))
+  (when auto-refresh-seconds
+    (setq -auto-refresh-timer
+          (run-with-idle-timer
+           ;; every time the wait period increases by auto-refresh-seconds
+           (time-add (current-idle-time)
+                     (* auto-refresh-seconds -auto-refresh-timer-count))
+           nil
+           #'-auto-refresh-timer-function))
+    (setq -auto-refresh-timer-count (1+ -auto-refresh-timer-count))))
 
 (defvar -auto-refresh-timer-count 0
   "Execution count of `-auto-refresh-timer-count' in this idle period.")
