@@ -369,7 +369,6 @@ Unnecessary switching is avoided internally."
   (setq -auto-refresh-timer-count 0)
   (-auto-refresh-timer-function))
 
-:autoload
 (define-minor-mode -auto-refresh-mode
   "Automaticly refresh input source."
   :global t
