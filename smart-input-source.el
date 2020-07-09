@@ -362,7 +362,7 @@ Unnecessary switching is avoided internally."
 
   (-get)
 
-  (when auto-refresh-seconds
+  (when (and auto-refresh-seconds -auto-refresh-mode)
     (setq -auto-refresh-timer
           (run-with-idle-timer
            ;; every time the wait period increases by auto-refresh-seconds
@@ -377,8 +377,9 @@ Unnecessary switching is avoided internally."
 
 (defun -auto-refresh-timer-restart ()
   "Restart `-auto-refresh-timer'."
-  (setq -auto-refresh-timer-count 0)
-  (-auto-refresh-timer-function))
+  (when (and auto-refresh-seconds -auto-refresh-mode)
+    (setq -auto-refresh-timer-count 0)
+    (-auto-refresh-timer-function)))
 
 (define-minor-mode -auto-refresh-mode
   "Automaticly refresh input source."
