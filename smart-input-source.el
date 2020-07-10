@@ -50,9 +50,6 @@ Should return a string which is the id of the input source.")
 
 Should accept a string which is the id of the input source.")
 
-(defvar async nil
-  "Asynchronously get or set input source.")
-
 (defvar english-pattern "[a-zA-Z]"
   "Pattern to identify a character as english.")
 
@@ -264,10 +261,10 @@ Possible values:
   "Normalize LANG in the form of source id or lang to lang."
   (cond
    (; english
-    (member source (list 'english english))
+    (member lang (list 'english english))
     'english)
    (; other
-    (member source (list 'other other))
+    (member lang (list 'other other))
     'other)))
 
 (defsubst -normalize-to-source (source)
@@ -285,25 +282,20 @@ Possible values:
   (cond
    (; EMP
     (equal -ism 'emp)
-    (setq async nil)
     #'mac-input-source)
    (; external ism
-    (lambda (finish-func)
-      (setq async t)
-      (async-start-process "get-input-source" -ism finish-func)))))
+    (lambda () (string-trim (shell-command-to-string -ism))))))
 
 (defun -mk-set-fn ()
   "Make a function to be bound to `do-set'."
   (cond
    (; EMP
     (equal -ism 'emp)
-    (setq async nil)
     (lambda (source) (mac-select-input-source source))
     #'mac-input-source)
    (; external ism
-    (lambda (source &optional finish-func)
-      (setq async t)
-      (async-start-process "set-input-source" -ism finish-func source)))))
+    (lambda (source)
+      (start-process "set-input-source" nil -ism source)))))
 
 (defun -update-state (source)
   "Update input source state.
@@ -317,31 +309,24 @@ SOURCE should be 'english or 'other."
   (when (not (eq -previous -current))
     (run-hooks 'smart-input-source-change-hook)))
 
-(defun -get ()
+(defsubst -get ()
   "Get the input source id."
   (-ensure-ism
-   (if (not async) (-update-state (-normalize-to-lang (funcall do-get)))
-     (funcall
-      do-get
-      (lambda(proc)
-        (let ((source (with-current-buffer (process-buffer proc)
-                        (buffer-string))))
-          (-update-state (-normalize-to-lang source))))))))
+   (-update-state (-normalize-to-lang (funcall do-get)))))
 
-(defun -set (source)
+(defsubst -set (source)
   "Set the input source according to source SOURCE."
   (-ensure-ism
-   (let ((lang (-normalize-to-source source)))
-     (funcall do-set lang)
-     (-update-state lang))
-   (when log-mode (message (format "Do set input source: [%s]" lang)))))
+   (-update-state (-normalize-to-lang source))
+   (funcall do-set (-normalize-to-source source))
+   (when log-mode (message (format "Do set input source: [%s]" source)))))
 
 :autoload
 (defun get ()
   "Get input source."
   (interactive)
-  (if (not async) (-get)
-    (async-get (-get))))
+  (-get)
+  -current)
 
 :autoload
 (defun set-english ()
@@ -488,13 +473,13 @@ way."
 ;; Following codes are mainly about respect mode
 ;;
 
-(defun -save-to-buffer (&optional lock-after)
+(defsubst -save-to-buffer (&optional lock-after)
   "Save buffer input source, optional LOCK-AFTER save."
   (-get)
   (when lock-after
     (setq -for-buffer-locked t)))
 
-(defun -restore-from-buffer ()
+(defsubst -restore-from-buffer ()
   "Restore buffer input source."
   (setq -for-buffer-locked nil)
   (-set (or -for-buffer 'english)))
@@ -598,14 +583,14 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (; current is sequence stage
      'sequence t)))
 
-(defun -preserve-assume-english-p (&optional buffer)
+(defsubst -preserve-assume-english-p (&optional buffer)
   "BUFFER does not need input source preservation."
   (or (minibufferp)
       (and (-string-match-p "\*" (buffer-name buffer))
            (not (-string-match-p "\*New" (buffer-name buffer)))
            (not (-string-match-p "\*Scratch" (buffer-name buffer))))))
 
-(defun -to-normal-stage (restore)
+(defsubst -to-normal-stage (restore)
   "Transite to normal stage and restore input source if RESTORE is t."
   (when restore
     (when log-mode
@@ -727,7 +712,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 ;; Following codes are mainly about follow-context-mode
 ;;
 
-(defun -string-match-p (regexp str &optional start)
+(defsubst -string-match-p (regexp str &optional start)
   "Robust wrapper of `string-match-p'.
 
 Works when REGEXP or STR is not a string REGEXP, STR, START all has the same
@@ -736,19 +721,19 @@ meanings as `string-match-p'."
        (stringp str)
        (string-match-p regexp str start)))
 
-(defun -english-p (str)
+(defsubst -english-p (str)
   "Predicate on STR is English."
   (-string-match-p english-pattern str))
 
-(defun -not-english-p (str)
+(defsubst -not-english-p (str)
   "Predicate on STR is not English."
   (not (-string-match-p english-pattern str)))
 
-(defun -other-p (str)
+(defsubst -other-p (str)
   "Predicate on STR is other language."
   (-string-match-p other-pattern str))
 
-(defun -not-other-p (str)
+(defsubst -not-other-p (str)
   "Predicate on STR is not other language."
   (not (-string-match-p other-pattern str)))
 
@@ -925,12 +910,12 @@ If POSITION is not provided, then default to be the current position."
   "First effective space point to check overlay activation.")
 (make-variable-buffer-local 'smart-input-source--inline-first-space-point)
 
-(defun -inline-overlay-start ()
+(defsubst -inline-overlay-start ()
   "Start position of the inline overlay."
   (when -inline-overlay
     (overlay-start -inline-overlay)))
 
-(defun -inline-overlay-end ()
+(defsubst -inline-overlay-end ()
   "End position of the inline overlay."
   (when -inline-overlay
     (overlay-end -inline-overlay)))
@@ -954,7 +939,7 @@ If POSITION is not provided, then default to be the current position."
   inline-mode
   inline-mode)
 
-(defun -inline-effect-space-inserted-p ()
+(defsubst -inline-effect-space-inserted-p ()
   "A effective space is inserted"
   (and inline-mode
        (not (overlayp -inline-overlay))
