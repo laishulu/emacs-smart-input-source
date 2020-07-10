@@ -269,8 +269,7 @@ Possible values:
   (if (equal -ism 'emp)
       (lambda (source) (mac-select-input-source source))
     (lambda (source)
-      (string-trim
-       (shell-command-to-string (concat -ism " " source))))))
+      (start-process "set-input-source" nil -ism source))))
 
 (defun -update-state (source)
   "Update input source state.
@@ -315,7 +314,7 @@ Unnecessary switching is avoided internally."
    (when log-mode (message (format "Do set input source: [%s]" lang))))))
 
 :autoload
-(defun set ()
+(defun get ()
   "Get input source."
   (interactive)
   (-get))
@@ -360,7 +359,7 @@ Unnecessary switching is avoided internally."
   (when -auto-refresh-timer
     (cancel-timer -auto-refresh-timer))
 
-  (-get)
+  (-save-to-buffer)
 
   (when (and auto-refresh-seconds -auto-refresh-mode)
     (setq -auto-refresh-timer
@@ -520,12 +519,14 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
 (defun -preserve-save-handler ()
   "Handler for `preserve-save-hooks'."
+
+  (unless (eq this-command 'mouse-drag-region)
+    (-save-to-buffer t)
+    (set-english))
+
   (when log-mode
     (message (format "Handle save hook, save [%s] to [%s]."
-                     (-get) (current-buffer))))
-  (unless (eq this-command 'mouse-drag-region)
-    (-save-to-buffer)
-    (set-english)))
+                     -for-buffer (current-buffer)))))
 
 (defun -preserve-restore-handler ()
   "Handler for `preserve-restore-hooks'."
@@ -964,18 +965,16 @@ input source to English."
         (cond
          (;inline english region
           (and inline-with-english
-               ;; to filter unecessary (-get)
                (-context-other-p back-detect fore-detect (1- (point)))
-               (equal (-get) other))
+               (equal -for-buffer other))
           (setq -inline-lang 'english)
           (-inline-activate (1- (point))))
 
          (;inline other lang region
           (and inline-with-other
                (= (1+ -inline-first-space-point) (point))
-               ;; to filter unecessary (-get)
                (-context-english-p back-detect fore-detect (- (point) 2))
-               (equal (-get) english))
+               (equal -for-buffer other))
           (setq -inline-lang 'other)
           (-inline-activate (- (point) 2)))))))))
 
