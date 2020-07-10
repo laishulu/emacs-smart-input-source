@@ -260,8 +260,8 @@ Possible values:
      (when smart-input-source--ism
        ,@body)))
 
-(defun -normalize-source (source)
-  "Normalize SOURCE in the form of source id or lang to lang."
+(defsubst -normalize-to-lang (lang)
+  "Normalize LANG in the form of source id or lang to lang."
   (cond
    (; english
     (member source (list 'english english))
@@ -269,6 +269,16 @@ Possible values:
    (; other
     (member source (list 'other other))
     'other)))
+
+(defsubst -normalize-to-source (source)
+  "Normalize SOURCE in the form of source id or lang to source."
+  (cond
+   (; english
+    (member source (list 'english english))
+    english)
+   (; other
+    (member source (list 'other other))
+    other)))
 
 (defun -mk-get-fn ()
   "Make a function to be bound to `do-get'."
@@ -310,15 +320,18 @@ SOURCE should be 'english or 'other."
 (defun -get ()
   "Get the input source id."
   (-ensure-ism
-   (if (not async) (-update-state (-normalize-source (funcall do-get)))
+   (if (not async) (-update-state (-normalize-to-lang (funcall do-get)))
      (funcall
       do-get
-      (lambda(source) (-update-state (-normalize-source source)))))))
+      (lambda(proc)
+        (let ((source (with-current-buffer (process-buffer proc)
+                        (buffer-string))))
+          (-update-state (-normalize-to-lang source))))))))
 
 (defun -set (source)
   "Set the input source according to source SOURCE."
   (-ensure-ism
-   (let ((lang (-normalize-source source)))
+   (let ((lang (-normalize-to-source source)))
      (funcall do-set lang)
      (-update-state lang))
    (when log-mode (message (format "Do set input source: [%s]" lang)))))
