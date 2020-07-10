@@ -50,6 +50,9 @@ Should return a string which is the id of the input source.")
 
 Should accept a string which is the id of the input source.")
 
+(defvar async nil
+  "Asynchronously get or set input source.")
+
 (defvar english-pattern "[a-zA-Z]"
   "Pattern to identify a character as english.")
 
@@ -257,19 +260,40 @@ Possible values:
      (when smart-input-source--ism
        ,@body)))
 
+(defun -normalize-source (source)
+  "Normalize SOURCE in the form of source id or lang to lang."
+  (cond
+   (; english
+    (member source (list 'english english))
+    'english)
+   (; other
+    (member source (list 'other other))
+    'other)))
+
 (defun -mk-get-fn ()
   "Make a function to be bound to `do-get'."
-  (if (equal -ism 'emp)
-      #'mac-input-source
-    (lambda ()
-      (string-trim (shell-command-to-string -ism)))))
+  (cond
+   (; EMP
+    (equal -ism 'emp)
+    (setq async nil)
+    #'mac-input-source)
+   (; external ism
+    (lambda (finish-func)
+      (setq async t)
+      (async-start-process "get-input-source" -ism finish-func)))))
 
 (defun -mk-set-fn ()
   "Make a function to be bound to `do-set'."
-  (if (equal -ism 'emp)
-      (lambda (source) (mac-select-input-source source))
-    (lambda (source)
-      (start-process "set-input-source" nil -ism source))))
+  (cond
+   (; EMP
+    (equal -ism 'emp)
+    (setq async nil)
+    (lambda (source) (mac-select-input-source source))
+    #'mac-input-source)
+   (; external ism
+    (lambda (source &optional finish-func)
+      (setq async t)
+      (async-start-process "set-input-source" -ism finish-func source)))))
 
 (defun -update-state (source)
   "Update input source state.
@@ -286,38 +310,25 @@ SOURCE should be 'english or 'other."
 (defun -get ()
   "Get the input source id."
   (-ensure-ism
-   (when (functionp do-get)
-     (let ((source (funcall do-get)))
-       (pcase source
-         ((pred (equal english))
-          (-update-state 'english))
-         ((pred (equal other))
-          (-update-state 'other)))
-       source))))
+   (if (not async) (-update-state (-normalize-source (funcall do-get)))
+     (funcall
+      do-get
+      (lambda(source) (-update-state (-normalize-source source)))))))
 
-(defun -set (lang)
-  "Set the input source according to lang LANG.
-
-Unnecessary switching is avoided internally."
+(defun -set (source)
+  "Set the input source according to source SOURCE."
   (-ensure-ism
-   (when lang
-     ;; swith only when required
-     (cond
-      (; set to english
-       (member lang (list 'english english))
-       (funcall do-set english)
-       (-update-state 'english))
-      (; set to other
-       (member lang (list 'other other))
-       (funcall do-set other)
-       (-update-state 'other)))
-   (when log-mode (message (format "Do set input source: [%s]" lang))))))
+   (let ((lang (-normalize-source source)))
+     (funcall do-set lang)
+     (-update-state lang))
+   (when log-mode (message (format "Do set input source: [%s]" lang)))))
 
 :autoload
 (defun get ()
   "Get input source."
   (interactive)
-  (-get))
+  (if (not async) (-get)
+    (async-get (-get))))
 
 :autoload
 (defun set-english ()
