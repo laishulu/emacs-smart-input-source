@@ -975,7 +975,7 @@ input source to English."
          (;inline english region
           (and inline-with-english
                (-context-other-p back-detect fore-detect (1- (point)))
-               (equal -for-buffer other))
+               (equal -for-buffer 'other))
           (setq -inline-lang 'english)
           (-inline-activate (1- (point))))
 
@@ -983,7 +983,7 @@ input source to English."
           (and inline-with-other
                (= (1+ -inline-first-space-point) (point))
                (-context-english-p back-detect fore-detect (- (point) 2))
-               (equal -for-buffer other))
+               (equal -for-buffer 'other))
           (setq -inline-lang 'other)
           (-inline-activate (- (point) 2)))))))))
 
