@@ -84,7 +84,7 @@ The default MacOS input sources are shown in the following.
 #+END_SRC
 
 Note:
-1. Your English input source **MAY NOT** be the default one. Use command
+1. Your English input source *MAY NOT* be the default one. Use command
    ~smart-input-source-get~ in Emacs to get the correct one.
 2. According to your use case, ~EMP~ or ~macism~ should be installed.
 
