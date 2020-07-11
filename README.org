@@ -74,9 +74,24 @@ Any Emacs-native input method can be configured in the same way, here uses
 #+END_SRC
 
 ** MacOS
+The default MacOS input sources are shown in the following.
+#+BEGIN_SRC lisp
+;; set the english input source
+;;(setq-default smart-input-source-english "com.apple.keylayout.ABC")
+(setq-default smart-input-source-english "com.apple.keylayout.US")
+;; set the default other language input source for all buffer
+(setq-default smart-input-source-other "com.sogou.inputmethod.sogou.pinyin")
+#+END_SRC
+
+Note:
+1. Your English input source **MAY NOT** be the default one. Use command
+   ~smart-input-source-get~ in Emacs to get the correct one.
+2. According to your use case, ~EMP~ or ~macism~ should be installed.
+
 *** GUI Emacs Mac Port (EMP)
-EMP has native API to interact input sources efficiently, thus no extra steps
-needed to prepare ISM. You can install EMP by the following commands:
+EMP is a Emacs distribution enhanced for MacOS. It has builtin native API to
+interact with MacOS input sources efficiently. EMP can be installed by the
+following commands:
 #+BEGIN_SRC bash
 brew tap railwaycat/emacsmacport
 brew install emacs-mac --with-modules --with-rsvg --with-imagemagick --with-natural-title-bar
@@ -142,8 +157,8 @@ method, just like the following screenshot.
 (setq-default smart-input-source-do-set
       (lambda(source)
         (pcase source
-          ("1" (string-trim (shell-command-to-string "fcitx-remote -c")))
-          ("2" (string-trim (shell-command-to-string "fcitx-remote -o"))))))
+          ("1" (start-process "fcitx-remote" nil -ism "-c"))
+          ("2" (start-process "fcitx-remote" nil -ism "-o")))))
 #+END_SRC
 
 *** ~ibus~
@@ -154,8 +169,7 @@ method, just like the following screenshot.
 (setq-default smart-input-source-do-get
       (lambda() (string-trim (shell-command-to-string "ibus engine"))))
 (setq-default smart-input-source-do-set
-      (lambda(source)
-        (string-trim (shell-command-to-string (concat "ibus engine " source)))))
+      (lambda(source) (start-process "ibus" nil -ism "engine" source)))
 #+END_SRC
 
 ** Internals for external ISM
@@ -223,7 +237,7 @@ You can change some of the behaviors by configuring related variables, note:
 |-------------------------------------------+--------+----------------------------------------------------+--------------------------------------|
 | ~smart-input-source-english~              | no     | Input source for English                           | ~com.apple.keylayout.US~             |
 | ~smart-input-source-other~                | yes    | Input source for other language                    | ~com.sogou.inputmethod.sogou.pinyin~ |
-| ~smart-input-source-external-ism~         | no     | input resource manager                             |                                      |
+| ~smart-input-source-external-ism~         | no     | External input resource manager                    | ~macism~                             |
 | ~smart-input-source-do-get~               | no     | Function to get the current input source           | determined from the environment      |
 | ~smart-input-source-do-set~               | no     | Function to set the input source                   | determined from the environment      |
 | ~smart-inpu-source-change-hook~           | no     | Hook to run after input source changes             | ~nil~                                |
