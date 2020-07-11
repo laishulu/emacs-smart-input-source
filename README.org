@@ -157,8 +157,8 @@ method, just like the following screenshot.
 (setq-default smart-input-source-do-set
       (lambda(source)
         (pcase source
-          ("1" (start-process "fcitx-remote" nil -ism "-c"))
-          ("2" (start-process "fcitx-remote" nil -ism "-o")))))
+          ("1" (start-process "set-input-source" nil "fcitx-remote" "-c"))
+          ("2" (start-process "set-input-source" nil "fcitx-remote" "-o")))))
 #+END_SRC
 
 *** ~ibus~
@@ -169,7 +169,7 @@ method, just like the following screenshot.
 (setq-default smart-input-source-do-get
       (lambda() (string-trim (shell-command-to-string "ibus engine"))))
 (setq-default smart-input-source-do-set
-      (lambda(source) (start-process "ibus" nil -ism "engine" source)))
+      (lambda(source) (start-process "set-input-source" nil "ibus" "engine" source)))
 #+END_SRC
 
 ** Internals for external ISM
