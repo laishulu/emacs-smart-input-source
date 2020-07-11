@@ -291,8 +291,7 @@ Possible values:
   (cond
    (; EMP
     (equal -ism 'emp)
-    (lambda (source) (mac-select-input-source source))
-    #'mac-input-source)
+    (lambda (source) (mac-select-input-source source)))
    (; external ism
     (lambda (source)
       (start-process "set-input-source" nil -ism source)))))
