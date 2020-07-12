@@ -73,6 +73,19 @@ Any Emacs-native input method can be configured in the same way, here uses
 (setq-default smart-input-source-do-set (lambda(source) (set-input-method source)))
 #+END_SRC
 
+If you just want to toggle default input method, configure like this:
+#+BEGIN_SRC lisp
+;;(setq-default default-input-method "rime")
+(setq-default smart-input-source-english nil)
+(setq-default smart-input-source-other default-input-method)
+(setq-default smart-input-source-do-get (lambda() current-input-method))
+(setq-default smart-input-source-do-set
+              (lambda(source)
+                (unless (equal source current-input-method)
+                  (toggle-input-method))))
+#+END_SRC
+
+
 ** MacOS
 The default MacOS input sources are shown in the following.
 #+BEGIN_SRC lisp
