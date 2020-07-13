@@ -503,12 +503,15 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (defvar -real-this-command nil
   "Real this command. Some commands overwrite it.")
 
+(defvar -prefix-override-order -1000
+  "Order of the prefix override in `emulation-mode-map-alists'.")
+
 (defun -prefix-override-recap-advice (&rest res)
   "Advice for `prefix-override-recap-triggers' with RES."
   (add-to-ordered-list
    'emulation-mode-map-alists
    'smart-input-source--prefix-override-map-alist
-   1)
+   -prefix-override-order)
   res)
 
 (defun -prefix-override-handler (arg)
