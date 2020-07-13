@@ -106,7 +106,7 @@ nil means obtained from the envrionment.")
   "Prefix keys to be overrided.")
 
 (defvar prefix-override-recap-triggers
-  '(evil-local-mode yas-minor-mode)
+  '(evil-local-mode yas-minor-mode eaf-mode)
   "Commands trigger the recap of the prefix override.
 
 Some functions take precedence of the override, need to recap after.")
