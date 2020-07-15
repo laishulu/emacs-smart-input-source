@@ -602,7 +602,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (list 'minibufferp
         (;; magit revision
          lambda (buffer)
-         (-string-match-p "^\magit-revision:" (buffer-name buffer)))
+         (-string-match-p "^magit-revision:" (buffer-name buffer)))
         (;; special buffer
          lambda (buffer)
          (and (-string-match-p "^\*" (buffer-name buffer))
