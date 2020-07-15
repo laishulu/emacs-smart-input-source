@@ -600,7 +600,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
 (defvar prefix-override-buffer-disable-predicates
   (list 'minibufferp
-        (;; special buffer
+        (;; magit revision
          lambda (buffer)
          (-string-match-p "^\magit-revision:" (buffer-name buffer)))
         (;; special buffer
