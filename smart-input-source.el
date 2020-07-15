@@ -486,6 +486,19 @@ way."
 (defvar -prefix-override-map-enable nil
   "Enabe the override keymap.")
 
+(defun prefix-override-buffer-disable ()
+  "Disable prefix override in current buffer."
+  (interactive)
+  (make-local-variable
+   'smart-input-source--prefix-override-map-enable)
+  (setq -prefix-override-map-enable nil))
+
+(defun prefix-override-buffer-enable ()
+  "Disable prefix override in current buffer."
+  (interactive)
+  (when (local-variable-p 'smart-input-source--prefix-override-map-enable)
+    (kill-local-variable 'smart-input-source--prefix-override-map-enable)))
+
 (defvar -prefix-override-map-alist nil
   "Map alist for override.")
 
@@ -585,20 +598,42 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (; current is sequence stage
      'sequence t)))
 
-(defsubst -preserve-assume-english-p (&optional buffer)
-  "BUFFER does not need input source preservation."
-  (or (minibufferp)
-      (and (-string-match-p "\*" (buffer-name buffer))
-           (not (-string-match-p "\*New" (buffer-name buffer)))
-           (not (-string-match-p "\*Scratch" (buffer-name buffer))))))
+(defvar prefix-override-buffer-disable-predicates
+  (list 'minibufferp
+        (;; special buffer
+         lambda (buffer)
+         (-string-match-p "^\magit-revision:" (buffer-name buffer)))
+        (;; special buffer
+         lambda (buffer)
+         (and (-string-match-p "^\*" (buffer-name buffer))
+              (not (-string-match-p "^\*New" (buffer-name buffer)))
+              (not (-string-match-p "^\*Scratch" (buffer-name buffer)))))
+        )
+  "Predicates on buffers to disable prefix overriding.")
+
+(defsubst -prefix-override-buffer-disable-p (buffer)
+  "Final predicate on disabling prefix override in BUFFER."
+  (let ((value nil))
+    (dolist (p prefix-override-buffer-disable-predicates)
+      (setq value (or value (funcall p buffer))))
+    value))
 
 (defsubst -to-normal-stage (restore)
   "Transite to normal stage and restore input source if RESTORE is t."
   (when restore
     (when log-mode
       (message (format "restore: [%s]@[%s]." -for-buffer (current-buffer))))
+
     (-restore-from-buffer))
-  (setq -prefix-override-map-enable t)
+
+    (when (and (not (local-variable-p
+                     'smart-input-source--prefix-override-map-enable))
+               (-prefix-override-buffer-disable-p (current-buffer)))
+      (prefix-override-buffer-disable))
+
+    (unless (local-variable-p 'smart-input-source--prefix-override-map-enable)
+      (setq -prefix-override-map-enable t)))
+
   (setq -prefix-handle-stage 'normal))
 
 (defun -preserve-post-command-handler ()
@@ -630,8 +665,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
       (; end key sequence
        t
        (when log-mode (message "Key sequence ended."))
-       (let ((restore (not (-preserve-assume-english-p (current-buffer)))))
-         (-to-normal-stage restore)))))
+       (-to-normal-stage t))))
     (; current is normal stage
      'normal
      (let ((restore (not (eq -buffer-before-command (current-buffer)))))

@@ -283,14 +283,15 @@ Note:
 |-------------------------------------------+--------+--------------------------------------------------------+--------------------------|
 
 ** About /respect mode/
-| Variable                                            | Buffer | Description                                        | Default                |
-|-----------------------------------------------------+--------+----------------------------------------------------+------------------------|
-| ~smart-input-source-respect-start~                  | no     | Switch to specific input source when mode enabled  | ~'english~             |
-| ~smart-input-source-respect-evil-normal-escape~     | no     | esc to English from evil normal sate               | ~t~                    |
-| ~smart-input-source-respect-prefix-and-buffer~      | no     | Handle prefix key and buffer                       | ~t~                    |
-| ~smart-input-source-prefix-override-keys~           | no     | Prefix keys to be respected                        | ~'("C-c" "C-x" "C-h")~ |
-| ~smart-input-source-prefix-override-recap-triggers~ | no     | Functions trigger the recap of the prefix override | see variable doc       |
-|-----------------------------------------------------+--------+----------------------------------------------------+------------------------|
+| Variable                                                       | Buffer | Description                                        | Default                |
+|----------------------------------------------------------------+--------+----------------------------------------------------+------------------------|
+| ~smart-input-source-respect-start~                             | no     | Switch to specific input source when mode enabled  | ~'english~             |
+| ~smart-input-source-respect-evil-normal-escape~                | no     | esc to English from evil normal sate               | ~t~                    |
+| ~smart-input-source-respect-prefix-and-buffer~                 | no     | Handle prefix key and buffer                       | ~t~                    |
+| ~smart-input-source-prefix-override-keys~                      | no     | Prefix keys to be respected                        | ~'("C-c" "C-x" "C-h")~ |
+| ~smart-input-source-prefix-override-recap-triggers~            | no     | Functions trigger the recap of the prefix override | see variable doc       |
+| ~smart-input-source-prefix-override-buffer-disable-predicates~ | no     | Predicates on buffers to disable prefix overriding | see variable doc       |
+|----------------------------------------------------------------+--------+----------------------------------------------------+------------------------|
 
 ** About language pattern
 | Variable                             | Buffer | Description                                    | Default                  |
