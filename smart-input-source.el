@@ -284,7 +284,16 @@ Possible values:
     (equal -ism 'emp)
     #'mac-input-source)
    (; external ism
-    (lambda () (string-trim (shell-command-to-string -ism))))))
+    (lambda ()
+      (condition-case err
+          (string-trim (shell-command-to-string -ism))
+        (file-missing
+         (when (equal (car (cdr err))
+                      "Setting current directory")
+           (message
+            "Default directory for buffer <%s> is missing, now set to '~'"
+            (current-buffer))
+           (setq default-directory "~"))))))))
 
 (defun -mk-set-fn ()
   "Make a function to be bound to `do-set'."
@@ -318,7 +327,7 @@ SOURCE should be 'english or 'other."
   (-ensure-ism
    (-update-state (-normalize-to-lang source))
    (funcall do-set (-normalize-to-source source))
-   (when log-mode (message (format "Do set input source: [%s]" source)))))
+   (when log-mode (message "Do set input source: [%s]" source))))
 
 :autoload
 (defun get ()
@@ -549,14 +558,14 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (set-english))
 
   (when log-mode
-    (message (format "Handle save hook, save [%s] to [%s]."
-                     -for-buffer (current-buffer)))))
+    (message "Handle save hook, save [%s] to [%s]."
+             -for-buffer (current-buffer))))
 
 (defun -preserve-restore-handler ()
   "Handler for `preserve-restore-hooks'."
   (when log-mode
-    (message (format "Handle restore hook, restore [%s] from [%s] ."
-                     -for-buffer (current-buffer))))
+    (message "Handle restore hook, restore [%s] from [%s] ."
+             -for-buffer (current-buffer)))
   (-restore-from-buffer))
 
 (defun -preserve-pre-command-handler ()
@@ -565,12 +574,12 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (setq -real-this-command this-command)
 
   (when log-mode
-    (message (format "pre@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
-                     -prefix-handle-stage
-                     (this-command-keys)
-                     -real-this-command
-                     (current-buffer)
-                     -prefix-override-map-enable)))
+    (message "pre@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
+             -prefix-handle-stage
+             (this-command-keys)
+             -real-this-command
+             (current-buffer)
+             -prefix-override-map-enable))
 
   (pcase -prefix-handle-stage
     (; current is normal stage
@@ -593,8 +602,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
      (-save-to-buffer t)
      (set-english)
      (when log-mode
-       (message (format "Input source: [%s] (saved) => [%s]."
-                        -for-buffer english))))
+       (message "Input source: [%s] (saved) => [%s]." -for-buffer english)))
     (; current is sequence stage
      'sequence t)))
 
@@ -621,8 +629,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (defsubst -to-normal-stage (restore)
   "Transite to normal stage and restore input source if RESTORE is t."
   (when restore
-    (when log-mode
-      (message (format "restore: [%s]@[%s]." -for-buffer (current-buffer))))
+    (when log-mode (message "restore: [%s]@[%s]." -for-buffer (current-buffer)))
 
     (-restore-from-buffer)
 
@@ -640,12 +647,12 @@ Possible values: 'normal, 'prefix, 'sequence.")
   "Handler for `post-command-hook' to preserve input source."
   ;; (setq this-command -real-this-command)
   (when log-mode
-    (message (format "post@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
-                     -prefix-handle-stage
-                     (this-command-keys)
-                     -real-this-command
-                     (current-buffer)
-                     -prefix-override-map-enable)))
+    (message "post@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
+             -prefix-handle-stage
+             (this-command-keys)
+             -real-this-command
+             (current-buffer)
+             -prefix-override-map-enable))
 
   (pcase -prefix-handle-stage
     (; current is prefix stage
