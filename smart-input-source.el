@@ -624,7 +624,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (when log-mode
       (message (format "restore: [%s]@[%s]." -for-buffer (current-buffer))))
 
-    (-restore-from-buffer))
+    (-restore-from-buffer)
 
     (when (and (not (local-variable-p
                      'smart-input-source--prefix-override-map-enable))
