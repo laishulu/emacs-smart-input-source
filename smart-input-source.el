@@ -58,15 +58,12 @@ Should accept a string which is the id of the input source.")
 
 (defvar other-pattern "\\cc"
   "Pattern to identify a character as other lang.")
-(make-variable-buffer-local 'smart-input-source-other-pattern)
 
 (defvar other "com.sogou.inputmethod.sogou.pinyin"
   "Input source for other lang.")
-(make-variable-buffer-local 'smart-input-source-other)
 
 (defvar blank-pattern "[:blank:]"
   "Pattern to identify a character as blank.")
-(make-variable-buffer-local 'smart-input-source-blank-pattern)
 
 (defvar auto-refresh-seconds 0.2
   "Idle timer interval to auto refresh input source status from OS.
@@ -118,11 +115,9 @@ Possible values:
 nil: dynamic context
 'english: English context
 'other: other language context.")
-(make-variable-buffer-local 'smart-input-source-follow-context-fixed)
 
 (defvar follow-context-aggressive-line t
   "Aggressively detect context across blank lines.")
-(make-variable-buffer-local 'smart-input-source-follow-context-aggressive-line)
 
 (defvar follow-context-hooks
   '(evil-insert-state-entry-hook)
@@ -163,7 +158,6 @@ Possible values:
 1: delete 1 space if exists
 0: don't delete space
 'all: delete all space.")
-(make-variable-buffer-local 'smart-input-source-inline-tighten-head-rule)
 
 (defvar inline-tighten-tail-rule 1
   "Rule to delete tail spaces.
@@ -172,19 +166,15 @@ Possible values:
 1: delete 1 space if exists
 0: don't delete space
 'all: delete all space.")
-(make-variable-buffer-local 'smart-input-source-inline-tighten-tail-rule)
 
 (defvar inline-single-space-close nil
   "Single space closes the inline region.")
-(make-variable-buffer-local 'smart-input-source-inline-with-single-space-close)
 
 (defvar inline-with-english t
   "With the inline region.")
-(make-variable-buffer-local 'smart-input-source-inline-with-english)
 
 (defvar inline-with-other nil
   "With the inline other lang region.")
-(make-variable-buffer-local 'smart-input-source-inline-with-other)
 
 ;;
 ;; Following symbols are not supposed to be used directly by end user.
@@ -388,47 +378,45 @@ type: TYPE can be 'emacs, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
       nil TYPE fits both 'emp and 'macism."
   (interactive)
   (unless english-source
-    (setq-default english english-source))
+    (setq english english-source))
   (unless other-source
-    (setq-default other other-source))
+    (setq other other-source))
   (unless ism-type
-    (setq-default external-ism (pcase ism-type
-                                 ('emacs nil)
-                                 ('emp nil)
-                                 ('macism "macism")
-                                 ('im-select "im-select.exe")
-                                 ('fcitx "fcitx-remote")
-                                 ('fcitx5 "fcitx5-remote")
-                                 ('ibus "ibus"))))
+    (setq external-ism (pcase ism-type
+                         ('emacs nil)
+                         ('emp nil)
+                         ('macism "macism")
+                         ('im-select "im-select.exe")
+                         ('fcitx "fcitx-remote")
+                         ('fcitx5 "fcitx5-remote")
+                         ('ibus "ibus"))))
 
   (cond
    (; emacs builtin input method, set do-get and do-set
     (eq ism-type 'emacs)
-    (setq-default default-input-method other-source)
-    (setq-default english nil)
-    (setq-default do-get (lambda() current-input-method))
-    (setq-default do-set (lambda(source)
-                           (unless (equal source current-input-method)
-                             (toggle-input-method)))))
-    (; for builtin supoort, use the default do-get and do-set 
-     (member ism-type (list nil 'emp 'macism 'im-select))
-     t)
-    (; fcitx and fcitx5, use the default do-get, set do-set
-     (member ism-type (list 'fcitx-remote 'fcitx5-remote))
-     (setq-default english "1")
-     (setq-default other "2")
-     (setq-default do-set (lambda(source)
-                            (pcase source
-                              ("1" (start-process
-                                    "set-input-source" nil -ism "-c"))
-                              ("2" (start-process
-                                    "set-input-source" nil -ism "-o"))))))
-    (; ibus, set do-get and do-set
-     (eq ism-type 'ibus)
-     (setq-default do-get (-mk-get-fn-cmd (format "%s engine" -ism)))
-     (setq-default do-set (lambda(source)
-                            (start-process "set-input-source"
-                                           nil -ism "engine" source))))))
+    (setq default-input-method other-source)
+    (setq english nil)
+    (setq do-get (lambda() current-input-method))
+    (setq do-set (lambda(source)
+                   (unless (equal source current-input-method)
+                     (toggle-input-method)))))
+   (; for builtin supoort, use the default do-get and do-set
+    (member ism-type (list nil 'emp 'macism 'im-select))
+    t)
+   (; fcitx and fcitx5, use the default do-get, set do-set
+    (member ism-type (list 'fcitx-remote 'fcitx5-remote))
+    (setq english "1")
+    (setq other "2")
+    (setq do-set (lambda(source)
+                   (pcase source
+                     ("1" (start-process "set-input-source" nil -ism "-c"))
+                     ("2" (start-process "set-input-source" nil -ism "-o"))))))
+   (; ibus, set do-get and do-set
+    (eq ism-type 'ibus)
+    (setq do-get (-mk-get-fn-cmd (format "%s engine" -ism)))
+    (setq do-set (lambda(source)
+                   (start-process
+                    "set-input-source" nil -ism "engine" source))))))
 
 ;;
 ;; Following codes are mainly about auto update mode
