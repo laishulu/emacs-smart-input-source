@@ -394,7 +394,6 @@ type: TYPE can be 'emacs, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
     (eq ism-type 'emacs)
     (setq-default default-input-method other-source)
     (setq-default english nil)
-    (setq-default other default-input-method)
     (setq-default do-get (lambda() current-input-method))
     (setq-default do-set (lambda(source)
                            (unless (equal source current-input-method)
