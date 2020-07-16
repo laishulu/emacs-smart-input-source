@@ -128,6 +128,18 @@ nil: dynamic context
   '(evil-insert-state-entry-hook)
   "Hooks trigger the set of input source following context.")
 
+(defvar inline-english-activated-hook nil
+  "Hook to run after inline english region activated.")
+
+(defvar inline-english-deactivated-hook nil
+  "Hook to run after inline english region deactivated.")
+
+(defvar inline-other-activated-hook nil
+  "Hook to run after inline other language region activated.")
+
+(defvar inline-other-deactivated-hook nil
+  "Hook to run after inline other language region deactivated.")
+
 (defface inline-face
   '()
   "Face of the inline region overlay."
@@ -1076,21 +1088,20 @@ input source to English."
           (and inline-with-english
                (-context-other-p back-detect fore-detect (1- (point)))
                (equal -for-buffer 'other))
-          (setq -inline-lang 'english)
-          (-inline-activate (1- (point))))
+          (-inline-activate 'english (1- (point))))
 
          (;inline other lang region
           (and inline-with-other
                (= (1+ -inline-first-space-point) (point))
                (-context-english-p back-detect fore-detect (- (point) 2))
                (equal -for-buffer 'english))
-          (setq -inline-lang 'other)
-          (-inline-activate (- (point) 2)))))))))
+          (-inline-activate 'other (- (point) 2)))))))))
 
-(defun -inline-activate (start)
+(defun -inline-activate (lang start)
   "Activate the inline region overlay from START."
   (interactive)
   (-ensure-ism
+   (setq -inline-lang lang)
    (when (overlayp -inline-overlay)
      (delete-overlay -inline-overlay))
 
@@ -1104,7 +1115,11 @@ input source to English."
                     #'-inline-ret-check-to-deactivate)
                   keymap))
    (add-hook 'post-command-hook #'-inline-fly-check-deactivate nil t)
-   (-set -inline-lang)))
+   (-set -inline-lang))
+
+  (pcase -inline-lang
+    ('other (run-hooks 'smart-input-source-inline-other-activated-hook))
+    ('english (run-hooks 'smart-input-source-inline-english-activated-hook))))
 
 (defun -inline-fly-check-deactivate ()
   "Check whether to deactivate the inline region overlay."
@@ -1228,7 +1243,10 @@ input source to English."
               (eq inline-tighten-head-rule 'all)
               (delete-region (point) tighten-fore-to))))))))
   (delete-overlay -inline-overlay)
-  (setq -inline-overlay nil))
+  (setq -inline-overlay nil)
+  (pcase -inline-lang
+    ('other (run-hooks 'smart-input-source-inline-other-deactivated-hook))
+    ('english (run-hooks 'smart-input-source-inline-english-deactivated-hook))))
 
 
 ;; end of namespace

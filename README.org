@@ -286,16 +286,20 @@ Note:
 
 ** About /inline mode/
 
-| Face Name                                      | Buffer | Description                                                | Default |
-|------------------------------------------------+--------+------------------------------------------------------------+---------|
-| ~smart-input-source-inline-face~               | no     | Face for the inline region overlay                         |         |
-| ~smart-input-source-inline-not-max-point~      | no     | Insert new line when the whole buffer ends with the region | ~t~     |
-| ~smart-input-source-inline-tighten-head-rule~  | yes    | Rule to delete the head spaces                             | ~1~     |
-| ~smart-input-source-inline-tighten-tail-rule~  | yes    | Rule to delete the tail spaces                             | ~1~     |
-| ~smart-input-source-inline-single-space-close~ | yes    | 1 space to close the region, default is 2 spaces/return    | ~t~     |
-| ~smart-input-source-inline-with-english~       | yes    | enable the ~inline english~ region feature                 | ~t~     |
-| ~smart-input-source-inline-with-other~         | yes    | enable the ~inline other language~ region feature          | ~nil~   |
-|------------------------------------------------+--------+------------------------------------------------------------+---------|
+| Face Name                                           | Buffer | Description                                                | Default |
+|-----------------------------------------------------+--------+------------------------------------------------------------+---------|
+| ~smart-input-source-inline-face~                    | no     | Face for the inline region overlay                         |         |
+| ~smart-input-source-inline-not-max-point~           | no     | Insert new line when the whole buffer ends with the region | ~t~     |
+| ~smart-input-source-inline-tighten-head-rule~       | yes    | Rule to delete the head spaces                             | ~1~     |
+| ~smart-input-source-inline-tighten-tail-rule~       | yes    | Rule to delete the tail spaces                             | ~1~     |
+| ~smart-input-source-inline-single-space-close~      | yes    | 1 space to close the region, default is 2 spaces/return    | ~t~     |
+| ~smart-input-source-inline-with-english~            | yes    | enable the ~inline english~ region feature                 | ~t~     |
+| ~smart-input-source-inline-with-other~              | yes    | enable the ~inline other language~ region feature          | ~nil~   |
+| ~smart-inpu-source-inline-english-activated-hook~   | no     | Hook to run after inline english region activated          | ~nil~   |
+| ~smart-inpu-source-inline-english-deactivated-hook~ | no     | Hook to run after inline english region deactivated        | ~nil~   |
+| ~smart-inpu-source-inline-other-activated-hook~     | no     | Hook to run after inline other language region activated   | ~nil~   |
+| ~smart-inpu-source-inline-other-deactivated-hook~   | no     | Hook to run after inline other language region deactivated | ~nil~   |
+|-----------------------------------------------------+--------+------------------------------------------------------------+---------|
 
 * How to
 **  How to get the input source id
