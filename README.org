@@ -172,7 +172,9 @@ method, just like the following screenshot.
 (setq-default smart-input-source-english "1")
 (setq-default smart-input-source-other "2")
 (setq-default smart-input-source-do-get
-      (lambda() (string-trim (shell-command-to-string "fcitx-remote"))))
+      (lambda()
+        (let ((default-directory "~"))
+          (string-trim (shell-command-to-string "fcitx-remote")))))
 (setq-default smart-input-source-do-set
       (lambda(source)
         (pcase source
@@ -186,7 +188,9 @@ method, just like the following screenshot.
 (setq-default smart-input-source-english "xkb:us::eng")
 (setq-default smart-input-source-other "OTHER_INPUT_SOURCE")
 (setq-default smart-input-source-do-get
-      (lambda() (string-trim (shell-command-to-string "ibus engine"))))
+      (lambda()
+        (let ((default-directory "~"))
+          (string-trim (shell-command-to-string "ibus engine")))))
 (setq-default smart-input-source-do-set
       (lambda(source) (start-process "set-input-source" nil "ibus" "engine" source)))
 #+END_SRC
