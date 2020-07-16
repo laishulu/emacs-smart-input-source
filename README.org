@@ -64,36 +64,19 @@ Just install ~smart-input-source~ from ~melpa~.
 
 * Prepare /input source manager (ISM)/
 ** Emacs-native input method
-Any Emacs-native input method can be configured in the same way, here uses
-~rime~ as an example:
+Here uses ~rime~ as an example:
 #+BEGIN_SRC lisp
-(setq-default smart-input-source-english nil)
-(setq-default smart-input-source-other "rime")
-(setq-default smart-input-source-do-get (lambda() current-input-method))
-(setq-default smart-input-source-do-set (lambda(source) (set-input-method source)))
-#+END_SRC
-
-If you just want to toggle default input method, configure like this:
-#+BEGIN_SRC lisp
-;;(setq-default default-input-method "rime")
-(setq-default smart-input-source-english nil)
-(setq-default smart-input-source-other default-input-method)
-(setq-default smart-input-source-do-get (lambda() current-input-method))
-(setq-default smart-input-source-do-set
-              (lambda(source)
-                (unless (equal source current-input-method)
-                  (toggle-input-method))))
+(smart-input-source-ism-lazyman-config nil "rime" 'emacs)
 #+END_SRC
 
 
 ** MacOS
 The default MacOS input sources are shown in the following.
 #+BEGIN_SRC lisp
-;; set the english input source
-;;(setq-default smart-input-source-english "com.apple.keylayout.ABC")
-(setq-default smart-input-source-english "com.apple.keylayout.US")
-;; set the default other language input source for all buffer
-(setq-default smart-input-source-other "com.sogou.inputmethod.sogou.pinyin")
+;; Not needed if your input sources are the same with the default values
+(smart-input-source-ism-lazyman-config
+ "com.apple.keylayout.US"
+ "com.sogou.inputmethod.sogou.pinyin")
 #+END_SRC
 
 Note:
@@ -149,11 +132,7 @@ Note:
 *** ~im-select~
 [[https://github.com/daipeihust/im-select][im-select]] can be used as a drop-in replacement of ~macism~ in Microsoft Windows.
 #+BEGIN_SRC lisp
-(setq-default smart-input-source-external-ism "im-select.exe")
-;; 1033 is for English
-(setq-default smart-input-source-english "1033")
-;; 2052 is for Chinese
-(setq-default smart-input-source-other "2052")
+(smart-input-source-ism-lazyman-config "1033" "2052" 'im-select)
 #+END_SRC
 
 However, because even though ~im-select~ supports switching different input
@@ -166,48 +145,43 @@ method, just like the following screenshot.
 
 ** Linux
 *** ~fcitx~
-~fcitx-remote~ can be used for ~fcitx~:
 #+BEGIN_SRC lisp
-(require 'subr-x)
-(setq-default smart-input-source-english "1")
-(setq-default smart-input-source-other "2")
-(setq-default smart-input-source-do-get
-      (lambda() (string-trim (shell-command-to-string "fcitx-remote"))))
-(setq-default smart-input-source-do-set
-      (lambda(source)
-        (pcase source
-          ("1" (start-process "set-input-source" nil "fcitx-remote" "-c"))
-          ("2" (start-process "set-input-source" nil "fcitx-remote" "-o")))))
+(smart-input-source-ism-lazyman-config nil nil 'fcitx)
+#+END_SRC
+
+*** ~fcitx5~
+#+BEGIN_SRC lisp
+(smart-input-source-ism-lazyman-config nil nil 'fcitx5)
 #+END_SRC
 
 *** ~ibus~
 #+BEGIN_SRC lisp
-(require 'subr-x)
-(setq-default smart-input-source-english "xkb:us::eng")
-(setq-default smart-input-source-other "OTHER_INPUT_SOURCE")
-(setq-default smart-input-source-do-get
-      (lambda() (string-trim (shell-command-to-string "ibus engine"))))
-(setq-default smart-input-source-do-set
-      (lambda(source) (start-process "set-input-source" nil "ibus" "engine" source)))
+(smart-input-source-ism-lazyman-config "xkb:us::eng" "OTHER_INPUT_SOURCE" 'ibus)
 #+END_SRC
 
-** Internals for external ISM
-- If you have a ISM ~YOUR_ISM~:
-  + Run ~YOUR_ISM~ will output the current input source
-  + Run ~YOUR_ISM INPUT_SOURCE_ID~ will select ~INPUT_SOURCE_ID~.
+** Internals for configuring ISM
+The core of the configuring of ISM is the two variables :
+#+BEGIN_SRC lisp
+(setq-default smart-input-source-do-get
+    #'YOUR_DO_GET_INPUT_SOURCE_FUNCTION)
+(setq-default smart-input-source-do-set
+    #'YOUR_DO_SET_INPUT_SOURCE_FUNCTION)
+#+END_SRC
 
-  Then you can simply configure the ISM
-  #+BEGIN_SRC lisp
-  (setq-default smart-input-source-external-ism "YOUR_ISM")
-  #+END_SRC
-- The most flexible way to specify ISM is defining the following functions:
-  #+BEGIN_SRC lisp
-  (setq-default smart-input-source-do-get
-        #'YOUR_DO_GET_INPUT_SOURCE_FUNCTION)
-  (setq-default smart-input-source-do-set
-        #'YOUR_DO_SET_INPUT_SOURCE_FUNCTION)
-  #+END_SRC
-  
+They are provided for ~EMP~ and ~macism~ by default.
+
+If you have a ISM ~YOUR_ISM~:
++ Run ~YOUR_ISM~ will output the current input source
++ Run ~YOUR_ISM INPUT_SOURCE_ID~ will select ~INPUT_SOURCE_ID~.
+
+Then you can simply use ~YOUR_ISM~ as a drop in replacement for ~macism~:
+#+BEGIN_SRC lisp
+(setq-default smart-input-source-external-ism "YOUR_ISM")
+#+END_SRC
+
+You can configure ISM by yourself, but a convenient command
+~smart-input-source-ism-lazyman-config~ is also provided for common ISMs.
+
 * Configure
 The mode is designed carefully, so it's safe to enable for all buffers even
 its all in English.
@@ -215,11 +189,11 @@ its all in English.
 #+BEGIN_SRC lisp
 (use-package smart-input-source
   :init
-  ;; set the english input source
-  ;;(setq-default smart-input-source-english "com.apple.keylayout.ABC")
-  (setq-default smart-input-source-english "com.apple.keylayout.US")
-  ;; set the default other language input source for all buffer
-  (setq-default smart-input-source-other "com.sogou.inputmethod.sogou.pinyin")
+  (smart-input-source-ism-lazyman-config
+   ;; "com.apple.keylayout.ABC"
+   "com.apple.keylayout.US"
+   ;; "im.rime.inputmethod.Squirrel.Rime"
+   "com.sogou.inputmethod.sogou.pinyin")
 
   ;; :hook
   ;; enable the /follow context/ and /inline region/ mode for specific buffers
@@ -267,13 +241,14 @@ Note:
 - To save energy, actual interval to refresh input source from OS in a long idle
   period is increased automatically.
 
-| Command Name                     | Description                                                |
-|----------------------------------+------------------------------------------------------------|
-| ~smart-input-source-get~         | Get the input source                                       |
-| ~smart-input-source-set-english~ | Set the input source to English                            |
-| ~smart-input-source-set-other~   | Set the input source to other language                     |
-| ~smart-input-source-switch~      | Switch the input source between English and other language |
-|----------------------------------+------------------------------------------------------------|
+| Command Name                            | Description                                                |
+|-----------------------------------------+------------------------------------------------------------|
+| ~smart-input-source-ism-lazyman-config~ | Configure input source manager                             |
+| ~smart-input-source-get~                | Get the input source                                       |
+| ~smart-input-source-set-english~        | Set the input source to English                            |
+| ~smart-input-source-set-other~          | Set the input source to other language                     |
+| ~smart-input-source-switch~             | Switch the input source between English and other language |
+|-----------------------------------------+------------------------------------------------------------|
 
 ** About /cursor color mode/
 | Variable                                  | Buffer | Description                                            | Default                  |

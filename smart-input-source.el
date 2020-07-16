@@ -277,6 +277,19 @@ Possible values:
     (member source (list 'other other))
     other)))
 
+(defun -mk-get-fn-cmd (cmd)
+  "Make a function to be bound to `do-get' from CMD."
+  (lambda ()
+    (condition-case err
+        (string-trim (shell-command-to-string cmd))
+      ((file-missing file-error)
+       (when (equal (car (cdr err))
+                    "Setting current directory")
+         (message
+          "Default directory for buffer <%s> is missing, now set to '~'"
+          (current-buffer))
+         (setq default-directory "~"))))))
+
 (defun -mk-get-fn ()
   "Make a function to be bound to `do-get'."
   (cond
@@ -284,16 +297,7 @@ Possible values:
     (equal -ism 'emp)
     #'mac-input-source)
    (; external ism
-    (lambda ()
-      (condition-case err
-          (string-trim (shell-command-to-string -ism))
-        ((file-missing file-error)
-         (when (equal (car (cdr err))
-                      "Setting current directory")
-           (message
-            "Default directory for buffer <%s> is missing, now set to '~'"
-            (current-buffer))
-           (setq default-directory "~"))))))))
+    (-mk-get-fn-cmd -ism))))
 
 (defun -mk-set-fn ()
   "Make a function to be bound to `do-set'."
@@ -361,12 +365,59 @@ SOURCE should be 'english or 'other."
      (eq -current 'other)
      (-set 'english)))))
 
-(defun lazyman_config_ism (english other &optional type)
+(defun ism-lazyman-config (english-source other-source &optional ism-type)
   "Config ism for lazy man.
 
-english: ENGLISH input source.
-other: OTHER language input source.
-type: TYPE can be 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.")
+english-source: ENGLISH input source, nil means default,
+                ignored by ISM-TYPE of 'fcitx, 'fcitx5, 'emacs. 
+other-source: OTHER language input source, nil means default,
+              ignored by ISM-TYPE of 'fcitx, 'fcitx5.
+type: TYPE can be 'emacs, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
+      nil TYPE fits both 'emp and 'macism."
+  (interactive)
+  (unless english-source
+    (setq-default english english-source))
+  (unless other-source
+    (setq-default other other-source))
+  (unless ism-type
+    (setq-default external-ism (pcase ism-type
+                                 ('emacs nil)
+                                 ('emp nil)
+                                 ('macism "macism")
+                                 ('im-select "im-select.exe")
+                                 ('fcitx "fcitx-remote")
+                                 ('fcitx5 "fcitx5-remote")
+                                 ('ibus "ibus"))))
+
+  (cond
+   (; emacs builtin input method, set do-get and do-set
+    (eq ism-type 'emacs)
+    (setq-default default-input-method other-source)
+    (setq-default english nil)
+    (setq-default other default-input-method)
+    (setq-default do-get (lambda() current-input-method))
+    (setq-default do-set (lambda(source)
+                           (unless (equal source current-input-method)
+                             (toggle-input-method)))))
+    (; for builtin supoort, use the default do-get and do-set 
+     (member ism-type (list nil 'emp 'macism 'im-select))
+     t)
+    (; fcitx and fcitx5, use the default do-get, set do-set
+     (member ism-type (list 'fcitx-remote 'fcitx5-remote))
+     (setq-default english "1")
+     (setq-default other "2")
+     (setq-default do-set (lambda(source)
+                            (pcase source
+                              ("1" (start-process
+                                    "set-input-source" nil -ism "-c"))
+                              ("2" (start-process
+                                    "set-input-source" nil -ism "-o"))))))
+    (; ibus, set do-get and do-set
+     (eq ism-type 'ibus)
+     (setq-default do-get (-mk-get-fn-cmd (format "%s engine" -ism)))
+     (setq-default do-set (lambda(source)
+                            (start-process "set-input-source"
+                                           nil -ism "engine" source))))))
 
 ;;
 ;; Following codes are mainly about auto update mode
