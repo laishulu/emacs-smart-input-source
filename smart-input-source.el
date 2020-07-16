@@ -287,7 +287,7 @@ Possible values:
     (lambda ()
       (condition-case err
           (string-trim (shell-command-to-string -ism))
-        (file-missing
+        ((file-missing file-error)
          (when (equal (car (cdr err))
                       "Setting current directory")
            (message
@@ -360,6 +360,13 @@ SOURCE should be 'english or 'other."
     (; current is other
      (eq -current 'other)
      (-set 'english)))))
+
+(defun lazyman_config_ism (english other &optional type)
+  "Config ism for lazy man.
+
+english: ENGLISH input source.
+other: OTHER language input source.
+type: TYPE can be 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.")
 
 ;;
 ;; Following codes are mainly about auto update mode
