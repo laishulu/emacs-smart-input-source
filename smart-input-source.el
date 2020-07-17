@@ -576,6 +576,9 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (defvar -buffer-before-prefix nil
   "Current buffer before prefix.")
 
+(defvar -buffer-before-minibuffer nil
+  "Current buffer before enter minibuffer.")
+
 (defvar -buffer-before-command nil
   "Current buffer before prefix.")
 
@@ -650,6 +653,10 @@ Possible values: 'normal, 'prefix, 'sequence.")
        (eq -real-this-command #'-prefix-override-handler)
 
        ;; go to pre@[prefix] directly
+       (when log-mode
+         (message
+          "[%s] is a prefix key, short circuit to prefix phase."
+          (this-command-keys)))
        (setq -prefix-handle-stage 'prefix)
        (-preserve-pre-command-handler))))
     (; current is prefix stage
@@ -685,10 +692,14 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
 (defsubst -to-normal-stage (restore)
   "Transite to normal stage and restore input source if RESTORE is t."
-  (when restore
-    (when log-mode (message "restore: [%s]@[%s]." -for-buffer (current-buffer)))
-
-    (-restore-from-buffer)
+  (when restore 
+    ;; minibuffer are handled separately.
+    ;; some functions like `exit-minibuffer' won't trigger post-command-hook
+    (unless (or (minibufferp)
+                (minibufferp -buffer-before-command))
+      (when log-mode
+        (message "restore: [%s]@[%s]." -for-buffer (current-buffer)))
+      (-restore-from-buffer))
 
     (when (and (not (local-variable-p
                      'smart-input-source--prefix-override-map-enable))
@@ -735,6 +746,26 @@ Possible values: 'normal, 'prefix, 'sequence.")
      (let ((restore (not (eq -buffer-before-command (current-buffer)))))
        (-to-normal-stage restore)))))
 
+(defun -minibuffer-setup-handler ()
+  "Handler for `minibuffer-setup-hook'."
+  (when log-mode 
+    (message "enter minibuffer: [%s]@current [%s]@last [%s]@command"
+             (current-buffer)
+             -buffer-before-command
+             this-command))
+  (setq -buffer-before-minibuffer -buffer-before-command)
+  (set-english))
+
+(defun -minibuffer-exit-handler ()
+  "Handler for `minibuffer-exit-hook'."
+  (when log-mode 
+    (message "exit minibuffer: [%s]@before [%s]@command"
+             -buffer-before-minibuffer
+             this-command))
+  (with-current-buffer -buffer-before-minibuffer
+    (unless (minibufferp)
+      (-restore-from-buffer))))
+
 :autoload
 (define-minor-mode global-respect-mode
   "Respect buffer/mode by proper input source.
@@ -764,6 +795,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
        ;; preserve buffer input source
        (add-hook 'pre-command-hook #'-preserve-pre-command-handler)
        (add-hook 'post-command-hook #'-preserve-post-command-handler)
+       (add-hook 'minibuffer-setup-hook #'-minibuffer-setup-handler)
+       (add-hook 'minibuffer-exit-hook #'-minibuffer-exit-handler)
 
        ;; enable terminal focus event
        (unless (display-graphic-p)
