@@ -188,19 +188,18 @@ its all in English.
 
 #+BEGIN_SRC lisp
 (use-package smart-input-source
-  :init
-  (smart-input-source-ism-lazyman-config
-   ;; "com.apple.keylayout.ABC"
-   "com.apple.keylayout.US"
-   ;; "im.rime.inputmethod.Squirrel.Rime"
-   "com.sogou.inputmethod.sogou.pinyin")
-
   ;; :hook
   ;; enable the /follow context/ and /inline region/ mode for specific buffers
   ;; (((text-mode prog-mode) . smart-input-source-follow-context-mode)
   ;;  ((text-mode prog-mode) . smart-input-source-inline-mode))
 
   :config
+  (smart-input-source-ism-lazyman-config
+   ;; "com.apple.keylayout.ABC"
+   "com.apple.keylayout.US"
+   ;; "im.rime.inputmethod.Squirrel.Rime"
+   "com.sogou.inputmethod.sogou.pinyin")
+
   ;; enable the /cursor color/ mode
   (smart-input-source-global-cursor-color-mode t)
   ;; enable the /respect/ mode
