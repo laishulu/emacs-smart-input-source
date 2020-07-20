@@ -404,7 +404,7 @@ type: TYPE can be 'emacs, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
     (member ism-type (list nil 'emp 'macism 'im-select))
     t)
    (; fcitx and fcitx5, use the default do-get, set do-set
-    (member ism-type (list 'fcitx-remote 'fcitx5-remote))
+    (member ism-type (list 'fcitx 'fcitx5))
     (setq english "1")
     (setq other "2")
     (setq do-set (lambda(source)
