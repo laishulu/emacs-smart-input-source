@@ -1013,7 +1013,7 @@ If POSITION is not provided, then default to be the current position."
    (; turn off the mode
     (not follow-context-mode)
     (dolist (hook follow-context-hooks)
-      (remove-hook hook #'follow-context nil t)))))
+      (remove-hook hook #'follow-context nil)))))
 
 :autoload
 (define-globalized-minor-mode
