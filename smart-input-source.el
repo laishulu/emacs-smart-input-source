@@ -377,11 +377,11 @@ other-source: OTHER language input source, nil means default,
 type: TYPE can be 'emacs, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
       nil TYPE fits both 'emp and 'macism."
   (interactive)
-  (unless english-source
+  (when english-source
     (setq english english-source))
-  (unless other-source
+  (when other-source
     (setq other other-source))
-  (unless ism-type
+  (when ism-type
     (setq external-ism (pcase ism-type
                          ('emacs nil)
                          ('emp nil)
