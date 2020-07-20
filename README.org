@@ -276,7 +276,7 @@ Note:
 ** About /follow context mode/
 | Variable                                            | Description                                    | Default          |
 |-----------------------------------------------------+------------------------------------------------+------------------|
-| ~smart-input-source-follow-context-contxt~          | Context is fixed to a specific language        | ~nil~            |
+| ~smart-input-source-follow-context-fixed~           | Context is fixed to a specific language        | ~nil~            |
 | ~smart-input-source-follow-context-aggressive-line~ | Aggressively detect context across blank lines | ~t~              |
 | ~smart-input-source-follow-context-hooks~           | Hooks trigger the context following            | see variable doc |
 |-----------------------------------------------------+------------------------------------------------+------------------|
