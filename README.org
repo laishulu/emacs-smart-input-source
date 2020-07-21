@@ -255,15 +255,17 @@ Note:
 |-------------------------------------------+--------------------------------------------------------+--------------------------|
 
 ** About /respect mode/
-| Variable                                                       | Description                                        | Default                |
-|----------------------------------------------------------------+----------------------------------------------------+------------------------|
-| ~smart-input-source-respect-start~                             | Switch to specific input source when mode enabled  | ~'english~             |
-| ~smart-input-source-respect-evil-normal-escape~                | esc to English from evil normal sate               | ~t~                    |
-| ~smart-input-source-respect-prefix-and-buffer~                 | Handle prefix key and buffer                       | ~t~                    |
-| ~smart-input-source-prefix-override-keys~                      | Prefix keys to be respected                        | ~'("C-c" "C-x" "C-h")~ |
-| ~smart-input-source-prefix-override-recap-triggers~            | Functions trigger the recap of the prefix override | see variable doc       |
-| ~smart-input-source-prefix-override-buffer-disable-predicates~ | Predicates on buffers to disable prefix overriding | see variable doc       |
-|----------------------------------------------------------------+----------------------------------------------------+------------------------|
+| Variable                                                       | Description                                            | Default                |
+|----------------------------------------------------------------+--------------------------------------------------------+------------------------|
+| ~smart-input-source-respect-start~                             | Switch to specific input source when mode enabled      | ~'english~             |
+| ~smart-input-source-respect-evil-normal-escape~                | esc to English from evil normal sate                   | ~t~                    |
+| ~smart-input-source-respect-prefix-and-buffer~                 | Handle prefix key and buffer                           | ~t~                    |
+| ~smart-input-source-respect-go-english-triggers~               | Additional trigger to save input source and go English | ~t~                    |
+| ~smart-input-source-respect-restore-trigger~                   | Additional trigger to restore input source             | ~nil~                  |
+| ~smart-input-source-prefix-override-keys~                      | Prefix keys to be respected                            | ~'("C-c" "C-x" "C-h")~ |
+| ~smart-input-source-prefix-override-recap-triggers~            | Functions trigger the recap of the prefix override     | see variable doc       |
+| ~smart-input-source-prefix-override-buffer-disable-predicates~ | Predicates on buffers to disable prefix overriding     | see variable doc       |
+|----------------------------------------------------------------+--------------------------------------------------------+------------------------|
 
 ** About language pattern
 | Variable                             | Description                                    | Default                  |

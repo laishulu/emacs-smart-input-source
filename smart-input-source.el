@@ -90,6 +90,12 @@ nil means obtained from the envrionment.")
 (defvar respect-prefix-and-buffer t
   "Preserve buffer input source when `global-respect-mode' enabled.")
 
+(defvar preserve-go-english-triggers nil
+  "Triggers to save input source to buffer and then go to english.")
+
+(defvar preserve-restore-triggers nil
+  "Triggers to restore the input source from buffer.")
+
 (defvar preserve-save-hooks
   (list 'focus-out-hook)
   "Hooks to save the input source for buffer.")
@@ -401,10 +407,10 @@ type: TYPE can be 'emacs, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
                    (unless (equal source current-input-method)
                      (toggle-input-method)))))
    (; for builtin supoort, use the default do-get and do-set
-    (member ism-type (list nil 'emp 'macism 'im-select))
+    (memq ism-type (list nil 'emp 'macism 'im-select))
     t)
    (; fcitx and fcitx5, use the default do-get, set do-set
-    (member ism-type (list 'fcitx 'fcitx5))
+    (memq ism-type (list 'fcitx 'fcitx5))
     (setq english "1")
     (setq other "2")
     (setq do-set (lambda(source)
@@ -613,6 +619,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (defun -preserve-save-handler ()
   "Handler for `preserve-save-hooks'."
 
+  ;; `mouse-drag-region' causes lots of noise.
   (unless (eq this-command 'mouse-drag-region)
     (-save-to-buffer t)
     (set-english))
@@ -645,6 +652,10 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (; current is normal stage
      'normal
      (cond
+      (; enter english era
+       (memq -real-this-command preserve-go-english-triggers)
+       (-save-to-buffer t)
+       (set-english))
       (; not prefix key
        (not (eq -real-this-command #'-prefix-override-handler))
        t)
@@ -743,7 +754,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
        (-to-normal-stage t))))
     (; current is normal stage
      'normal
-     (let ((restore (not (eq -buffer-before-command (current-buffer)))))
+     (let ((restore (or (not (eq -buffer-before-command (current-buffer)))
+                        (memq -real-this-command preserve-restore-triggers))))
        (-to-normal-stage restore)))))
 
 (defun -minibuffer-setup-handler ()
