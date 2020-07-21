@@ -96,14 +96,6 @@ nil means obtained from the envrionment.")
 (defvar preserve-restore-triggers nil
   "Triggers to restore the input source from buffer.")
 
-(defvar preserve-save-hooks
-  (list 'focus-out-hook)
-  "Hooks to save the input source for buffer.")
-
-(defvar preserve-restore-hooks
-  (list 'focus-in-hook)
-  "Hooks to restore the input source from buffer.")
-
 (defvar prefix-override-keys
   '("C-c" "C-x" "C-h")
   "Prefix keys to be overrided.")
@@ -605,31 +597,33 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (defun -prefix-override-handler (arg)
   "Prefix key handler with ARG."
   (interactive "P")
-  (let* ((keys (this-command-keys))
-         (n (length keys))
-         (key (aref keys (1- n))))
-    ;; Restore the prefix arg
-    (setq prefix-arg arg)
-    (prefix-command-preserve-state)
-    ;; Push the key back on the event queue
-    (setq unread-command-events
-          (append (mapcar (lambda (e) `(t . ,e)) (listify-key-sequence keys))
-                  unread-command-events))))
+  ;; Restore the prefix arg
+  (setq prefix-arg arg)
+  (prefix-command-preserve-state)
+  ;; Push the key back on the event queue
+  (setq unread-command-events
+        (append (mapcar (lambda (e) `(t . ,e))
+                        (listify-key-sequence (this-command-keys)))
+                unread-command-events)))
 
-(defun -preserve-save-handler ()
-  "Handler for `preserve-save-hooks'."
+(defun -preserve-focus-out-handler ()
+  "Handler for `focus-out-hook'."
 
   ;; `mouse-drag-region' causes lots of noise.
   (unless (eq this-command 'mouse-drag-region)
-    (-save-to-buffer t)
+    ;; can't use `-save-to-buffer' directly
+    ;; because OS may has already changed input source
+    ;; when other windows get focus.
+    ;; so, don't get the current OS input source
+    (setq -for-buffer-locked t)
     (set-english))
 
   (when log-mode
     (message "Handle save hook, save [%s] to [%s]."
              -for-buffer (current-buffer))))
 
-(defun -preserve-restore-handler ()
-  "Handler for `preserve-restore-hooks'."
+(defun -preserve-focus-in-handler ()
+  "Handler for `focus-in-hook'."
   (when log-mode
     (message "Handle restore hook, restore [%s] from [%s] ."
              -for-buffer (current-buffer)))
@@ -815,10 +809,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
          (require 'terminal-focus-reporting)
          (terminal-focus-reporting-mode t))
 
-       (dolist (hook preserve-save-hooks)
-         (add-hook hook #'-preserve-save-handler))
-       (dolist (hook preserve-restore-hooks)
-         (add-hook hook #'-preserve-restore-handler))
+       (add-hook 'focus-out-hook #'-preserve-focus-out-handler)
+       (add-hook 'focus-in-hook #'-preserve-focus-in-handler)
 
        ;; set english when prefix key pressed
        (setq -prefix-override-map-alist
@@ -844,8 +836,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
     (when respect-prefix-and-buffer
       ;; for preserving buffer input source
-      (remove-hook 'pre-command-hook #'-preserve-pre-command-handler)
-      (remove-hook 'post-command-hook #'-preserve-post-command-handler)
+      (remove-hook 'focus-out-hook #'-preserve-focus-out-handler)
+      (remove-hook 'focus-in-hook #'-preserve-focus-in-handler)
 
       ;; for prefix key
       (setq emulation-mode-map-alists
@@ -974,9 +966,7 @@ If POSITION is not provided, then default to be the current position."
          (cross-line-back-char (back-detect-cross-line-char back-detect))
 
          (fore-to (fore-detect-to fore-detect))
-         (fore-char (fore-detect-char fore-detect))
-         (cross-line-fore-to (fore-detect-cross-line-to fore-detect))
-         (cross-line-fore-char (fore-detect-cross-line-char fore-detect)))
+         (fore-char (fore-detect-char fore-detect)))
     (cond
      (; [english]^
       (and (= back-to (or position (point))) (-english-p back-char))
