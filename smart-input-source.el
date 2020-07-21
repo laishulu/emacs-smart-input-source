@@ -174,6 +174,12 @@ Possible values:
 (defvar inline-with-other nil
   "With the inline other lang region.")
 
+:autoload
+(define-minor-mode log-mode
+  "Log the execution of this package."
+  :global t
+  :init-value nil)
+
 ;;
 ;; Following symbols are not supposed to be used directly by end user.
 ;;
@@ -187,12 +193,6 @@ Possible values:
 (declare-function mac-input-source "ext:macfns.c" (&optional SOURCE FORMAT) t)
 (declare-function mac-select-input-source "ext:macfns.c"
                   (SOURCE &optional SET-KEYBOARD-LAYOUT-OVERRIDE-P) t)
-
-
-(define-minor-mode log-mode
-  "Log the execution of this package."
-  :global t
-  :init-value nil)
 
 ;;
 ;; Following codes are mainly about input source manager
@@ -551,6 +551,7 @@ way."
 (defvar -prefix-override-map-enable nil
   "Enabe the override keymap.")
 
+:autoload
 (defun prefix-override-buffer-disable ()
   "Disable prefix override in current buffer."
   (interactive)
@@ -558,6 +559,7 @@ way."
    'smart-input-source--prefix-override-map-enable)
   (setq -prefix-override-map-enable nil))
 
+:autoload
 (defun prefix-override-buffer-enable ()
   "Disable prefix override in current buffer."
   (interactive)
@@ -1024,6 +1026,7 @@ If POSITION is not provided, then default to be the current position."
   follow-context-mode
   follow-context-mode)
 
+:autoload
 (defun follow-context ()
   "Follow the context to switch input source."
   (let ((context (-context-guess)))
