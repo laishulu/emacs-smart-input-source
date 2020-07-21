@@ -365,6 +365,7 @@ SOURCE should be 'english or 'other."
      (eq -current 'other)
      (-set 'english)))))
 
+:autoload
 (defun ism-lazyman-config (english-source other-source &optional ism-type)
   "Config ism for lazy man.
 
