@@ -531,7 +531,7 @@ way."
 (defsubst sis--save-to-buffer (&optional lock-after)
   "Save buffer input source, optional LOCK-AFTER save."
   (sis--get)
-  (when sis-lock-after
+  (when lock-after
     (setq sis--for-buffer-locked t)))
 
 (defsubst sis--restore-from-buffer ()
