@@ -288,7 +288,7 @@ Possible values:
     (equal sis--ism 'emp)
     #'mac-input-source)
    (; external ism
-    t
+    sis--ism
     (sis--mk-get-fn-by-cmd sis--ism))))
 
 (defun sis--mk-set-fn ()
@@ -298,7 +298,7 @@ Possible values:
     (equal sis--ism 'emp)
     (lambda (source) (mac-select-input-source source)))
    (; external ism
-    t
+    sis--ism
     (lambda (source)
       (start-process "set-input-source" nil sis--ism source)))))
 
