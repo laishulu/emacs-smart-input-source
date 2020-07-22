@@ -1,29 +1,29 @@
 #+TITLE: README
-[[https://melpa.org/#/smart-input-source][file:https://melpa.org/packages/smart-input-source-badge.svg]]
+[[https://melpa.org/#/smart-input-source][file:https://melpa.org/packages/sis-badge.svg]]
 
 * About
 This package provide several modes to switch OS-native or Emacs-native input
 source smartly:
 
-- A global mode: ~smart-input-source-global-respect-mode~ to respect buffer/mode
+- A global mode: ~sis-global-respect-mode~ to respect buffer/mode
   by proper input source
   1. Respect start: start Emacs with specified language.
   2. Respect ~evil~: switch to English when leaving ~evil~ ~insert~ mode.
   3. Respect ~minibuffer~: switch to English when enter ~minibuffer~.
   4. Respect prefix key: switch to English for ~C-c~ / ~C-x~ / ~C-h~ and more.
   5. Respect buffer: recover buffer input source when it regain focus.
-- A buffer local mode: ~smart-input-source-follow-context-mode~ to switch input
+- A buffer local mode: ~sis-follow-context-mode~ to switch input
   source smarted according to context. It also has a global version
-  ~smart-input-source-global-follow-context-mode~ to enable the mode for all
+  ~sis-global-follow-context-mode~ to enable the mode for all
   buffers. When to switch input source by following context can be configured
   easily by a variable, whose default value indicates when entering evil insert
   mode.
-- A buffer local mode: ~smart-input-source-inline-mode~ to enable the
+- A buffer local mode: ~sis-inline-mode~ to enable the
   automatically triggering of a temporary overlay to input English/other
   language and then back to original input source without switching input
   sources manually. It also has a global version
-  ~smart-input-source-global-inline-mode~ to enable the mode for all buffers.
-- A global mode: ~smart-input-source-global-cursor-color-mode~ to automatically
+  ~sis-global-inline-mode~ to enable the mode for all buffers.
+- A global mode: ~sis-global-cursor-color-mode~ to automatically
   change cursor color according to current input source.
 
 * Features
@@ -60,13 +60,13 @@ source smartly:
    editing, input source will never be switched to other languages.
 
 * Install
-Just install ~smart-input-source~ from ~melpa~.
+Just install ~sis~ from ~melpa~.
 
 * Prepare /input source manager (ISM)/
 ** Emacs-native input method
 Here uses ~rime~ as an example:
 #+BEGIN_SRC lisp
-(smart-input-source-ism-lazyman-config nil "rime" 'emacs)
+(sis-ism-lazyman-config nil "rime" 'emacs)
 #+END_SRC
 
 
@@ -74,14 +74,14 @@ Here uses ~rime~ as an example:
 The default MacOS input sources are shown in the following.
 #+BEGIN_SRC lisp
 ;; Not needed if your input sources are the same with the default values
-(smart-input-source-ism-lazyman-config
+(sis-ism-lazyman-config
  "com.apple.keylayout.US"
  "com.sogou.inputmethod.sogou.pinyin")
 #+END_SRC
 
 Note:
 1. Your English input source *MAY NOT* be the default one. Use command
-   ~smart-input-source-get~ in Emacs to get the correct one.
+   ~sis-get~ in Emacs to get the correct one.
 2. According to your use case, ~EMP~ or ~macism~ should be installed.
 
 *** GUI Emacs Mac Port (EMP)
@@ -107,7 +107,7 @@ Note:
   default to work with Accessibility. The default can be overwritten by the
   following codes.
   #+BEGIN_SRC lisp
-(setq smart-input-source-do-set
+(setq sis-do-set
       (lambda(source) (start-process "set-input-source" nil "macism" source "50000")))
   #+END_SRC
 - Don't use ~Alacritty~ for TUI Emacs, because it can't handle deleting
@@ -132,7 +132,7 @@ Note:
 *** ~im-select~
 [[https://github.com/daipeihust/im-select][im-select]] can be used as a drop-in replacement of ~macism~ in Microsoft Windows.
 #+BEGIN_SRC lisp
-(smart-input-source-ism-lazyman-config "1033" "2052" 'im-select)
+(sis-ism-lazyman-config "1033" "2052" 'im-select)
 #+END_SRC
 
 However, because even though ~im-select~ supports switching different input
@@ -146,25 +146,25 @@ method, just like the following screenshot.
 ** Linux
 *** ~fcitx~
 #+BEGIN_SRC lisp
-(smart-input-source-ism-lazyman-config nil nil 'fcitx)
+(sis-ism-lazyman-config nil nil 'fcitx)
 #+END_SRC
 
 *** ~fcitx5~
 #+BEGIN_SRC lisp
-(smart-input-source-ism-lazyman-config nil nil 'fcitx5)
+(sis-ism-lazyman-config nil nil 'fcitx5)
 #+END_SRC
 
 *** ~ibus~
 #+BEGIN_SRC lisp
-(smart-input-source-ism-lazyman-config "xkb:us::eng" "OTHER_INPUT_SOURCE" 'ibus)
+(sis-ism-lazyman-config "xkb:us::eng" "OTHER_INPUT_SOURCE" 'ibus)
 #+END_SRC
 
 ** Internals for configuring ISM
 The core of the configuring of ISM is the two variables :
 #+BEGIN_SRC lisp
-(setq smart-input-source-do-get
+(setq sis-do-get
       #'YOUR_DO_GET_INPUT_SOURCE_FUNCTION)
-(setq smart-input-source-do-set
+(setq sis-do-set
       #'YOUR_DO_SET_INPUT_SOURCE_FUNCTION)
 #+END_SRC
 
@@ -176,38 +176,38 @@ If you have a ISM ~YOUR_ISM~:
 
 Then you can simply use ~YOUR_ISM~ as a drop in replacement for ~macism~:
 #+BEGIN_SRC lisp
-(setq smart-input-source-external-ism "YOUR_ISM")
+(setq sis-external-ism "YOUR_ISM")
 #+END_SRC
 
 You can configure ISM by yourself, but a convenient command
-~smart-input-source-ism-lazyman-config~ is also provided for common ISMs.
+~sis-ism-lazyman-config~ is also provided for common ISMs.
 
 * Configure
 The mode is designed carefully, so it's safe to enable for all buffers even
 its all in English.
 
 #+BEGIN_SRC lisp
-(use-package smart-input-source
+(use-package sis
   ;; :hook
   ;; enable the /follow context/ and /inline region/ mode for specific buffers
-  ;; (((text-mode prog-mode) . smart-input-source-follow-context-mode)
-  ;;  ((text-mode prog-mode) . smart-input-source-inline-mode))
+  ;; (((text-mode prog-mode) . sis-follow-context-mode)
+  ;;  ((text-mode prog-mode) . sis-inline-mode))
 
   :config
-  (smart-input-source-ism-lazyman-config
+  (sis-ism-lazyman-config
    ;; "com.apple.keylayout.ABC"
    "com.apple.keylayout.US"
    ;; "im.rime.inputmethod.Squirrel.Rime"
    "com.sogou.inputmethod.sogou.pinyin")
 
   ;; enable the /cursor color/ mode
-  (smart-input-source-global-cursor-color-mode t)
+  (sis-global-cursor-color-mode t)
   ;; enable the /respect/ mode
-  (smart-input-source-global-respect-mode t)
+  (sis-global-respect-mode t)
   ;; enable the /follow context/ mode for all buffers
-  (smart-input-source-global-follow-context-mode t)
+  (sis-global-follow-context-mode t)
   ;; enable the /inline english/ mode for all buffers
-  (smart-input-source-global-inline-mode t)
+  (sis-global-inline-mode t)
   )
 #+END_SRC
 
@@ -219,99 +219,99 @@ Tips:
 You can change some of the behaviors by configuring related variables, note:
 ~inline other language~ feature is turned off by default.
 #+CAPTION: Smart Input Source
-[[./screenshots/smart-input-source.png]]
+[[./screenshots/sis.png]]
 
 * Variables and commands
 ** About input source
-| Variable                                  | Description                                        | Default                              |
-|-------------------------------------------+----------------------------------------------------+--------------------------------------|
-| ~smart-input-source-english~              | Input source for English                           | ~com.apple.keylayout.US~             |
-| ~smart-input-source-other~                | Input source for other language                    | ~com.sogou.inputmethod.sogou.pinyin~ |
-| ~smart-input-source-external-ism~         | External input resource manager                    | ~macism~                             |
-| ~smart-input-source-do-get~               | Function to get the current input source           | determined from the environment      |
-| ~smart-input-source-do-set~               | Function to set the input source                   | determined from the environment      |
-| ~smart-inpu-source-change-hook~           | Hook to run after input source changes             | ~nil~                                |
-| ~smart-input-source-auto-refresh-seconds~ | Idle interval to auto refresh input source from OS | ~0.2~, ~nil~ to disable              |
-|-------------------------------------------+----------------------------------------------------+--------------------------------------|
+| Variable                   | Description                                        | Default                              |
+|----------------------------+----------------------------------------------------+--------------------------------------|
+| ~sis-english-source~       | Input source for English                           | ~com.apple.keylayout.US~             |
+| ~sis-other-source~         | Input source for other language                    | ~com.sogou.inputmethod.sogou.pinyin~ |
+| ~sis-external-ism~         | External input resource manager                    | ~macism~                             |
+| ~sis-do-get~               | Function to get the current input source           | determined from the environment      |
+| ~sis-do-set~               | Function to set the input source                   | determined from the environment      |
+| ~sis-change-hook~          | Hook to run after input source changes             | ~nil~                                |
+| ~sis-auto-refresh-seconds~ | Idle interval to auto refresh input source from OS | ~0.2~, ~nil~ to disable              |
+|----------------------------+----------------------------------------------------+--------------------------------------|
 
 Note:
 - To save energy, actual interval to refresh input source from OS in a long idle
   period is increased automatically.
 
-| Command Name                            | Description                                                |
-|-----------------------------------------+------------------------------------------------------------|
-| ~smart-input-source-ism-lazyman-config~ | Configure input source manager                             |
-| ~smart-input-source-get~                | Get the input source                                       |
-| ~smart-input-source-set-english~        | Set the input source to English                            |
-| ~smart-input-source-set-other~          | Set the input source to other language                     |
-| ~smart-input-source-switch~             | Switch the input source between English and other language |
-|-----------------------------------------+------------------------------------------------------------|
+| Command Name             | Description                                                |
+|--------------------------+------------------------------------------------------------|
+| ~sis-ism-lazyman-config~ | Configure input source manager                             |
+| ~sis-get~                | Get the input source                                       |
+| ~sis-set-english~        | Set the input source to English                            |
+| ~sis-set-other~          | Set the input source to other language                     |
+| ~sis-switch~             | Switch the input source between English and other language |
+|--------------------------+------------------------------------------------------------|
 
 ** About /cursor color mode/
-| Variable                                  | Description                                            | Default                  |
-|-------------------------------------------+--------------------------------------------------------+--------------------------|
-| ~smart-input-source-default-cursor-color~ | Default cursor color, also used for English            | ~nil~ (from envrionment) |
-| ~smart-input-source-other-cursor-color~   | Cursor color for other input source                    | ~green~                  |
-|-------------------------------------------+--------------------------------------------------------+--------------------------|
+| Variable                   | Description                                 | Default                  |
+|----------------------------+---------------------------------------------+--------------------------|
+| ~sis-default-cursor-color~ | Default cursor color, also used for English | ~nil~ (from envrionment) |
+| ~sis-other-cursor-color~   | Cursor color for other input source         | ~green~                  |
+|----------------------------+---------------------------------------------+--------------------------|
 
 ** About /respect mode/
-| Variable                                                       | Description                                            | Default                |
-|----------------------------------------------------------------+--------------------------------------------------------+------------------------|
-| ~smart-input-source-respect-start~                             | Switch to specific input source when mode enabled      | ~'english~             |
-| ~smart-input-source-respect-evil-normal-escape~                | esc to English from evil normal sate                   | ~t~                    |
-| ~smart-input-source-respect-prefix-and-buffer~                 | Handle prefix key and buffer                           | ~t~                    |
-| ~smart-input-source-respect-go-english-triggers~               | Additional trigger to save input source and go English | ~t~                    |
-| ~smart-input-source-respect-restore-trigger~                   | Additional trigger to restore input source             | ~nil~                  |
-| ~smart-input-source-prefix-override-keys~                      | Prefix keys to be respected                            | ~'("C-c" "C-x" "C-h")~ |
-| ~smart-input-source-prefix-override-recap-triggers~            | Functions trigger the recap of the prefix override     | see variable doc       |
-| ~smart-input-source-prefix-override-buffer-disable-predicates~ | Predicates on buffers to disable prefix overriding     | see variable doc       |
-|----------------------------------------------------------------+--------------------------------------------------------+------------------------|
+| Variable                                        | Description                                            | Default                |
+|-------------------------------------------------+--------------------------------------------------------+------------------------|
+| ~sis-respect-start~                             | Switch to specific input source when mode enabled      | ~'english~             |
+| ~sis-respect-evil-normal-escape~                | esc to English from evil normal sate                   | ~t~                    |
+| ~sis-respect-prefix-and-buffer~                 | Handle prefix key and buffer                           | ~t~                    |
+| ~sis-respect-go-english-triggers~               | Additional trigger to save input source and go English | ~t~                    |
+| ~sis-respect-restore-trigger~                   | Additional trigger to restore input source             | ~nil~                  |
+| ~sis-prefix-override-keys~                      | Prefix keys to be respected                            | ~'("C-c" "C-x" "C-h")~ |
+| ~sis-prefix-override-recap-triggers~            | Functions trigger the recap of the prefix override     | see variable doc       |
+| ~sis-prefix-override-buffer-disable-predicates~ | Predicates on buffers to disable prefix overriding     | see variable doc       |
+|-------------------------------------------------+--------------------------------------------------------+------------------------|
 
 ** About language pattern
-| Variable                             | Description                                    | Default                  |
-|--------------------------------------+------------------------------------------------+--------------------------|
-| ~smart-input-source-english-pattern~ | Pattern to identify a character as English     | ~[a-zA-Z]~               |
-| ~smart-input-source-other-pattern~   | Pattern to identify a character as other       | ~\cc~ , see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]] |
-| ~smart-input-source-blank-pattern~   | Pattern to identify a character as blank       | ~[:blank:]~              |
-|--------------------------------------+------------------------------------------------+--------------------------|
+| Variable              | Description                                | Default                  |
+|-----------------------+--------------------------------------------+--------------------------|
+| ~sis-english-pattern~ | Pattern to identify a character as English | ~[a-zA-Z]~               |
+| ~sis-other-pattern~   | Pattern to identify a character as other   | ~\cc~ , see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]] |
+| ~sis-blank-pattern~   | Pattern to identify a character as blank   | ~[:blank:]~              |
+|-----------------------+--------------------------------------------+--------------------------|
 
 ** About /follow context mode/
-| Variable                                            | Description                                    | Default          |
-|-----------------------------------------------------+------------------------------------------------+------------------|
-| ~smart-input-source-follow-context-fixed~           | Context is fixed to a specific language        | ~nil~            |
-| ~smart-input-source-follow-context-aggressive-line~ | Aggressively detect context across blank lines | ~t~              |
-| ~smart-input-source-follow-context-hooks~           | Hooks trigger the context following            | see variable doc |
-|-----------------------------------------------------+------------------------------------------------+------------------|
+| Variable                             | Description                                    | Default          |
+|--------------------------------------+------------------------------------------------+------------------|
+| ~sis-follow-context-fixed~           | Context is fixed to a specific language        | ~nil~            |
+| ~sis-follow-context-aggressive-line~ | Aggressively detect context across blank lines | ~t~              |
+| ~sis-follow-context-hooks~           | Hooks trigger the context following            | see variable doc |
+|--------------------------------------+------------------------------------------------+------------------|
 
 ** About /inline mode/
 
-| Face Name                                           | Description                                                | Default |
-|-----------------------------------------------------+------------------------------------------------------------+---------|
-| ~smart-input-source-inline-face~                    | Face for the inline region overlay                         |         |
-| ~smart-input-source-inline-not-max-point~           | Insert new line when the whole buffer ends with the region | ~t~     |
-| ~smart-input-source-inline-tighten-head-rule~       | Rule to delete the head spaces                             | ~1~     |
-| ~smart-input-source-inline-tighten-tail-rule~       | Rule to delete the tail spaces                             | ~1~     |
-| ~smart-input-source-inline-single-space-close~      | 1 space to close the region, default is 2 spaces/return    | ~t~     |
-| ~smart-input-source-inline-with-english~            | enable the ~inline english~ region feature                 | ~t~     |
-| ~smart-input-source-inline-with-other~              | enable the ~inline other language~ region feature          | ~nil~   |
-| ~smart-inpu-source-inline-english-activated-hook~   | Hook to run after inline english region activated          | ~nil~   |
-| ~smart-inpu-source-inline-english-deactivated-hook~ | Hook to run after inline english region deactivated        | ~nil~   |
-| ~smart-inpu-source-inline-other-activated-hook~     | Hook to run after inline other language region activated   | ~nil~   |
-| ~smart-inpu-source-inline-other-deactivated-hook~   | Hook to run after inline other language region deactivated | ~nil~   |
-|-----------------------------------------------------+------------------------------------------------------------+---------|
+| Face Name                             | Description                                                | Default |
+|---------------------------------------+------------------------------------------------------------+---------|
+| ~sis-inline-face~                     | Face for the inline region overlay                         |         |
+| ~sis-inline-not-max-point~            | Insert new line when the whole buffer ends with the region | ~t~     |
+| ~sis-inline-tighten-head-rule~        | Rule to delete the head spaces                             | ~1~     |
+| ~sis-inline-tighten-tail-rule~        | Rule to delete the tail spaces                             | ~1~     |
+| ~sis-inline-single-space-close~       | 1 space to close the region, default is 2 spaces/return    | ~t~     |
+| ~sis-inline-with-english~             | enable the ~inline english~ region feature                 | ~t~     |
+| ~sis-inline-with-other~               | enable the ~inline other language~ region feature          | ~nil~   |
+| ~sis-inline-english-activated-hook~   | Hook to run after inline english region activated          | ~nil~   |
+| ~sis-inline-english-deactivated-hook~ | Hook to run after inline english region deactivated        | ~nil~   |
+| ~sis-inline-other-activated-hook~     | Hook to run after inline other language region activated   | ~nil~   |
+| ~sis-inline-other-deactivated-hook~   | Hook to run after inline other language region deactivated | ~nil~   |
+|---------------------------------------+------------------------------------------------------------+---------|
 
 * How to
 **  How to get the input source id
 After /input source manager/ is configured, you can get your /current
-input source id/ by the command ~smart-input-source-get~.
+input source id/ by the command ~sis-get~.
 
 **  How the package know the input source change.
-1. If your input source is switched from ~smart-input-source~, then everything
-   should be OK naturally. And your ~smart-input-source-auto-refresh-seconds~
+1. If your input source is switched from ~sis~, then everything
+   should be OK naturally. And your ~sis-auto-refresh-seconds~
    can even be set to ~nil~.
 2. If your input source is switched from OS, to detect the switch timely,
-   ~smart-input-source-auto-refresh-seconds~ should not be too large.
+   ~sis-auto-refresh-seconds~ should not be too large.
 3. To save energy, if the input source is switched from OS during a long idle
    period of Emacs, the package won't be aware in time. Then you can manually
    inform the package by doing anything in Emacs to exit the long idle period,
-   or invoke the command ~smart-input-source-get~ directly.
+   or invoke the command ~sis-get~ directly.
