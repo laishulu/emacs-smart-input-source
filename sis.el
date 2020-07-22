@@ -481,7 +481,7 @@ way."
      (funcall fn sis-default-cursor-color))
     ('other
      (funcall fn sis-other-cursor-color))
-    (unknown
+    (_
      (funcall fn color))))
 
 (defun sis--update-cursor-color()
