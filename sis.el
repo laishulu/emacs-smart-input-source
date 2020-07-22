@@ -1,4 +1,4 @@
-;;; sis.el --- Switch OS-native or Emacs-native input source smartly -*- lexical-binding: t; -*-
+;;; sis.el --- Switch OS or native input sources smartly -*- lexical-binding: t; -*-
 
 ;; URL: https://github.com/laishulu/emacs-smart-input-source
 ;; Created: March 27th, 2020
@@ -427,7 +427,7 @@ TYPE: TYPE can be 'emacs, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
 
   (sis--save-to-buffer)
 
-  (when (and sis-auto-refresh-seconds sis--auto-refresh-mode)
+  (when (and sis-auto-refresh-seconds sis-auto-refresh-mode)
     (setq sis--auto-refresh-timer
           (run-with-idle-timer
            ;; every time the wait period increases by auto-refresh-seconds
@@ -443,17 +443,18 @@ TYPE: TYPE can be 'emacs, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
 
 (defun sis--auto-refresh-timer-restart ()
   "Restart `sis--auto-refresh-timer'."
-  (when (and sis-auto-refresh-seconds sis--auto-refresh-mode)
+  (when (and sis-auto-refresh-seconds sis-auto-refresh-mode)
     (setq sis--auto-refresh-timer-scale 1)
     (sis--auto-refresh-timer-function)))
 
-(define-minor-mode sis--auto-refresh-mode
+;;;###autoload
+(define-minor-mode sis-auto-refresh-mode
   "Automaticly refresh input source."
   :global t
   :init-value nil
   (cond
    (; turn on the mode
-    sis--auto-refresh-mode
+    sis-auto-refresh-mode
     (when sis-auto-refresh-seconds
       (when sis--auto-refresh-manager-timer
         (cancel-timer sis--auto-refresh-manager-timer))
@@ -461,14 +462,16 @@ TYPE: TYPE can be 'emacs, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
             (run-with-idle-timer sis-auto-refresh-seconds t
                                  #'sis--auto-refresh-timer-restart))))
    (; turn off the mode
-    (and (not sis--auto-refresh-mode)
-         ;; /cusor color mode/ depends on this mode
-         (not sis-global-cursor-color-mode)
-         ;; /respect mode/ depends on this mode
-         (not sis-global-respect-mode))
+    (not sis-auto-refresh-mode)
     (when sis--auto-refresh-manager-timer
       (cancel-timer sis--auto-refresh-manager-timer))
     (when sis--auto-refresh-timer (cancel-timer sis--auto-refresh-timer)))))
+
+(defun sis--try-disable-auto-refresh-mode ()
+  "Try to disable auto refresh mode."
+  (when (and (not sis-global-cursor-color-mode)
+             (not sis-global-respect-mode))
+    (sis-auto-refresh-mode -1)))
 
 ;;
 ;; Following codes are mainly about cursor color mode
@@ -513,6 +516,9 @@ way."
   (cond
    (; turn on the mode
     sis-global-cursor-color-mode
+
+    ;; auto refresh input source
+    (sis-auto-refresh-mode t)
     ;; save original cursor color
     (unless sis-default-cursor-color
       (setq sis-default-cursor-color
@@ -523,9 +529,8 @@ way."
     (advice-add 'set-cursor-color :around #'sis--set-cursor-color-advice)
     (add-hook 'sis-change-hook #'sis--update-cursor-color))
    (; turn off the mode
-    (and (not sis-global-cursor-color-mode)
-         ;; /respect mode/ depends on /cursor color mode/
-         (not sis-global-respect-mode))
+    (not sis-global-cursor-color-mode)
+    (sis--try-disable-auto-refresh-mode)
     (advice-remove 'set-cursor-color #'sis--set-cursor-color-advice)
     (remove-hook 'sis-change-hook #'sis--update-cursor-color))))
 
@@ -684,8 +689,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
          lambda (buffer)
          (and (sis--string-match-p "^\*" (buffer-name buffer))
               (not (sis--string-match-p "^\*New" (buffer-name buffer)))
-              (not (sis--string-match-p "^\*Scratch" (buffer-name buffer)))))
-        )
+              (not (sis--string-match-p "^\*Scratch" (buffer-name buffer))))))
   "Predicates on buffers to disable prefix overriding.")
 
 (defsubst sis--prefix-override-buffer-disable-p (buffer)
@@ -788,7 +792,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
     sis-global-respect-mode
     (sis--ensure-ism
      ;; /respect mode/ depends on /auto refresh mode/
-     (sis--auto-refresh-mode t)
+     (sis-auto-refresh-mode t)
      ;; set english when mode enabled
      (when sis-respect-start (sis--set sis-respect-start))
 
@@ -830,6 +834,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
          (advice-add trigger :after #'sis--prefix-override-recap-advice)))))
    (; turn off the mode
     (not sis-global-respect-mode)
+    (sis--try-disable-auto-refresh-mode)
     ;; for evil
     (when (featurep 'evil)
       (remove-hook 'evil-insert-state-exit-hook #'sis-set-english)
