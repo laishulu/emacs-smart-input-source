@@ -73,13 +73,13 @@ nil means obtained from the envrionment.")
   "Cursor color for other language.")
 
 (defvar sis-respect-start 'english
-  "Switch to specific input source when `sis-global-respect-mode' enabled.")
+  "Switch to specific input source when the /respect mode/ is enabled.")
 
 (defvar sis-respect-evil-normal-escape t
-  "<escape> to english in normal state when `sis-global-respect-mode' enabled.")
+  "<escape> to english in normal state when the /respect mode/ is enabled.")
 
 (defvar sis-respect-prefix-and-buffer t
-  "Preserve buffer input source when `sis-global-respect-mode' enabled.")
+  "Preserve buffer input source when the /respect mode/ is enabled.")
 
 (defvar sis-preserve-go-english-triggers nil
   "Triggers to save input source to buffer and then go to english.")
@@ -98,7 +98,7 @@ nil means obtained from the envrionment.")
 Some functions take precedence of the override, need to recap after.")
 
 (defvar sis-follow-context-fixed nil
-  "Context is fixed to a specific language in `sis-follow-context-mode'.
+  "Context is fixed to a specific language in the /follow context mode/.
 
 Possible values:
 nil: dynamic context
@@ -360,11 +360,11 @@ SOURCE should be 'english or 'other."
 (defun sis-ism-lazyman-config (english-source other-source &optional ism-type)
   "Config ism for lazy man.
 
-english-source: ENGLISH input source, nil means default,
-                ignored by ISM-TYPE of 'fcitx, 'fcitx5, 'emacs. 
-other-source: OTHER language input source, nil means default,
+ENGLISH-SOURCE: ENGLISH input source, nil means default,
+                ignored by ISM-TYPE of 'fcitx, 'fcitx5, 'emacs.
+OTHER-SOURCE: OTHER language input source, nil means default,
               ignored by ISM-TYPE of 'fcitx, 'fcitx5.
-type: TYPE can be 'emacs, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
+TYPE: TYPE can be 'emacs, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
       nil TYPE fits both 'emp and 'macism."
   (interactive)
   (when english-source
@@ -478,9 +478,9 @@ The advice is needed, because other packages may set cursor color in their only
 way."
   (pcase sis--current
     ('english
-     (funcall fn default-cursor-color))
+     (funcall fn sis-default-cursor-color))
     ('other
-     (funcall fn other-cursor-color))
+     (funcall fn sis-other-cursor-color))
     (unknown
      (funcall fn color))))
 
@@ -490,13 +490,13 @@ way."
   (when (display-graphic-p)
     ;; actually which color passed to the function does not matter,
     ;; the advice will take care of it.
-    (set-cursor-color default-cursor-color))
+    (set-cursor-color sis-default-cursor-color))
 
   ;; for TUI
   (unless (display-graphic-p)
     (pcase sis--current
       ('english
-       (send-string-to-terminal (format "\e]12;%s\a" default-cursor-color)))
+       (send-string-to-terminal (format "\e]12;%s\a" sis-default-cursor-color)))
       ('other
        (send-string-to-terminal (format "\e]12;%s\a" other-cursor-color))))))
 
@@ -691,7 +691,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
 (defsubst sis--to-normal-stage (restore)
   "Transite to normal stage and restore input source if RESTORE is t."
-  (when restore 
+  (when restore
     ;; minibuffer are handled separately.
     ;; some functions like `exit-minibuffer' won't trigger post-command-hook
     (unless (or (minibufferp)
@@ -748,7 +748,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
 (defun sis--minibuffer-setup-handler ()
   "Handler for `minibuffer-setup-hook'."
-  (when sis-log-mode 
+  (when sis-log-mode
     (message "enter minibuffer: [%s]@current [%s]@last [%s]@command"
              (current-buffer)
              sis--buffer-before-command
@@ -758,7 +758,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
 (defun -minibuffer-exit-handler ()
   "Handler for `minibuffer-exit-hook'."
-  (when sis-log-mode 
+  (when sis-log-mode
     (message "exit minibuffer: [%s]@before [%s]@command"
              sis--buffer-before-minibuffer
              this-command))
@@ -936,10 +936,10 @@ If POSITION is not provided, then default to be the current position."
      (; ^[other]
       (and (= fore-to (or position (point))) (sis--other-p fore-char))
       t)
-     (; [other lang][blank or not][^][blank or not][not english] 
+     (; [other lang][blank or not][^][blank or not][not english]
       (and (sis--other-p back-char) (sis--not-english-p fore-char))
       t)
-     (; [not english][blank or not][^][blank or not][other lang] 
+     (; [not english][blank or not][^][blank or not][other lang]
       (and (sis--not-english-p back-char) (sis--other-p fore-char))
       t)
      (; [other lang: to the previous line][blank][^]
@@ -968,10 +968,10 @@ If POSITION is not provided, then default to be the current position."
      (; ^[english]
       (and (= fore-to (or position (point))) (sis--english-p fore-char))
       t)
-     (; [english][blank or not][^][blank or not][not other] 
+     (; [english][blank or not][^][blank or not][not other]
       (and (sis--english-p back-char) (sis--not-other-p fore-char))
       t)
-     (; [not other][blank or not][^][blank or not][english] 
+     (; [not other][blank or not][^][blank or not][english]
       (and (sis--not-other-p back-char) (sis--english-p fore-char))
       t)
      (; [english: to the previous line][blank][^]
@@ -1070,7 +1070,7 @@ If POSITION is not provided, then default to be the current position."
   sis-inline-mode)
 
 (defsubst sis--inline-effect-space-inserted-p ()
-  "A effective space is inserted"
+  "A effective space is inserted."
   (and sis-inline-mode
        (not (overlayp sis--inline-overlay))
        (not (button-at (point)))
@@ -1116,7 +1116,10 @@ input source to English."
           (sis--inline-activate 'other (- (point) 2)))))))))
 
 (defun sis--inline-activate (lang start)
-  "Activate the inline region overlay from START."
+  "Activate the inline region overlay from START.
+
+LANG: the inline region language.
+START: start position of the inline region."
   (interactive)
   (sis--ensure-ism
    (setq sis--inline-lang lang)
