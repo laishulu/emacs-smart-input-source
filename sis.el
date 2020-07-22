@@ -3,7 +3,7 @@
 ;; URL: https://github.com/laishulu/emacs-smart-input-source
 ;; Created: March 27th, 2020
 ;; Keywords: convenience
-;; Package-Requires: ((emacs "25") (terminal-focus-reporting "0.0"))
+;; Package-Requires: ((emacs "25.1") (terminal-focus-reporting "0.0"))
 ;; Version: 1.0
 
 ;; This file is not part of GNU Emacs.
@@ -373,13 +373,13 @@ TYPE: TYPE can be 'emacs, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
     (setq sis-other-source other-source))
   (when ism-type
     (setq sis-external-ism (pcase ism-type
-                         ('emacs nil)
-                         ('emp nil)
-                         ('macism "macism")
-                         ('im-select "im-select.exe")
-                         ('fcitx "fcitx-remote")
-                         ('fcitx5 "fcitx5-remote")
-                         ('ibus "ibus"))))
+                             ('emacs nil)
+                             ('emp nil)
+                             ('macism "macism")
+                             ('im-select "im-select.exe")
+                             ('fcitx "fcitx-remote")
+                             ('fcitx5 "fcitx5-remote")
+                             ('ibus "ibus"))))
 
   (cond
    (; emacs builtin input method, set do-get and do-set
@@ -388,8 +388,8 @@ TYPE: TYPE can be 'emacs, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
     (setq sis-english-source nil)
     (setq sis-do-get (lambda() current-input-method))
     (setq sis-do-set (lambda(source)
-                   (unless (equal source current-input-method)
-                     (toggle-input-method)))))
+                       (unless (equal source current-input-method)
+                         (toggle-input-method)))))
    (; for builtin supoort, use the default do-get and do-set
     (memq ism-type (list nil 'emp 'macism 'im-select))
     t)
@@ -398,15 +398,17 @@ TYPE: TYPE can be 'emacs, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
     (setq sis-english-source "1")
     (setq sis-other-source "2")
     (setq sis-do-set (lambda(source)
-                   (pcase source
-                     ("1" (start-process "set-input-source" nil sis--ism "-c"))
-                     ("2" (start-process "set-input-source" nil sis--ism "-o"))))))
+                       (pcase source
+                         ("1" (start-process "set-input-source"
+                                             nil sis--ism "-c"))
+                         ("2" (start-process "set-input-source"
+                                             nil sis--ism "-o"))))))
    (; ibus, set do-get and do-set
     (eq ism-type 'ibus)
     (setq sis-do-get (sis--mk-get-fn-by-cmd (format "%s engine" sis--ism)))
     (setq sis-do-set (lambda(source)
-                   (start-process
-                    "set-input-source" nil sis--ism "engine" source))))))
+                       (start-process "set-input-source"
+                                      nil sis--ism "engine" source))))))
 
 ;;
 ;; Following codes are mainly about auto update mode
@@ -433,7 +435,8 @@ TYPE: TYPE can be 'emacs, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
                      (* sis-auto-refresh-seconds sis--auto-refresh-timer-scale))
            nil
            #'sis--auto-refresh-timer-function))
-    (setq sis--auto-refresh-timer-scale (* 1.05 sis--auto-refresh-timer-scale))))
+    (setq sis--auto-refresh-timer-scale
+          (* 1.05 sis--auto-refresh-timer-scale))))
 
 (defvar sis--auto-refresh-timer-scale 1
   "Interval scale during this idle period.")
@@ -496,9 +499,11 @@ way."
   (unless (display-graphic-p)
     (pcase sis--current
       ('english
-       (send-string-to-terminal (format "\e]12;%s\a" sis-default-cursor-color)))
+       (send-string-to-terminal
+        (format "\e]12;%s\a" sis-default-cursor-color)))
       ('other
-       (send-string-to-terminal (format "\e]12;%s\a" sis-other-cursor-color))))))
+       (send-string-to-terminal
+        (format "\e]12;%s\a" sis-other-cursor-color))))))
 
 ;;;###autoload
 (define-minor-mode sis-global-cursor-color-mode
@@ -665,7 +670,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
      (sis--save-to-buffer t)
      (sis-set-english)
      (when sis-log-mode
-       (message "Input source: [%s] (saved) => [%s]." sis--for-buffer sis-english-source)))
+       (message "Input source: [%s] (saved) => [%s]."
+                sis--for-buffer sis-english-source)))
     (; current is sequence stage
      'sequence t)))
 
@@ -743,7 +749,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (; current is normal stage
      'normal
      (let ((restore (or (not (eq sis--buffer-before-command (current-buffer)))
-                        (memq sis--real-this-command sis-preserve-restore-triggers))))
+                        (memq sis--real-this-command
+                              sis-preserve-restore-triggers))))
        (sis--to-normal-stage restore)))))
 
 (defun sis--minibuffer-setup-handler ()
@@ -790,7 +797,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
        (when (featurep 'evil)
          (add-hook 'evil-insert-state-exit-hook #'sis-set-english)
          (when sis-respect-evil-normal-escape
-           (define-key evil-normal-state-map (kbd "<escape>") #'sis-set-english)))
+           (define-key evil-normal-state-map
+             (kbd "<escape>") #'sis-set-english)))
 
        ;; preserve buffer input source
        (add-hook 'pre-command-hook #'sis--preserve-pre-command-handler)
@@ -887,10 +895,10 @@ meanings as `string-match-p'."
       (skip-chars-backward (concat sis-blank-pattern "[:cntrl:]"))
       (let ((cross-line-char (char-before (point))))
         (make-sis-back-detect :to to
-                          :char (when char (string char))
-                          :cross-line-to (point)
-                          :cross-line-char (when cross-line-char
-                                             (string cross-line-char)))))))
+                              :char (when char (string char))
+                              :cross-line-to (point)
+                              :cross-line-char (when cross-line-char
+                                                 (string cross-line-char)))))))
 
 (cl-defstruct sis-fore-detect ; result of forward detect
   to ; point before first non-blank char in the same line
@@ -910,10 +918,10 @@ meanings as `string-match-p'."
       (skip-chars-forward (concat sis-blank-pattern "[:cntrl:]"))
       (let ((cross-line-char (char-after (point))))
         (make-sis-fore-detect :to to
-                          :char (when char (string char))
-                          :cross-line-to (point)
-                          :cross-line-char (when cross-line-char
-                                             (string cross-line-char)))))))
+                              :char (when char (string char))
+                              :cross-line-to (point)
+                              :cross-line-char (when cross-line-char
+                                                 (string cross-line-char)))))))
 
 (defun sis--context-other-p (back-detect fore-detect &optional position)
   "Predicate for context of other language.
