@@ -28,6 +28,9 @@
 ;;; Code:
 (require 'subr-x)
 
+(defvar sis-external-ism "macism"
+  "Path of external ism.")
+
 (defvar sis-do-get nil
   "Function to get the current input source.
 
