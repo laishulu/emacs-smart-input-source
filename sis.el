@@ -498,7 +498,7 @@ way."
       ('english
        (send-string-to-terminal (format "\e]12;%s\a" sis-default-cursor-color)))
       ('other
-       (send-string-to-terminal (format "\e]12;%s\a" other-cursor-color))))))
+       (send-string-to-terminal (format "\e]12;%s\a" sis-other-cursor-color))))))
 
 ;;;###autoload
 (define-minor-mode sis-global-cursor-color-mode
@@ -756,7 +756,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (setq sis--buffer-before-minibuffer sis--buffer-before-command)
   (sis-set-english))
 
-(defun -minibuffer-exit-handler ()
+(defun sis--minibuffer-exit-handler ()
   "Handler for `minibuffer-exit-hook'."
   (when sis-log-mode
     (message "exit minibuffer: [%s]@before [%s]@command"
@@ -886,7 +886,7 @@ meanings as `string-match-p'."
           (char (char-before (point))))
       (skip-chars-backward (concat sis-blank-pattern "[:cntrl:]"))
       (let ((cross-line-char (char-before (point))))
-        (make-back-detect :to to
+        (make-sis-back-detect :to to
                           :char (when char (string char))
                           :cross-line-to (point)
                           :cross-line-char (when cross-line-char
@@ -909,7 +909,7 @@ meanings as `string-match-p'."
           (char (char-after (point))))
       (skip-chars-forward (concat sis-blank-pattern "[:cntrl:]"))
       (let ((cross-line-char (char-after (point))))
-        (make-fore-detect :to to
+        (make-sis-fore-detect :to to
                           :char (when char (string char))
                           :cross-line-to (point)
                           :cross-line-char (when cross-line-char
@@ -926,9 +926,7 @@ If POSITION is not provided, then default to be the current position."
          (cross-line-back-char (sis-back-detect-cross-line-char back-detect))
 
          (fore-to (sis-fore-detect-to fore-detect))
-         (fore-char (sis-fore-detect-char fore-detect))
-         (cross-line-fore-to (sis-fore-detect-cross-line-to fore-detect))
-         (cross-line-fore-char (sis-fore-detect-cross-line-char fore-detect)))
+         (fore-char (sis-fore-detect-char fore-detect)))
     (cond
      (; [other]^
       (and (= back-to (or position (point))) (sis--other-p back-char))
@@ -954,13 +952,13 @@ If POSITION is not provided, then default to be the current position."
 
 `back-detect' BACK-DETECT and `fore-detect' FORE-DETECT are required.
 If POSITION is not provided, then default to be the current position."
-  (let* ((back-to (back-detect-to back-detect))
-         (back-char (back-detect-char back-detect))
-         (cross-line-back-to (back-detect-cross-line-to back-detect))
-         (cross-line-back-char (back-detect-cross-line-char back-detect))
+  (let* ((back-to (sis-back-detect-to back-detect))
+         (back-char (sis-back-detect-char back-detect))
+         (cross-line-back-to (sis-back-detect-cross-line-to back-detect))
+         (cross-line-back-char (sis-back-detect-cross-line-char back-detect))
 
-         (fore-to (fore-detect-to fore-detect))
-         (fore-char (fore-detect-char fore-detect)))
+         (fore-to (sis-fore-detect-to fore-detect))
+         (fore-char (sis-fore-detect-char fore-detect)))
     (cond
      (; [english]^
       (and (= back-to (or position (point))) (sis--english-p back-char))
@@ -1005,7 +1003,7 @@ If POSITION is not provided, then default to be the current position."
     sis-follow-context-mode
     (sis--ensure-ism
      (dolist (hook sis-follow-context-hooks)
-       (add-hook hook #'follow-context nil t))))
+       (add-hook hook #'sis-follow-context nil t))))
    (; turn off the mode
     (not sis-follow-context-mode)
     (dolist (hook sis-follow-context-hooks)
