@@ -361,10 +361,10 @@ SOURCE should be 'english or 'other."
   "Config ism for lazy man.
 
 ENGLISH-SOURCE: ENGLISH input source, nil means default,
-                ignored by ISM-TYPE of 'fcitx, 'fcitx5, 'emacs.
+                ignored by ISM-TYPE of 'fcitx, 'fcitx5, 'native.
 OTHER-SOURCE: OTHER language input source, nil means default,
               ignored by ISM-TYPE of 'fcitx, 'fcitx5.
-TYPE: TYPE can be 'emacs, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
+TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
       nil TYPE fits both 'emp and 'macism."
   (interactive)
   (when english-source
@@ -373,7 +373,7 @@ TYPE: TYPE can be 'emacs, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
     (setq sis-other-source other-source))
   (when ism-type
     (setq sis-external-ism (pcase ism-type
-                             ('emacs nil)
+                             ('native nil)
                              ('emp nil)
                              ('macism "macism")
                              ('im-select "im-select.exe")
@@ -382,8 +382,8 @@ TYPE: TYPE can be 'emacs, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
                              ('ibus "ibus"))))
 
   (cond
-   (; emacs builtin input method, set do-get and do-set
-    (eq ism-type 'emacs)
+   (; Emacs native input method, set do-get and do-set
+    (eq ism-type 'native)
     (setq default-input-method other-source)
     (setq sis-english-source nil)
     (setq sis-do-get (lambda() current-input-method))

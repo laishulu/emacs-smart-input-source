@@ -65,7 +65,7 @@ Just install ~sis~ from ~melpa~.
 ** Emacs-native input method
 Here uses ~rime~ as an example:
 #+BEGIN_SRC lisp
-(sis-ism-lazyman-config nil "rime" 'emacs)
+(sis-ism-lazyman-config nil "rime" 'native)
 #+END_SRC
 
 
