@@ -88,11 +88,11 @@ nil means obtained from the envrionment.")
   "Triggers to restore the input source from buffer.")
 
 (defvar sis-prefix-override-keys
-  '("C-c" "C-x" "C-h")
+  (list "C-c" "C-x" "C-h")
   "Prefix keys to be overrided.")
 
-(defvar sis-prefix-override-recap-triggers
-  '(evil-local-mode yas-minor-mode eaf-mode)
+(defvar sis-prefix-override-recap-triggers nil
+  (list 'evil-local-mode 'yas-minor-mode 'eaf-mode)
   "Commands trigger the recap of the prefix override.
 
 Some functions take precedence of the override, need to recap after.")
@@ -798,14 +798,14 @@ Possible values: 'normal, 'prefix, 'sequence.")
      ;; set english when mode enabled
      (when sis-respect-start (sis--set sis-respect-start))
 
-     (when sis-respect-prefix-and-buffer
-       ;; set english when exit evil insert state
-       (when (featurep 'evil)
-         (add-hook 'evil-insert-state-exit-hook #'sis-set-english)
-         (when sis-respect-evil-normal-escape
-           (define-key evil-normal-state-map
-             (kbd "<escape>") #'sis-set-english)))
+     ;; set english when exit evil insert state
+     (when (featurep 'evil)
+       (add-hook 'evil-insert-state-exit-hook #'sis-set-english)
+       (when sis-respect-evil-normal-escape
+         (define-key evil-normal-state-map
+           (kbd "<escape>") #'sis-set-english)))
 
+     (when sis-respect-prefix-and-buffer
        ;; preserve buffer input source
        (add-hook 'pre-command-hook #'sis--preserve-pre-command-handler)
        (add-hook 'post-command-hook #'sis--preserve-post-command-handler)
