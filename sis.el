@@ -1,4 +1,4 @@
-;;; sis.el --- Switch native or OS input sources smartly -*- lexical-binding: t; -*-
+;;; sis.el --- Switch native or OS input source (input method) smartly -*- lexical-binding: t; -*-
 
 ;; URL: https://github.com/laishulu/emacs-smart-input-source
 ;; Created: March 27th, 2020
