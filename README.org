@@ -212,8 +212,8 @@ its all in English.
 #+END_SRC
 
 Tips:
-1. For ~spacemacs~ user, if you config it with the ~hybrid~ mode, Some of the
-   ~evil~ related features may not work. Change it to ~vim~ mode instead.
+1. For ~spacemacs~, if it works in the ~hybrid~ mode, some of the ~evil~ related
+   features may not work. Change to ~vim~ mode instead.
 
 **  Default behavior for /inline english mode/ and /follow context mode/
 You can change some of the behaviors by configuring related variables, note:
