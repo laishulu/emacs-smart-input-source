@@ -2,7 +2,7 @@
 [[https://melpa.org/#/smart-input-source][file:https://melpa.org/packages/sis-badge.svg]]
 
 * About
-`sis` (smart input source) is to switch native or OS input source (input method)
+~sis~ (smart input source) is to switch native or OS input source (input method)
 smartly:
 
 - A global mode: ~sis-global-respect-mode~ to respect buffer/mode
