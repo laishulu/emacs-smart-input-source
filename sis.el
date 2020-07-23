@@ -91,7 +91,7 @@ nil means obtained from the envrionment.")
   (list "C-c" "C-x" "C-h")
   "Prefix keys to be overrided.")
 
-(defvar sis-prefix-override-recap-triggers nil
+(defvar sis-prefix-override-recap-triggers
   (list 'evil-local-mode 'yas-minor-mode 'eaf-mode)
   "Commands trigger the recap of the prefix override.
 
