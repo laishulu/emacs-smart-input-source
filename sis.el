@@ -427,7 +427,11 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
   (when sis--auto-refresh-timer
     (cancel-timer sis--auto-refresh-timer))
 
-  (sis--save-to-buffer)
+  (if sis--recovered-after-minibuffer
+      (progn
+        (sis--restore-from-buffer)
+        (setq sis--recovered-after-minibuffer nil))
+  (sis--save-to-buffer))
 
   (when (and sis-auto-refresh-seconds sis-auto-refresh-mode)
     (setq sis--auto-refresh-timer
@@ -580,8 +584,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (defvar sis--buffer-before-prefix nil
   "Current buffer before prefix.")
 
-(defvar sis--buffer-before-minibuffer nil
-  "Current buffer before enter minibuffer.")
+(defvar sis--recovered-after-minibuffer nil
+  "Already recovered input source after minibuffer exit.")
 
 (defvar sis--buffer-before-command nil
   "Current buffer before prefix.")
@@ -704,13 +708,15 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (defsubst sis--to-normal-stage (restore)
   "Transite to normal stage and restore input source if RESTORE is t."
   (when restore
-    ;; minibuffer are handled separately.
+    ;; entering minibuffer is handled separately.
     ;; some functions like `exit-minibuffer' won't trigger post-command-hook
-    (unless (or (minibufferp)
-                (minibufferp sis--buffer-before-command))
+    (unless (minibufferp)
       (when sis-log-mode
         (message "restore: [%s]@[%s]." sis--for-buffer (current-buffer)))
-      (sis--restore-from-buffer))
+      (sis--restore-from-buffer)
+      ;; indicate that input source is already recovered after minibuffer.
+      ;; no harm if not the case of just exiting minibuffer.
+      (setq sis--recovered-after-minibuffer nil))
 
     (when (and (not (local-variable-p
                      'sis--prefix-override-map-enable))
@@ -766,7 +772,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
              (current-buffer)
              sis--buffer-before-command
              this-command))
-  (setq sis--buffer-before-minibuffer sis--buffer-before-command)
+  (setq sis--recovered-after-minibuffer nil)
   (sis-set-english))
 
 (defun sis--minibuffer-exit-handler ()
@@ -775,9 +781,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (message "exit minibuffer: [%s]@before [%s]@command"
              sis--buffer-before-minibuffer
              this-command))
-  (with-current-buffer sis--buffer-before-minibuffer
-    (unless (minibufferp)
-      (sis--restore-from-buffer))))
+  (setq sis--recovered-after-minibuffer t))
 
 ;;;###autoload
 (define-minor-mode sis-global-respect-mode
