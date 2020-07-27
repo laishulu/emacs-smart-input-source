@@ -185,6 +185,8 @@ Possible values:
 (declare-function mac-select-input-source "ext:macfns.c"
                   (SOURCE &optional SET-KEYBOARD-LAYOUT-OVERRIDE-P) t)
 
+(defun sis--do-nothing-advice (&rest _)
+    "Advice to make existing function do nothing.")
 ;;
 ;; Following codes are mainly about input source manager
 ;;
@@ -806,6 +808,11 @@ Possible values: 'normal, 'prefix, 'sequence.")
      ;; set english when exit evil insert state
      (when (featurep 'evil)
        (add-hook 'evil-insert-state-exit-hook #'sis-set-english)
+       ;; let sis to manage input method
+       (advice-add 'evil-activate-input-method :around
+                   #'sis--do-nothing-advice)
+       (advice-add 'evil-deactivate-input-method :around
+                   #'sis--do-nothing-advice)
        (when sis-respect-evil-normal-escape
          (define-key evil-normal-state-map
            (kbd "<escape>") #'sis-set-english)))
@@ -844,6 +851,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (sis--try-disable-auto-refresh-mode)
     ;; for evil
     (when (featurep 'evil)
+      (advice-remove 'evil-activate-input-method #'sis--do-nothing-advice)
+      (advice-remove 'evil-deactivate-input-method #'sis--do-nothing-advice)
       (remove-hook 'evil-insert-state-exit-hook #'sis-set-english)
       (when sis-respect-evil-normal-escape
         (define-key evil-normal-state-map (kbd "<escape>") nil)))
