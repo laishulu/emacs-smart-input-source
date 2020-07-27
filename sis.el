@@ -389,11 +389,9 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
     (setq default-input-method other-source)
     (setq sis-english-source nil)
     (add-hook 'input-method-activate-hook
-              (lambda ()
-                (sis--update-state sis-other-source)))
+              (lambda () (sis--update-state sis-other-source)))
     (add-hook 'input-method-deactivate-hook
-              (lambda ()
-                (sis--update-state sis-english-source)))
+              (lambda () (sis--update-state sis-english-source)))
     (setq sis-do-get (lambda() current-input-method))
     (setq sis-do-set (lambda(source)
                        (unless (equal source current-input-method)
