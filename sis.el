@@ -375,8 +375,8 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
     (setq sis-other-source other-source))
   (when ism-type
     (setq sis-external-ism (pcase ism-type
-                             ('native nil)
-                             ('emp nil)
+                             ('native 'native)
+                             ('emp 'emp)
                              ('macism "macism")
                              ('im-select "im-select.exe")
                              ('fcitx "fcitx-remote")
@@ -388,6 +388,12 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
     (eq ism-type 'native)
     (setq default-input-method other-source)
     (setq sis-english-source nil)
+    (add-hook 'input-method-activate-hook
+              (lambda ()
+                (sis--update-state sis-other-source)))
+    (add-hook 'input-method-deactivate-hook
+              (lambda ()
+                (sis--update-state sis-english-source)))
     (setq sis-do-get (lambda() current-input-method))
     (setq sis-do-set (lambda(source)
                        (unless (equal source current-input-method)
@@ -777,10 +783,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
 (defun sis--minibuffer-exit-handler ()
   "Handler for `minibuffer-exit-hook'."
-  (when sis-log-mode
-    (message "exit minibuffer: [%s]@before [%s]@command"
-             sis--buffer-before-minibuffer
-             this-command))
+  (when sis-log-mode (message "exit minibuffer: [%s]@command" this-command))
   (setq sis--recovered-after-minibuffer t))
 
 ;;;###autoload
