@@ -700,8 +700,10 @@ Possible values: 'normal, 'prefix, 'sequence.")
         (;; special buffer
          lambda (buffer)
          (and (sis--string-match-p "^\*" (buffer-name buffer))
-              (not (sis--string-match-p "^\*New" (buffer-name buffer)))
-              (not (sis--string-match-p "^\*Scratch" (buffer-name buffer))))))
+              (not (sis--string-match-p "^\*new\*"
+                                        (downcase (buffer-name buffer))))
+              (not (sis--string-match-p "^\*scratch\*"
+                                        (downcase (buffer-name buffer)))))))
   "Predicates on buffers to disable prefix overriding.")
 
 (defsubst sis--prefix-override-buffer-disable-p (buffer)
