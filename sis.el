@@ -92,7 +92,7 @@ nil means obtained from the envrionment.")
   "Prefix keys to be overrided.")
 
 (defvar sis-prefix-override-recap-triggers
-  (list 'evil-local-mode 'yas-minor-mode 'eaf-mode)
+  (list 'evil-local-mode 'yas-minor-mode)
   "Commands trigger the recap of the prefix override.
 
 Some functions take precedence of the override, need to recap after.")
