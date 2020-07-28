@@ -1,5 +1,5 @@
 #+TITLE: README
-[[https://melpa.org/#/smart-input-source][file:https://melpa.org/packages/sis-badge.svg]]
+[[https://melpa.org/#/sis][file:https://melpa.org/packages/sis-badge.svg]]
 
 * About
 ~sis~ (smart input source) is to switch native or OS input source (input method)
