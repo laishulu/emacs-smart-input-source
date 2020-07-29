@@ -252,10 +252,8 @@ Possible values:
 
 (defmacro sis--ensure-dir (&rest body)
   "Ensure BODY runs in home directory."
-  `(let (saved-default-directory default-directory)
-     (setq default-directory "~")
-     ,@body
-     (setq default-directory saved-default-directory)))
+  `(let ((default-directory "~"))
+     ,@body))
 
 (defsubst sis--normalize-to-lang (lang)
   "Normalize LANG in the form of source id or lang to lang."
