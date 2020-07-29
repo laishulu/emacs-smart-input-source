@@ -250,6 +250,13 @@ Possible values:
      (when sis--ism
        ,@body)))
 
+(defmacro sis--ensure-dir (&rest body)
+  "Ensure BODY runs in home directory."
+  `(let (saved-default-directory default-directory)
+     (setq default-directory "~")
+     ,@body
+     (setq default-directory saved-default-directory)))
+
 (defsubst sis--normalize-to-lang (lang)
   "Normalize LANG in the form of source id or lang to lang."
   (cond
@@ -273,15 +280,8 @@ Possible values:
 (defun sis--mk-get-fn-by-cmd (cmd)
   "Make a function to be bound to `sis-do-get' from CMD."
   (lambda ()
-    (condition-case err
-        (string-trim (shell-command-to-string cmd))
-      ((file-missing file-error)
-       (when (equal (car (cdr err))
-                    "Setting current directory")
-         (message
-          "Default directory for buffer <%s> is missing, now set to '~'"
-          (current-buffer))
-         (setq default-directory "~"))))))
+    (sis--ensure-dir
+     (string-trim (shell-command-to-string cmd)))))
 
 (defun sis--mk-get-fn ()
   "Make a function to be bound to `sis-do-get'."
@@ -302,7 +302,8 @@ Possible values:
    (; external ism
     sis--ism
     (lambda (source)
-      (start-process "set-input-source" nil sis--ism source)))))
+      (sis--ensure-dir
+       (start-process "set-input-source" nil sis--ism source))))))
 
 (defun sis--update-state (source)
   "Update input source state.
@@ -406,17 +407,19 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
     (setq sis-english-source "1")
     (setq sis-other-source "2")
     (setq sis-do-set (lambda(source)
-                       (pcase source
-                         ("1" (start-process "set-input-source"
-                                             nil sis--ism "-c"))
-                         ("2" (start-process "set-input-source"
-                                             nil sis--ism "-o"))))))
+                       (sis--ensure-dir
+                        (pcase source
+                          ("1" (start-process "set-input-source"
+                                              nil sis--ism "-c"))
+                          ("2" (start-process "set-input-source"
+                                              nil sis--ism "-o")))))))
    (; ibus, set do-get and do-set
     (eq ism-type 'ibus)
     (setq sis-do-get (sis--mk-get-fn-by-cmd (format "%s engine" sis--ism)))
     (setq sis-do-set (lambda(source)
-                       (start-process "set-input-source"
-                                      nil sis--ism "engine" source))))))
+                       (sis--ensure-dir
+                        (start-process "set-input-source"
+                                       nil sis--ism "engine" source)))))))
 
 ;;
 ;; Following codes are mainly about auto update mode
