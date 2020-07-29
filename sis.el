@@ -273,15 +273,8 @@ Possible values:
 (defun sis--mk-get-fn-by-cmd (cmd)
   "Make a function to be bound to `sis-do-get' from CMD."
   (lambda ()
-    (condition-case err
-        (string-trim (shell-command-to-string cmd))
-      ((file-missing file-error)
-       (when (equal (car (cdr err))
-                    "Setting current directory")
-         (message
-          "Default directory for buffer <%s> is missing, now set to '~'"
-          (current-buffer))
-         (setq default-directory "~"))))))
+    (let ((default-directory "~"))
+      (string-trim (shell-command-to-string cmd)))))
 
 (defun sis--mk-get-fn ()
   "Make a function to be bound to `sis-do-get'."
