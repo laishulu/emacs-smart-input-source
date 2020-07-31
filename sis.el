@@ -619,7 +619,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (prefix-command-preserve-state)
   ;; Push the key back on the event queue
   (setq unread-command-events
-        (append (mapcar (lambda (e) `(t . ,e))
+        (append (mapcar (lambda (e) (cons t e))
                         (listify-key-sequence (this-command-keys)))
                 unread-command-events)))
 
