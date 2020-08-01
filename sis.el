@@ -434,10 +434,10 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
   (when sis--auto-refresh-timer
     (cancel-timer sis--auto-refresh-timer))
 
-  (if sis--recovered-after-minibuffer
+  (if sis--to-restore-after-minibuffer
       (progn
         (sis--restore-from-buffer)
-        (setq sis--recovered-after-minibuffer nil))
+        (setq sis--to-restore-after-minibuffer nil))
   (sis--save-to-buffer))
 
   (when (and sis-auto-refresh-seconds sis-auto-refresh-mode)
@@ -562,6 +562,15 @@ way."
   (setq sis--for-buffer-locked nil)
   (sis--set (or sis--for-buffer 'english)))
 
+(defsubst sis--preserve-go-english-advice ()
+  "Restore buffer input source."
+  (sis--save-to-buffer t)
+  (sis-set-english))
+
+(defsubst sis--preserve-restore-advice ()
+  "Restore buffer input source."
+  (sis--restore-from-buffer))
+
 (defvar sis--prefix-override-map-enable nil
   "Enabe the override keymap.")
 
@@ -591,8 +600,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (defvar sis--buffer-before-prefix nil
   "Current buffer before prefix.")
 
-(defvar sis--recovered-after-minibuffer nil
-  "Already recovered input source after minibuffer exit.")
+(defvar sis--to-restore-after-minibuffer nil
+  "Already restored input source after minibuffer exit.")
 
 (defvar sis--buffer-before-command nil
   "Current buffer before prefix.")
@@ -663,10 +672,6 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (; current is normal stage
      'normal
      (cond
-      (; enter english era
-       (memq sis--real-this-command sis-preserve-go-english-triggers)
-       (sis--save-to-buffer t)
-       (sis-set-english))
       (; not prefix key
        (not (eq sis--real-this-command #'sis--prefix-override-handler))
        t)
@@ -723,9 +728,9 @@ Possible values: 'normal, 'prefix, 'sequence.")
       (when sis-log-mode
         (message "restore: [%s]@[%s]." sis--for-buffer (current-buffer)))
       (sis--restore-from-buffer)
-      ;; indicate that input source is already recovered after minibuffer.
+      ;; indicate that input source is already restored after minibuffer.
       ;; no harm if not the case of just exiting minibuffer.
-      (setq sis--recovered-after-minibuffer nil))
+      (setq sis--to-restore-after-minibuffer nil))
 
     (when (and (not (local-variable-p
                      'sis--prefix-override-map-enable))
@@ -769,9 +774,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
        (sis--to-normal-stage t))))
     (; current is normal stage
      'normal
-     (let ((restore (or (not (eq sis--buffer-before-command (current-buffer)))
-                        (memq sis--real-this-command
-                              sis-preserve-restore-triggers))))
+     (let ((restore (not (eq sis--buffer-before-command (current-buffer)))))
        (sis--to-normal-stage restore)))))
 
 (defun sis--minibuffer-setup-handler ()
@@ -781,13 +784,13 @@ Possible values: 'normal, 'prefix, 'sequence.")
              (current-buffer)
              sis--buffer-before-command
              this-command))
-  (setq sis--recovered-after-minibuffer nil)
+  (setq sis--to-restore-after-minibuffer nil)
   (sis-set-english))
 
 (defun sis--minibuffer-exit-handler ()
   "Handler for `minibuffer-exit-hook'."
   (when sis-log-mode (message "exit minibuffer: [%s]@command" this-command))
-  (setq sis--recovered-after-minibuffer t))
+  (setq sis--to-restore-after-minibuffer t))
 
 ;;;###autoload
 (define-minor-mode sis-global-respect-mode
@@ -796,7 +799,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 - Respect start: start this mode with specific input source.
 - Respect ~evil~: switch to English when leaving ~evil~ ~insert~ mode.
 - Respect prefix key: switch to English for ~C-c~/ ~C-x~/ ~C-h~.
-- Respect buffer: recover buffer input source when it regain focus."
+- Respect buffer: restore buffer input source when it regain focus."
   :global t
   :init-value nil
   (cond
@@ -834,6 +837,12 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
        (add-hook 'focus-out-hook #'sis--preserve-focus-out-handler)
        (add-hook 'focus-in-hook #'sis--preserve-focus-in-handler)
+
+       (dolist (trigger sis-preserve-go-english-triggers)
+         (advice-add trigger :after #'sis--preserve-go-english-advice))
+
+       (dolist (trigger sis-preserve-restore-triggers)
+         (advice-add trigger :after #'sis--preserve-restore-advice))
 
        ;; set english when prefix key pressed
        (setq sis--prefix-override-map-alist
