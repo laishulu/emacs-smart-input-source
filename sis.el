@@ -81,13 +81,14 @@ nil means obtained from the envrionment.")
 (defvar sis-respect-prefix-and-buffer t
   "Preserve buffer input source when the /respect mode/ is enabled.")
 
-(defvar sis-preserve-go-english-triggers nil
+(defvar sis-respect-go-english-triggers nil
   "Triggers to save input source to buffer and then go to english.")
 
-(defvar sis-preserve-restore-triggers nil
+(defvar sis-respect-restore-triggers nil
   "Triggers to restore the input source from buffer.")
 
-(defvar sis-preserve-dispatcher-triggers nil
+(defvar sis-respect-dispatch-triggers
+  (list 'magit-file-dispatch)
   "Triggers for dispatchers.")
 
 (defvar sis-prefix-override-keys
@@ -440,11 +441,11 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
   (when sis--auto-refresh-timer
     (cancel-timer sis--auto-refresh-timer))
 
-  (if (and sis--preserve-to-restore-after-minibuffer
-           (not sis--preserve-in-despatcher))
+  (if (and sis--respect-to-restore-after-minibuffer
+           (not sis--respect-in-dispatcher))
       (progn
         (sis--restore-from-buffer)
-        (setq sis--preserve-to-restore-after-minibuffer nil))
+        (setq sis--respect-to-restore-after-minibuffer nil))
   (sis--save-to-buffer))
 
   (when (and sis-auto-refresh-seconds sis-auto-refresh-mode)
@@ -575,7 +576,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (defvar sis--real-this-command nil
   "Real this command. Some commands overwrite it.")
 
-(defvar sis--preserve-to-restore-after-minibuffer nil
+(defvar sis--respect-to-restore-after-minibuffer nil
   "Already restored input source after minibuffer exit.")
 
 (defvar sis--prefix-override-order -1000
@@ -591,22 +592,22 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (setq sis--for-buffer-locked nil)
   (sis--set (or sis--for-buffer 'english)))
 
-(defvar sis--preserve-in-despatcher nil
+(defvar sis--respect-in-dispatcher nil
   "In processing a dispatcher.")
-(make-variable-buffer-local 'sis--preserve-in-despatcher)
+(make-variable-buffer-local 'sis--respect-in-dispatcher)
 
-(defsubst sis--preserve-dispatcher-advice ()
-  "Advice for `sis-preserve-dispatcher-triggers'."
+(defsubst sis--respect-dispatch-advice ()
+  "Advice for `sis-respect-dispatch-triggers'."
   (when sis-log-mode
     (message "dispatcher-advice: %s@%s, %s@locked"
              sis--for-buffer (current-buffer)
              sis--for-buffer-locked))
   (setq sis--for-buffer-locked t)
   (sis-set-english)
-  (setq sis--preserve-in-despatcher t))
+  (setq sis--respect-in-dispatcher t))
 
-(defsubst sis--preserve-go-english-advice ()
-  "Advice for `sis-preserve-go-english-triggers'."
+(defsubst sis--respect-go-english-advice ()
+  "Advice for `sis-respect-go-english-triggers'."
   (sis--save-to-buffer)
   (when sis-log-mode
     (message "go-english-advice: %s@%s, %s@locked"
@@ -615,7 +616,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (setq sis--for-buffer-locked t)
   (sis-set-english))
 
-(defsubst sis--preserve-restore-advice ()
+(defsubst sis--respect-restore-advice ()
   "Restore buffer input source."
   (when sis-log-mode
     (message "restore-advice: %s@%s, %s@locked"
@@ -661,7 +662,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
                         (listify-key-sequence (this-command-keys)))
                 unread-command-events)))
 
-(defun sis--preserve-focus-out-handler ()
+(defun sis--respect-focus-out-handler ()
   "Handler for `focus-out-hook'."
 
   ;; `mouse-drag-region' causes lots of noise.
@@ -677,18 +678,18 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (message "Handle save hook, save [%s] to [%s]."
              sis--for-buffer (current-buffer))))
 
-(defun sis--preserve-focus-in-handler ()
+(defun sis--respect-focus-in-handler ()
   "Handler for `focus-in-hook'."
   (when sis-log-mode
     (message "Handle restore hook, restore [%s] from [%s] ."
              sis--for-buffer (current-buffer)))
   (sis--restore-from-buffer))
 
-(defun sis--preserve-pre-command-handler ()
+(defun sis--respect-pre-command-handler ()
   "Handler for `pre-command-hook' to preserve input source."
   (setq sis--buffer-before-command (current-buffer))
   (setq sis--real-this-command this-command)
-  (setq sis--preserve-in-despatcher nil)
+  (setq sis--respect-in-dispatcher nil)
 
   (when sis-log-mode
     (message "pre@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
@@ -715,7 +716,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
           "[%s] is a prefix key, short circuit to prefix phase."
           (this-command-keys)))
        (setq sis--prefix-handle-stage 'prefix)
-       (sis--preserve-pre-command-handler))))
+       (sis--respect-pre-command-handler))))
     (; current is prefix stage
      'prefix
      (setq sis--prefix-override-map-enable nil)
@@ -755,13 +756,13 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (when restore
     ;; entering minibuffer is handled separately.
     ;; some functions like `exit-minibuffer' won't trigger post-command-hook
-    (unless (or (minibufferp) sis--preserve-in-despatcher)
+    (unless (or (minibufferp) sis--respect-in-dispatcher)
       (when sis-log-mode
         (message "restore: [%s]@[%s]" sis--for-buffer (current-buffer)))
       (sis--restore-from-buffer)
       ;; indicate that input source is already restored after minibuffer.
       ;; no harm if not the case of just exiting minibuffer.
-      (setq sis--preserve-to-restore-after-minibuffer nil))
+      (setq sis--respect-to-restore-after-minibuffer nil))
 
     (when (and (not (local-variable-p
                      'sis--prefix-override-map-enable))
@@ -773,7 +774,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
   (setq sis--prefix-handle-stage 'normal))
 
-(defun sis--preserve-post-command-handler ()
+(defun sis--respect-post-command-handler ()
   "Handler for `post-command-hook' to preserve input source."
   ;; (setq this-command sis--real-this-command)
   (when sis-log-mode
@@ -815,13 +816,13 @@ Possible values: 'normal, 'prefix, 'sequence.")
              (current-buffer)
              sis--buffer-before-command
              this-command))
-  (setq sis--preserve-to-restore-after-minibuffer nil)
+  (setq sis--respect-to-restore-after-minibuffer nil)
   (sis-set-english))
 
 (defun sis--minibuffer-exit-handler ()
   "Handler for `minibuffer-exit-hook'."
   (when sis-log-mode (message "exit minibuffer: [%s]@command" this-command))
-  (setq sis--preserve-to-restore-after-minibuffer t))
+  (setq sis--respect-to-restore-after-minibuffer t))
 
 ;;;###autoload
 (define-minor-mode sis-global-respect-mode
@@ -856,8 +857,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
      (when sis-respect-prefix-and-buffer
        ;; preserve buffer input source
-       (add-hook 'pre-command-hook #'sis--preserve-pre-command-handler)
-       (add-hook 'post-command-hook #'sis--preserve-post-command-handler)
+       (add-hook 'pre-command-hook #'sis--respect-pre-command-handler)
+       (add-hook 'post-command-hook #'sis--respect-post-command-handler)
        (add-hook 'minibuffer-setup-hook #'sis--minibuffer-setup-handler)
        (add-hook 'minibuffer-exit-hook #'sis--minibuffer-exit-handler)
 
@@ -866,17 +867,17 @@ Possible values: 'normal, 'prefix, 'sequence.")
          (require 'terminal-focus-reporting)
          (terminal-focus-reporting-mode t))
 
-       (add-hook 'focus-out-hook #'sis--preserve-focus-out-handler)
-       (add-hook 'focus-in-hook #'sis--preserve-focus-in-handler)
+       (add-hook 'focus-out-hook #'sis--respect-focus-out-handler)
+       (add-hook 'focus-in-hook #'sis--respect-focus-in-handler)
 
-       (dolist (trigger sis-preserve-go-english-triggers)
-         (advice-add trigger :after #'sis--preserve-go-english-advice))
+       (dolist (trigger sis-respect-go-english-triggers)
+         (advice-add trigger :after #'sis--respect-go-english-advice))
 
-       (dolist (trigger sis-preserve-restore-triggers)
-         (advice-add trigger :after #'sis--preserve-restore-advice))
+       (dolist (trigger sis-respect-restore-triggers)
+         (advice-add trigger :after #'sis--respect-restore-advice))
 
-       (dolist (trigger sis-preserve-dispatcher-triggers)
-         (advice-add trigger :after #'sis--preserve-dispatcher-advice))
+       (dolist (trigger sis-respect-dispatch-triggers)
+         (advice-add trigger :after #'sis--respect-dispatch-advice))
 
        ;; set english when prefix key pressed
        (setq sis--prefix-override-map-alist
@@ -905,8 +906,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
     (when sis-respect-prefix-and-buffer
       ;; for preserving buffer input source
-      (remove-hook 'focus-out-hook #'sis--preserve-focus-out-handler)
-      (remove-hook 'focus-in-hook #'sis--preserve-focus-in-handler)
+      (remove-hook 'focus-out-hook #'sis--respect-focus-out-handler)
+      (remove-hook 'focus-in-hook #'sis--respect-focus-in-handler)
 
       ;; for prefix key
       (setq emulation-mode-map-alists
