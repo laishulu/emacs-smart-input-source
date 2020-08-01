@@ -87,6 +87,9 @@ nil means obtained from the envrionment.")
 (defvar sis-preserve-restore-triggers nil
   "Triggers to restore the input source from buffer.")
 
+(defvar sis-preserve-dispatcher-triggers nil
+  "Triggers for dispatchers.")
+
 (defvar sis-prefix-override-keys
   (list "C-c" "C-x" "C-h")
   "Prefix keys to be overrided.")
@@ -325,7 +328,10 @@ SOURCE should be 'english or 'other."
   (sis--ensure-ism
    (sis--update-state (sis--normalize-to-lang source))
    (funcall sis-do-set (sis--normalize-to-source source))
-   (when sis-log-mode (message "Do set input source: [%s]" source))))
+   (when sis-log-mode
+     (message "Do set input source: [%s]@%s, for-buffer: %s, locked: %s"
+              source (current-buffer)
+              sis--for-buffer sis--for-buffer-locked))))
 
 ;;;###autoload
 (defun sis-get ()
@@ -434,10 +440,11 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
   (when sis--auto-refresh-timer
     (cancel-timer sis--auto-refresh-timer))
 
-  (if sis--to-restore-after-minibuffer
+  (if (and sis--preserve-to-restore-after-minibuffer
+           (not sis--preserve-in-despatcher))
       (progn
         (sis--restore-from-buffer)
-        (setq sis--to-restore-after-minibuffer nil))
+        (setq sis--preserve-to-restore-after-minibuffer nil))
   (sis--save-to-buffer))
 
   (when (and sis-auto-refresh-seconds sis-auto-refresh-mode)
@@ -551,24 +558,69 @@ way."
 ;; Following codes are mainly about respect mode
 ;;
 
-(defsubst sis--save-to-buffer (&optional lock-after)
-  "Save buffer input source, optional LOCK-AFTER save."
-  (sis--get)
-  (when lock-after
-    (setq sis--for-buffer-locked t)))
+(defvar sis--prefix-override-map-alist nil
+  "Map alist for override.")
+
+(defvar sis--prefix-handle-stage 'normal
+  "Processing state of the prefix key.
+
+Possible values: 'normal, 'prefix, 'sequence.")
+
+(defvar sis--buffer-before-prefix nil
+  "Current buffer before prefix.")
+
+(defvar sis--buffer-before-command nil
+  "Current buffer before prefix.")
+
+(defvar sis--real-this-command nil
+  "Real this command. Some commands overwrite it.")
+
+(defvar sis--preserve-to-restore-after-minibuffer nil
+  "Already restored input source after minibuffer exit.")
+
+(defvar sis--prefix-override-order -1000
+  "Order of the prefix override in `emulation-mode-map-alists'.")
+
+
+(defsubst sis--save-to-buffer ()
+  "Save buffer input source."
+  (sis--get))
 
 (defsubst sis--restore-from-buffer ()
   "Restore buffer input source."
   (setq sis--for-buffer-locked nil)
   (sis--set (or sis--for-buffer 'english)))
 
+(defvar sis--preserve-in-despatcher nil
+  "In processing a dispatcher.")
+(make-variable-buffer-local 'sis--preserve-in-despatcher)
+
+(defsubst sis--preserve-dispatcher-advice ()
+  "Advice for `sis-preserve-dispatcher-triggers'."
+  (when sis-log-mode
+    (message "dispatcher-advice: %s@%s, %s@locked"
+             sis--for-buffer (current-buffer)
+             sis--for-buffer-locked))
+  (setq sis--for-buffer-locked t)
+  (sis-set-english)
+  (setq sis--preserve-in-despatcher t))
+
 (defsubst sis--preserve-go-english-advice ()
-  "Restore buffer input source."
-  (sis--save-to-buffer t)
+  "Advice for `sis-preserve-go-english-triggers'."
+  (sis--save-to-buffer)
+  (when sis-log-mode
+    (message "go-english-advice: %s@%s, %s@locked"
+             sis--for-buffer (current-buffer)
+             sis--for-buffer-locked))
+  (setq sis--for-buffer-locked t)
   (sis-set-english))
 
 (defsubst sis--preserve-restore-advice ()
   "Restore buffer input source."
+  (when sis-log-mode
+    (message "restore-advice: %s@%s, %s@locked"
+             sis--for-buffer (current-buffer)
+             sis--for-buffer-locked))
   (sis--restore-from-buffer))
 
 (defvar sis--prefix-override-map-enable nil
@@ -588,29 +640,6 @@ way."
   (interactive)
   (when (local-variable-p 'sis--prefix-override-map-enable)
     (kill-local-variable 'sis--prefix-override-map-enable)))
-
-(defvar sis--prefix-override-map-alist nil
-  "Map alist for override.")
-
-(defvar sis--prefix-handle-stage 'normal
-  "Processing state of the prefix key.
-
-Possible values: 'normal, 'prefix, 'sequence.")
-
-(defvar sis--buffer-before-prefix nil
-  "Current buffer before prefix.")
-
-(defvar sis--to-restore-after-minibuffer nil
-  "Already restored input source after minibuffer exit.")
-
-(defvar sis--buffer-before-command nil
-  "Current buffer before prefix.")
-
-(defvar sis--real-this-command nil
-  "Real this command. Some commands overwrite it.")
-
-(defvar sis--prefix-override-order -1000
-  "Order of the prefix override in `emulation-mode-map-alists'.")
 
 (defun sis--prefix-override-recap-advice (&rest res)
   "Advice for `prefix-override-recap-triggers' with RES."
@@ -659,6 +688,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
   "Handler for `pre-command-hook' to preserve input source."
   (setq sis--buffer-before-command (current-buffer))
   (setq sis--real-this-command this-command)
+  (setq sis--preserve-in-despatcher nil)
 
   (when sis-log-mode
     (message "pre@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
@@ -690,7 +720,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
      'prefix
      (setq sis--prefix-override-map-enable nil)
      (setq sis--buffer-before-prefix (current-buffer))
-     (sis--save-to-buffer t)
+     (sis--save-to-buffer)
+     (setq sis--for-buffer-locked t)
      (sis-set-english)
      (when sis-log-mode
        (message "Input source: [%s] (saved) => [%s]."
@@ -724,13 +755,13 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (when restore
     ;; entering minibuffer is handled separately.
     ;; some functions like `exit-minibuffer' won't trigger post-command-hook
-    (unless (minibufferp)
+    (unless (or (minibufferp) sis--preserve-in-despatcher)
       (when sis-log-mode
-        (message "restore: [%s]@[%s]." sis--for-buffer (current-buffer)))
+        (message "restore: [%s]@[%s]" sis--for-buffer (current-buffer)))
       (sis--restore-from-buffer)
       ;; indicate that input source is already restored after minibuffer.
       ;; no harm if not the case of just exiting minibuffer.
-      (setq sis--to-restore-after-minibuffer nil))
+      (setq sis--preserve-to-restore-after-minibuffer nil))
 
     (when (and (not (local-variable-p
                      'sis--prefix-override-map-enable))
@@ -784,13 +815,13 @@ Possible values: 'normal, 'prefix, 'sequence.")
              (current-buffer)
              sis--buffer-before-command
              this-command))
-  (setq sis--to-restore-after-minibuffer nil)
+  (setq sis--preserve-to-restore-after-minibuffer nil)
   (sis-set-english))
 
 (defun sis--minibuffer-exit-handler ()
   "Handler for `minibuffer-exit-hook'."
   (when sis-log-mode (message "exit minibuffer: [%s]@command" this-command))
-  (setq sis--to-restore-after-minibuffer t))
+  (setq sis--preserve-to-restore-after-minibuffer t))
 
 ;;;###autoload
 (define-minor-mode sis-global-respect-mode
@@ -843,6 +874,9 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
        (dolist (trigger sis-preserve-restore-triggers)
          (advice-add trigger :after #'sis--preserve-restore-advice))
+
+       (dolist (trigger sis-preserve-dispatcher-triggers)
+         (advice-add trigger :after #'sis--preserve-dispatcher-advice))
 
        ;; set english when prefix key pressed
        (setq sis--prefix-override-map-alist
