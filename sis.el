@@ -88,7 +88,7 @@ nil means obtained from the envrionment.")
   "Triggers to restore the input source from buffer.")
 
 (defvar sis-respect-dispatches
-  (list 'magit-file-dispatch)
+  (list 'magit-file-dispatch 'magit-dispatch)
   "Triggers for dispatchers.")
 
 (defvar sis-prefix-override-keys
@@ -341,30 +341,42 @@ SOURCE should be 'english or 'other."
   (sis--get)
   sis--current)
 
-;;;###autoload
-(defun sis-set-english ()
-  "Set input source to `english'."
-  (interactive)
+(defun sis--set-english ()
+  "Function to set input source to `english'."
   (sis--set 'english))
 
 ;;;###autoload
-(defun sis-set-other ()
-  "Set input source to `other'."
+(defun sis-set-english ()
+  "Command to set input source to `english'."
   (interactive)
+  (setq sis--for-buffer-locked nil)
+  (sis--set-english))
+
+(defun sis--set-other ()
+  "Function to set input source to `other'."
+  (setq sis--for-buffer-locked nil)
   (sis--set 'other))
+
+;;;###autoload
+(defun sis-set-other ()
+  "Command to set input source to `other'."
+  (interactive)
+  (setq sis--for-buffer-locked nil)
+  (sis--set-other))
 
 ;;;###autoload
 (defun sis-switch ()
   "Switch input source between english and other."
   (interactive)
+  (setq sis--for-buffer-locked nil)
   (sis--ensure-ism
    (cond
     (; current is english
      (eq sis--current 'english)
-     (sis--set 'other))
+     (sis--set-other))
     (; current is other
      (eq sis--current 'other)
-     (sis--set 'english)))))
+     (sis--set-english)))))
 
 ;;;###autoload
 (defun sis-ism-lazyman-config (english-source other-source &optional ism-type)
@@ -603,7 +615,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
              sis--for-buffer (current-buffer)
              sis--for-buffer-locked))
   (setq sis--for-buffer-locked t)
-  (sis-set-english)
+  (sis--set-english)
   (setq sis--respect-in-dispatcher t))
 
 (defsubst sis--respect-go-english-advice ()
@@ -614,7 +626,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
              sis--for-buffer (current-buffer)
              sis--for-buffer-locked))
   (setq sis--for-buffer-locked t)
-  (sis-set-english))
+  (sis--set-english))
 
 (defsubst sis--respect-restore-advice ()
   "Restore buffer input source."
@@ -672,7 +684,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
     ;; when other windows get focus.
     ;; so, don't get the current OS input source
     (setq sis--for-buffer-locked t)
-    (sis-set-english))
+    (sis--set-english))
 
   (when sis-log-mode
     (message "Handle save hook, save [%s] to [%s]."
@@ -723,7 +735,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
      (setq sis--buffer-before-prefix (current-buffer))
      (sis--save-to-buffer)
      (setq sis--for-buffer-locked t)
-     (sis-set-english)
+     (sis--set-english)
      (when sis-log-mode
        (message "Input source: [%s] (saved) => [%s]."
                 sis--for-buffer sis-english-source)))
@@ -817,7 +829,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
              sis--buffer-before-command
              this-command))
   (setq sis--respect-to-restore-after-minibuffer nil)
-  (sis-set-english))
+  (sis--set-english))
 
 (defun sis--minibuffer-exit-handler ()
   "Handler for `minibuffer-exit-hook'."
