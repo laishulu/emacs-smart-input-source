@@ -87,7 +87,7 @@ nil means obtained from the envrionment.")
 (defvar sis-respect-restore-triggers nil
   "Triggers to restore the input source from buffer.")
 
-(defvar sis-respect-dispatch-triggers
+(defvar sis-respect-dispatches
   (list 'magit-file-dispatch)
   "Triggers for dispatchers.")
 
@@ -597,7 +597,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (make-variable-buffer-local 'sis--respect-in-dispatcher)
 
 (defsubst sis--respect-dispatch-advice ()
-  "Advice for `sis-respect-dispatch-triggers'."
+  "Advice for `sis-respect-dispatches'."
   (when sis-log-mode
     (message "dispatcher-advice: %s@%s, %s@locked"
              sis--for-buffer (current-buffer)
@@ -876,7 +876,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
        (dolist (trigger sis-respect-restore-triggers)
          (advice-add trigger :after #'sis--respect-restore-advice))
 
-       (dolist (trigger sis-respect-dispatch-triggers)
+       (dolist (trigger sis-respect-dispatches)
          (advice-add trigger :after #'sis--respect-dispatch-advice))
 
        ;; set english when prefix key pressed
