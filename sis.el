@@ -421,8 +421,10 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
     t)
    (; fcitx and fcitx5, use the default do-get, set do-set
     (memq ism-type (list 'fcitx 'fcitx5))
-    (setq sis-english-source "1")
-    (setq sis-other-source "2")
+    (unless sis-english-source
+      (setq sis-english-source "1"))
+    (unless sis-other-source
+      (setq sis-other-source "2"))
     (setq sis-do-set (lambda(source)
                        (sis--ensure-dir
                         (pcase source
