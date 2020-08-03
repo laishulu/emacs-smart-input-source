@@ -434,11 +434,11 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
                                               nil sis--ism "-o")))))))
    (; ibus, set do-get and do-set
     (eq ism-type 'ibus)
-    (setq sis-do-get (sis--mk-get-fn-by-cmd (format "%s engine" sis--ism)))
+    (setq sis-do-get (sis--mk-get-fn-by-cmd "ibus engine"))
     (setq sis-do-set (lambda(source)
                        (sis--ensure-dir
                         (start-process "set-input-source"
-                                       nil sis--ism "engine" source)))))))
+                                       nil "ibus" "engine" source)))))))
 
 ;;
 ;; Following codes are mainly about auto update mode
