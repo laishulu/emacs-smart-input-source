@@ -146,12 +146,12 @@ method, just like the following screenshot.
 ** Linux
 *** ~fcitx~
 #+BEGIN_SRC lisp
-(sis-ism-lazyman-config nil nil 'fcitx)
+(sis-ism-lazyman-config "1" "2" 'fcitx)
 #+END_SRC
 
 *** ~fcitx5~
 #+BEGIN_SRC lisp
-(sis-ism-lazyman-config nil nil 'fcitx5)
+(sis-ism-lazyman-config "1" "2" 'fcitx5)
 #+END_SRC
 
 *** ~ibus~
