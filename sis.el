@@ -513,18 +513,18 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
 ;; Following codes are mainly about cursor color mode
 ;;
 
-(defun sis--set-cursor-color-advice (fn color)
+(defun sis--set-cursor-color-advice (color)
   "Advice for FN of `set-cursor-color' with COLOR.
 
 The advice is needed, because other packages may set cursor color in their only
 way."
   (pcase sis--current
     ('english
-     (funcall fn sis-default-cursor-color))
+     sis-default-cursor-color)
     ('other
-     (funcall fn sis-other-cursor-color))
+     sis-other-cursor-color)
     (_
-     (funcall fn color))))
+     color)))
 
 (defun sis--update-cursor-color()
   "Update cursor color according to input source."
@@ -562,7 +562,7 @@ way."
                   (or (cdr (assq 'cursor-color default-frame-alist))
                       (face-background 'cursor)))
                 "white")))
-    (advice-add 'set-cursor-color :around #'sis--set-cursor-color-advice)
+    (advice-add 'set-cursor-color :filter-args #'sis--set-cursor-color-advice)
     (add-hook 'sis-change-hook #'sis--update-cursor-color))
    (; turn off the mode
     (not sis-global-cursor-color-mode)
@@ -621,7 +621,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (sis--set-english)
   (setq sis--respect-in-dispatcher t))
 
-(defsubst sis--respect-go-english-advice ()
+(defsubst sis--respect-go-english-advice (res)
   "Advice for `sis-respect-go-english-triggers'."
   (sis--save-to-buffer)
   (when sis-log-mode
@@ -629,15 +629,17 @@ Possible values: 'normal, 'prefix, 'sequence.")
              sis--for-buffer (current-buffer)
              sis--for-buffer-locked))
   (setq sis--for-buffer-locked t)
-  (sis--set-english))
+  (sis--set-english)
+  res)
 
-(defsubst sis--respect-restore-advice ()
+(defsubst sis--respect-restore-advice (res)
   "Restore buffer input source."
   (when sis-log-mode
     (message "restore-advice: %s@%s, %s@locked"
              sis--for-buffer (current-buffer)
              sis--for-buffer-locked))
-  (sis--restore-from-buffer))
+  (sis--restore-from-buffer)
+  res)
 
 (defvar sis--prefix-override-map-enable nil
   "Enabe the override keymap.")
@@ -862,9 +864,9 @@ Possible values: 'normal, 'prefix, 'sequence.")
      (when (featurep 'evil)
        (add-hook 'evil-insert-state-exit-hook #'sis-set-english)
        ;; let sis to manage input method
-       (advice-add 'evil-activate-input-method :around
+       (advice-add 'evil-activate-input-method :override
                    #'sis--do-nothing-advice)
-       (advice-add 'evil-deactivate-input-method :around
+       (advice-add 'evil-deactivate-input-method :override
                    #'sis--do-nothing-advice)
        (when sis-respect-evil-normal-escape
          (define-key evil-normal-state-map
@@ -886,13 +888,13 @@ Possible values: 'normal, 'prefix, 'sequence.")
        (add-hook 'focus-in-hook #'sis--respect-focus-in-handler)
 
        (dolist (trigger sis-respect-go-english-triggers)
-         (advice-add trigger :after #'sis--respect-go-english-advice))
+         (advice-add trigger :filter-return #'sis--respect-go-english-advice))
 
        (dolist (trigger sis-respect-restore-triggers)
-         (advice-add trigger :after #'sis--respect-restore-advice))
+         (advice-add trigger :filter-return #'sis--respect-restore-advice))
 
        (dolist (trigger sis-respect-dispatches)
-         (advice-add trigger :after #'sis--respect-dispatch-advice))
+         (advice-add trigger :filter-return #'sis--respect-dispatch-advice))
 
        ;; set english when prefix key pressed
        (setq sis--prefix-override-map-alist
@@ -907,7 +909,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
        (setq sis--prefix-override-map-enable t)
        (sis--prefix-override-recap-advice)
        (dolist (trigger sis-prefix-override-recap-triggers)
-         (advice-add trigger :after #'sis--prefix-override-recap-advice)))))
+         (advice-add trigger :filter-return
+                     #'sis--prefix-override-recap-advice)))))
    (; turn off the mode
     (not sis-global-respect-mode)
     (sis--try-disable-auto-refresh-mode)
