@@ -280,12 +280,6 @@ Possible values:
     (member source (list 'other sis-other-source))
     sis-other-source)))
 
-(defun sis--mk-get-fn-by-cmd (cmd)
-  "Make a function to be bound to `sis-do-get' from CMD."
-  (lambda ()
-    (sis--ensure-dir
-     (string-trim (shell-command-to-string cmd)))))
-
 (defun sis--mk-get-fn ()
   "Make a function to be bound to `sis-do-get'."
   (cond
@@ -294,7 +288,9 @@ Possible values:
     #'mac-input-source)
    (; external ism
     sis--ism
-    (sis--mk-get-fn-by-cmd sis--ism))))
+    (lambda ()
+      (sis--ensure-dir
+       (string-trim (shell-command-to-string sis--ism)))))))
 
 (defun sis--mk-set-fn ()
   "Make a function to be bound to `sis-do-set'."
@@ -435,7 +431,11 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
                                               nil sis--ism "-o")))))))
    (; ibus, set do-get and do-set
     (eq ism-type 'ibus)
-    (setq sis-do-get (sis--mk-get-fn-by-cmd (format "%s engine" sis--ism)))
+    (setq sis-do-get (lambda ()
+                       (sis--ensure-dir
+                        (string-trim
+                         (shell-command-to-string
+                          (format "%s engine" sis--ism))))))
     (setq sis-do-set (lambda(source)
                        (sis--ensure-dir
                         (start-process "set-input-source"
