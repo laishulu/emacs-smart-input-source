@@ -262,7 +262,6 @@ Note:
 | ~sis-respect-prefix-and-buffer~                 | Handle prefix key and buffer                           | ~t~                    |
 | ~sis-respect-go-english-triggers~               | Additional trigger to save input source and go English | ~t~                    |
 | ~sis-respect-restore-trigger~                   | Additional trigger to restore input source             | ~nil~                  |
-| ~sis-respect-dispatches~                        | Dispatch function to be handled specially              | see variable doc       |
 | ~sis-prefix-override-keys~                      | Prefix keys to be respected                            | ~'("C-c" "C-x" "C-h")~ |
 | ~sis-prefix-override-recap-triggers~            | Functions trigger the recap of the prefix override     | see variable doc       |
 | ~sis-prefix-override-buffer-disable-predicates~ | Predicates on buffers to disable prefix overriding     | see variable doc       |

@@ -87,10 +87,6 @@ nil means obtained from the envrionment.")
 (defvar sis-respect-restore-triggers nil
   "Triggers to restore the input source from buffer.")
 
-(defvar sis-respect-dispatches
-  (list 'magit-file-dispatch 'magit-dispatch)
-  "Triggers for dispatchers.")
-
 (defvar sis-prefix-override-keys
   (list "C-c" "C-x" "C-h")
   "Prefix keys to be overrided.")
@@ -456,8 +452,7 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
   (when sis--auto-refresh-timer
     (cancel-timer sis--auto-refresh-timer))
 
-  (if (and sis--respect-to-restore-after-minibuffer
-           (not sis--respect-in-dispatcher))
+  (if sis--respect-to-restore-after-minibuffer
       (progn
         (sis--restore-from-buffer)
         (setq sis--respect-to-restore-after-minibuffer nil))
@@ -607,20 +602,6 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (setq sis--for-buffer-locked nil)
   (sis--set (or sis--for-buffer 'english)))
 
-(defvar sis--respect-in-dispatcher nil
-  "In processing a dispatcher.")
-(make-variable-buffer-local 'sis--respect-in-dispatcher)
-
-(defsubst sis--respect-dispatch-advice ()
-  "Advice for `sis-respect-dispatches'."
-  (when sis-log-mode
-    (message "dispatcher-advice: %s@%s, %s@locked"
-             sis--for-buffer (current-buffer)
-             sis--for-buffer-locked))
-  (setq sis--for-buffer-locked t)
-  (sis--set-english)
-  (setq sis--respect-in-dispatcher t))
-
 (defsubst sis--respect-go-english-advice (res)
   "Advice for `sis-respect-go-english-triggers'."
   (sis--save-to-buffer)
@@ -706,7 +687,6 @@ Possible values: 'normal, 'prefix, 'sequence.")
   "Handler for `pre-command-hook' to preserve input source."
   (setq sis--buffer-before-command (current-buffer))
   (setq sis--real-this-command this-command)
-  (setq sis--respect-in-dispatcher nil)
 
   (when sis-log-mode
     (message "pre@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
@@ -773,7 +753,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (when restore
     ;; entering minibuffer is handled separately.
     ;; some functions like `exit-minibuffer' won't trigger post-command-hook
-    (unless (or (minibufferp) sis--respect-in-dispatcher)
+    (unless (minibufferp)
       (when sis-log-mode
         (message "restore: [%s]@[%s]" sis--for-buffer (current-buffer)))
       (sis--restore-from-buffer)
@@ -892,9 +872,6 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
        (dolist (trigger sis-respect-restore-triggers)
          (advice-add trigger :filter-return #'sis--respect-restore-advice))
-
-       (dolist (trigger sis-respect-dispatches)
-         (advice-add trigger :filter-return #'sis--respect-dispatch-advice))
 
        ;; set english when prefix key pressed
        (setq sis--prefix-override-map-alist
