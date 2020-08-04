@@ -748,9 +748,17 @@ Possible values: 'normal, 'prefix, 'sequence.")
       (setq value (or value (funcall p buffer))))
     value))
 
-(defsubst sis--to-normal-stage (restore)
-  "Transite to normal stage and restore input source if RESTORE is t."
-  (when restore
+(defsubst sis--to-normal-stage(&optional force-restore)
+  "Transite to normal stage, may FORCE-RESTORE input source."
+  ;; for some command, after the command end,
+  ;; the command loop may change the current buffer,
+  ;; so delay the real processing.
+  (run-with-timer 0 nil (lambda () (sis--to-normal-stage-internal force-restore))))
+
+(defsubst sis--to-normal-stage-internal (force-restore)
+  "Internal for `sis--to-normal-stage', may FORCE-RESTORE input source."
+  (when (or force-restore
+            (not (eq sis--buffer-before-command (current-buffer))))
     ;; entering minibuffer is handled separately.
     ;; some functions like `exit-minibuffer' won't trigger post-command-hook
     (unless (minibufferp)
@@ -761,11 +769,12 @@ Possible values: 'normal, 'prefix, 'sequence.")
       ;; no harm if not the case of just exiting minibuffer.
       (setq sis--respect-to-restore-after-minibuffer nil)))
 
-  (when (and (not (local-variable-p
-                   'sis--prefix-override-map-enable))
+  ;; disable prefix override for current buffer
+  (when (and (not (local-variable-p 'sis--prefix-override-map-enable))
              (sis--prefix-override-buffer-disable-p (current-buffer)))
     (sis-prefix-override-buffer-disable))
 
+  ;; re-enable if prefix override is disabled temporarily
   (unless (local-variable-p 'sis--prefix-override-map-enable)
     (setq sis--prefix-override-map-enable t))
 
@@ -803,8 +812,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
        (sis--to-normal-stage t))))
     (; current is normal stage
      'normal
-     (let ((restore (not (eq sis--buffer-before-command (current-buffer)))))
-       (sis--to-normal-stage restore)))))
+     (sis--to-normal-stage))))
 
 (defun sis--minibuffer-setup-handler ()
   "Handler for `minibuffer-setup-hook'."
