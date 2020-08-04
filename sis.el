@@ -215,6 +215,12 @@ Possible values:
 (defun sis--init-ism ()
   "Init input source manager."
   ;; `sis-do-get'and `sis-do-set' takes the first precedence.
+
+  ;; external ism
+  (when (stringp sis-external-ism)
+    (let ((ism-path (executable-find sis-external-ism)))
+      (when ism-path (setq sis--ism ism-path))))
+
   (unless (and (functionp sis-do-get)
                (functionp sis-do-set))
     ;; EMP
@@ -222,11 +228,6 @@ Possible values:
                (fboundp 'mac-input-source))
       ;; EMP
       (setq sis--ism 'emp))
-
-    ;; external ism
-    (when (and (not sis--ism) (stringp sis-external-ism))
-      (let ((ism-path (executable-find sis-external-ism)))
-        (when ism-path (setq sis--ism ism-path))))
 
     ;; make `sis-do-set' and `sis-do-get'
     (when sis--ism
