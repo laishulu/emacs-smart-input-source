@@ -777,15 +777,15 @@ Possible values: 'normal, 'prefix, 'sequence.")
       (sis--restore-from-buffer)
       ;; indicate that input source is already restored after minibuffer.
       ;; no harm if not the case of just exiting minibuffer.
-      (setq sis--respect-to-restore-after-minibuffer nil))
+      (setq sis--respect-to-restore-after-minibuffer nil)))
 
-    (when (and (not (local-variable-p
-                     'sis--prefix-override-map-enable))
-               (sis--prefix-override-buffer-disable-p (current-buffer)))
-      (sis-prefix-override-buffer-disable))
+  (when (and (not (local-variable-p
+                   'sis--prefix-override-map-enable))
+             (sis--prefix-override-buffer-disable-p (current-buffer)))
+    (sis-prefix-override-buffer-disable))
 
-    (unless (local-variable-p 'sis--prefix-override-map-enable)
-      (setq sis--prefix-override-map-enable t)))
+  (unless (local-variable-p 'sis--prefix-override-map-enable)
+    (setq sis--prefix-override-map-enable t))
 
   (setq sis--prefix-handle-stage 'normal))
 
