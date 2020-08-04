@@ -221,22 +221,22 @@ Possible values:
     (let ((ism-path (executable-find sis-external-ism)))
       (when ism-path (setq sis--ism ism-path))))
 
+  ;; try EMP when do-get or do-set is missing
   (unless (and (functionp sis-do-get)
                (functionp sis-do-set))
-    ;; EMP
     (when (and (string= (window-system) "mac")
                (fboundp 'mac-input-source))
       ;; EMP
-      (setq sis--ism 'emp))
+      (setq sis--ism 'emp)))
 
-    ;; make `sis-do-set' and `sis-do-get'
-    (when sis--ism
-      ;; avoid override user customized sis-do-get
-      (unless (functionp sis-do-get)
-        (setq sis-do-get (sis--mk-get-fn)))
-      ;; avoid override user customized sis-do-set
-      (unless (functionp sis-do-set)
-        (setq sis-do-set (sis--mk-set-fn)))))
+  ;; make `sis-do-set' and `sis-do-get'
+  (when sis--ism
+    ;; avoid override user customized sis-do-get
+    (unless (functionp sis-do-get)
+      (setq sis-do-get (sis--mk-get-fn)))
+    ;; avoid override user customized sis-do-set
+    (unless (functionp sis-do-set)
+      (setq sis-do-set (sis--mk-set-fn))))
 
   ;; successfully inited
   (when (and (functionp sis-do-get)
