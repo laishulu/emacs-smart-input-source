@@ -258,7 +258,7 @@ Note:
 | Variable                                        | Description                                            | Default                |
 |-------------------------------------------------+--------------------------------------------------------+------------------------|
 | ~sis-respect-start~                             | Switch to specific input source when mode enabled      | ~'english~             |
-| ~sis-respect-evil-normal-escape~                | esc to English from evil normal sate                   | ~t~                    |
+| ~sis-respect-evil-normal-escape~                | esc to English even in evil normal state               | ~t~                    |
 | ~sis-respect-prefix-and-buffer~                 | Handle prefix key and buffer                           | ~t~                    |
 | ~sis-respect-go-english-triggers~               | Additional trigger to save input source and go English | ~t~                    |
 | ~sis-respect-restore-trigger~                   | Additional trigger to restore input source             | ~nil~                  |
