@@ -84,10 +84,6 @@ nil means obtained from the envrionment.")
 (defvar sis-respect-go-english-triggers nil
   "Triggers to save input source to buffer and then go to english.")
 
-(defvar sis-respect-next-english-triggers
-  (list 'magit-dispatch 'magit-file-dispatch)
-  "Triggers to go english for buffer and restore after next command.")
-
 (defvar sis-respect-restore-triggers nil
   "Triggers to restore the input source from buffer.")
 
@@ -188,6 +184,7 @@ Possible values:
 (declare-function mac-input-source "ext:macfns.c" (&optional SOURCE FORMAT) t)
 (declare-function mac-select-input-source "ext:macfns.c"
                   (SOURCE &optional SET-KEYBOARD-LAYOUT-OVERRIDE-P) t)
+(defvar transient--showp)
 
 (defun sis--do-nothing-advice (&rest _)
     "Advice to make existing function do nothing.")
@@ -583,22 +580,11 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (defvar sis--real-this-command nil
   "Real this command. Some commands overwrite it.")
 
-(defvar sis--respect-has-post-command nil
-  "Has post command.")
-
 (defvar sis--respect-post-cmd-timer nil
   "Timer to run after returning to command loop.")
 
 (defvar sis--respect-force-restore-after-cmd nil
   "Force restore after command finishes.")
-
-(defvar sis--respect-next-english-phase nil
-  "Phase to make the next command in english.
-
-Possbile values:
-- 'trigger: the command trigger.
-- 'next: the next command.
-- nil: not in the phase.")
 
 (defvar sis--prefix-override-order -1000
   "Order of the prefix override in `emulation-mode-map-alists'.")
@@ -621,14 +607,6 @@ Possbile values:
              sis--for-buffer-locked))
   (setq sis--for-buffer-locked t)
   (sis--set-english))
-
-(defun sis--respect-next-english-advice (&rest _)
-  "Advice for `sis-respect-next-english-triggers'."
-  (when sis-log-mode
-    (message "next-english-advice: %s@%s, %s@locked"
-             sis--for-buffer (current-buffer)
-             sis--for-buffer-locked))
-  (setq sis--respect-next-english-phase 'trigger))
 
 (defun sis--respect-restore-advice (res)
   "Restore buffer input source."
@@ -704,7 +682,6 @@ Possbile values:
   "Handler for `pre-command-hook' to preserve input source."
   (setq sis--buffer-before-command (current-buffer))
   (setq sis--real-this-command this-command)
-  (setq sis--respect-has-post-command nil)
   (when sis-log-mode
     (message "pre@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
              sis--prefix-handle-stage
@@ -768,32 +745,18 @@ Possbile values:
 (defun sis--respect-post-cmd-timer-fn ()
   "Function for `sis--respect-post-cmd-timer'."
   (when sis-log-mode
-    (message "timer@[%s]: [%s]@key [%s]@cmd [%s]->[%s]@buf [%s]@override."
+    (message "timer@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
              sis--prefix-handle-stage
              (this-command-keys)
              sis--real-this-command
-             sis--buffer-before-command
              (current-buffer)
              sis--prefix-override-map-enable))
   (setq sis--respect-post-cmd-timer nil)
   (cond
-   (; 'trigger phase to make the next command in english
-    ;; some command like `magit-file-dispatch' will manipulate the command loop
-    ;; so this function may be entered before running post-command-hook.
-    (and (eq sis--respect-next-english-phase 'trigger)
-         sis--respect-has-post-command)
-    (when sis-log-mode
-      (message "trigger phase: [%s]@[%s]" sis--for-buffer (current-buffer)))
-    (setq sis--respect-next-english-phase 'next)
+   (; transient buffer shows
+    (and (boundp 'transient--showp) transient--showp)
     (setq sis--for-buffer-locked t)
     (sis--set-english))
-   (; 'next phase to make the next command in english
-    (eq sis--respect-next-english-phase 'next)
-    (when sis-log-mode
-      (message "next phase: [%s]@[%s]" sis--for-buffer (current-buffer)))
-    (setq sis--respect-next-english-phase nil)
-    (setq sis--respect-force-restore-after-cmd t)
-    (sis--respect-post-cmd-timer-fn))
    (; restore
     (or sis--respect-force-restore-after-cmd
         (not (eq sis--buffer-before-command (current-buffer))))
@@ -834,7 +797,6 @@ Possbile values:
              sis--real-this-command
              (current-buffer)
              sis--prefix-override-map-enable))
-  (setq sis--respect-has-post-command t)
   (pcase sis--prefix-handle-stage
     (; current is prefix stage
      'prefix
@@ -925,9 +887,6 @@ Possbile values:
 
        (dolist (trigger sis-respect-go-english-triggers)
          (advice-add trigger :before #'sis--respect-go-english-advice))
-
-       (dolist (trigger sis-respect-next-english-triggers)
-         (advice-add trigger :before #'sis--respect-next-english-advice))
 
        (dolist (trigger sis-respect-restore-triggers)
          (advice-add trigger :filter-return #'sis--respect-restore-advice))
