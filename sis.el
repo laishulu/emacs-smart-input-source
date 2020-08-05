@@ -84,6 +84,10 @@ nil means obtained from the envrionment.")
 (defvar sis-respect-go-english-triggers nil
   "Triggers to save input source to buffer and then go to english.")
 
+(defvar sis-respect-next-english-triggers
+  (list 'magit-dispatch 'magit-file-dispatch)
+  "Triggers to go english for buffer and restore after next command.")
+
 (defvar sis-respect-restore-triggers nil
   "Triggers to restore the input source from buffer.")
 
@@ -338,17 +342,16 @@ SOURCE should be 'english or 'other."
   "Function to set input source to `english'."
   (sis--set 'english))
 
+(defun sis--set-other ()
+  "Function to set input source to `other'."
+  (sis--set 'other))
+
 ;;;###autoload
 (defun sis-set-english ()
   "Command to set input source to `english'."
   (interactive)
   (setq sis--for-buffer-locked nil)
   (sis--set-english))
-
-(defun sis--set-other ()
-  "Function to set input source to `other'."
-  (setq sis--for-buffer-locked nil)
-  (sis--set 'other))
 
 ;;;###autoload
 (defun sis-set-other ()
@@ -451,13 +454,7 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
   "Auto refresh input source on idle timer."
   (when sis--auto-refresh-timer
     (cancel-timer sis--auto-refresh-timer))
-
-  (if sis--respect-to-restore-after-minibuffer
-      (progn
-        (sis--restore-from-buffer)
-        (setq sis--respect-to-restore-after-minibuffer nil))
-  (sis--save-to-buffer))
-
+  (sis--save-to-buffer)
   (when (and sis-auto-refresh-seconds sis-auto-refresh-mode)
     (setq sis--auto-refresh-timer
           (run-with-idle-timer
@@ -586,12 +583,25 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (defvar sis--real-this-command nil
   "Real this command. Some commands overwrite it.")
 
-(defvar sis--respect-to-restore-after-minibuffer nil
-  "Already restored input source after minibuffer exit.")
+(defvar sis--respect-has-post-command nil
+  "Has post command.")
+
+(defvar sis--respect-post-cmd-timer nil
+  "Timer to run after returning to command loop.")
+
+(defvar sis--respect-force-restore-after-cmd nil
+  "Force restore after command finishes.")
+
+(defvar sis--respect-next-english-phase nil
+  "Phase to make the next command in english.
+
+Possbile values:
+- 'trigger: the command trigger.
+- 'next: the next command.
+- nil: not in the phase.")
 
 (defvar sis--prefix-override-order -1000
   "Order of the prefix override in `emulation-mode-map-alists'.")
-
 
 (defsubst sis--save-to-buffer ()
   "Save buffer input source."
@@ -602,7 +612,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (setq sis--for-buffer-locked nil)
   (sis--set (or sis--for-buffer 'english)))
 
-(defsubst sis--respect-go-english-advice (res)
+(defun sis--respect-go-english-advice (&rest _)
   "Advice for `sis-respect-go-english-triggers'."
   (sis--save-to-buffer)
   (when sis-log-mode
@@ -610,10 +620,17 @@ Possible values: 'normal, 'prefix, 'sequence.")
              sis--for-buffer (current-buffer)
              sis--for-buffer-locked))
   (setq sis--for-buffer-locked t)
-  (sis--set-english)
-  res)
+  (sis--set-english))
 
-(defsubst sis--respect-restore-advice (res)
+(defun sis--respect-next-english-advice (&rest _)
+  "Advice for `sis-respect-next-english-triggers'."
+  (when sis-log-mode
+    (message "next-english-advice: %s@%s, %s@locked"
+             sis--for-buffer (current-buffer)
+             sis--for-buffer-locked))
+  (setq sis--respect-next-english-phase 'trigger))
+
+(defun sis--respect-restore-advice (res)
   "Restore buffer input source."
   (when sis-log-mode
     (message "restore-advice: %s@%s, %s@locked"
@@ -687,7 +704,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
   "Handler for `pre-command-hook' to preserve input source."
   (setq sis--buffer-before-command (current-buffer))
   (setq sis--real-this-command this-command)
-
+  (setq sis--respect-has-post-command nil)
   (when sis-log-mode
     (message "pre@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
              sis--prefix-handle-stage
@@ -748,26 +765,44 @@ Possible values: 'normal, 'prefix, 'sequence.")
       (setq value (or value (funcall p buffer))))
     value))
 
-(defsubst sis--to-normal-stage(&optional force-restore)
-  "Transite to normal stage, may FORCE-RESTORE input source."
-  ;; for some command, after the command end,
-  ;; the command loop may change the current buffer,
-  ;; so delay the real processing.
-  (run-with-timer 0 nil (lambda () (sis--to-normal-stage-internal force-restore))))
-
-(defsubst sis--to-normal-stage-internal (force-restore)
-  "Internal for `sis--to-normal-stage', may FORCE-RESTORE input source."
-  (when (or force-restore
-            (not (eq sis--buffer-before-command (current-buffer))))
+(defun sis--respect-post-cmd-timer-fn ()
+  "Function for `sis--respect-post-cmd-timer'."
+  (when sis-log-mode
+    (message "timer@[%s]: [%s]@key [%s]@cmd [%s]->[%s]@buf [%s]@override."
+             sis--prefix-handle-stage
+             (this-command-keys)
+             sis--real-this-command
+             sis--buffer-before-command
+             (current-buffer)
+             sis--prefix-override-map-enable))
+  (setq sis--respect-post-cmd-timer nil)
+  (cond
+   (; 'trigger phase to make the next command in english
+    ;; some command like `magit-file-dispatch' will manipulate the command loop
+    ;; so this function may be entered before running post-command-hook.
+    (and (eq sis--respect-next-english-phase 'trigger)
+         sis--respect-has-post-command)
+    (when sis-log-mode
+      (message "trigger phase: [%s]@[%s]" sis--for-buffer (current-buffer)))
+    (setq sis--respect-next-english-phase 'next)
+    (setq sis--for-buffer-locked t)
+    (sis--set-english))
+   (; 'next phase to make the next command in english
+    (eq sis--respect-next-english-phase 'next)
+    (when sis-log-mode
+      (message "next phase: [%s]@[%s]" sis--for-buffer (current-buffer)))
+    (setq sis--respect-next-english-phase nil)
+    (setq sis--respect-force-restore-after-cmd t)
+    (sis--respect-post-cmd-timer-fn))
+   (; restore
+    (or sis--respect-force-restore-after-cmd
+        (not (eq sis--buffer-before-command (current-buffer))))
     ;; entering minibuffer is handled separately.
     ;; some functions like `exit-minibuffer' won't trigger post-command-hook
     (unless (minibufferp)
       (when sis-log-mode
         (message "restore: [%s]@[%s]" sis--for-buffer (current-buffer)))
-      (sis--restore-from-buffer)
-      ;; indicate that input source is already restored after minibuffer.
-      ;; no harm if not the case of just exiting minibuffer.
-      (setq sis--respect-to-restore-after-minibuffer nil)))
+      (sis--restore-from-buffer))))
 
   ;; disable prefix override for current buffer
   (when (and (not (local-variable-p 'sis--prefix-override-map-enable))
@@ -780,6 +815,15 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
   (setq sis--prefix-handle-stage 'normal))
 
+(defsubst sis--to-normal-stage()
+  "Transite to normal stage."
+  ;; for some command, after the command end,
+  ;; the command loop may change the current buffer,
+  ;; so delay the real processing.
+  (unless sis--respect-post-cmd-timer
+    (setq sis--respect-post-cmd-timer
+          (run-with-timer 0 nil #'sis--respect-post-cmd-timer-fn))))
+
 (defun sis--respect-post-command-handler ()
   "Handler for `post-command-hook' to preserve input source."
   ;; (setq this-command sis--real-this-command)
@@ -790,7 +834,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
              sis--real-this-command
              (current-buffer)
              sis--prefix-override-map-enable))
-
+  (setq sis--respect-has-post-command t)
   (pcase sis--prefix-handle-stage
     (; current is prefix stage
      'prefix
@@ -804,12 +848,14 @@ Possible values: 'normal, 'prefix, 'sequence.")
       (; key sequence is canceled
        (not sis--real-this-command)
        (when sis-log-mode (message "Key sequence canceled."))
-       (sis--to-normal-stage t))
+       (sis--respect-force-restore-after-cmd t)
+       (sis--to-normal-stage))
 
       (; end key sequence
        t
        (when sis-log-mode (message "Key sequence ended."))
-       (sis--to-normal-stage t))))
+       (sis--respect-force-restore-after-cmd t)
+       (sis--to-normal-stage))))
     (; current is normal stage
      'normal
      (sis--to-normal-stage))))
@@ -821,13 +867,15 @@ Possible values: 'normal, 'prefix, 'sequence.")
              (current-buffer)
              sis--buffer-before-command
              this-command))
-  (setq sis--respect-to-restore-after-minibuffer nil)
   (sis--set-english))
 
 (defun sis--minibuffer-exit-handler ()
   "Handler for `minibuffer-exit-hook'."
   (when sis-log-mode (message "exit minibuffer: [%s]@command" this-command))
-  (setq sis--respect-to-restore-after-minibuffer t))
+  (setq sis--respect-force-restore-after-cmd t)
+  (unless sis--respect-post-cmd-timer
+    (setq sis--respect-post-cmd-timer
+          (run-with-timer 0 nil #'sis--respect-post-cmd-timer-fn))))
 
 ;;;###autoload
 (define-minor-mode sis-global-respect-mode
@@ -876,7 +924,10 @@ Possible values: 'normal, 'prefix, 'sequence.")
        (add-hook 'focus-in-hook #'sis--respect-focus-in-handler)
 
        (dolist (trigger sis-respect-go-english-triggers)
-         (advice-add trigger :filter-return #'sis--respect-go-english-advice))
+         (advice-add trigger :before #'sis--respect-go-english-advice))
+
+       (dolist (trigger sis-respect-next-english-triggers)
+         (advice-add trigger :before #'sis--respect-next-english-advice))
 
        (dolist (trigger sis-respect-restore-triggers)
          (advice-add trigger :filter-return #'sis--respect-restore-advice))
