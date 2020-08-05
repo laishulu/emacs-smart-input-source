@@ -507,13 +507,14 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
 
 The advice is needed, because other packages may set cursor color in their only
 way."
-  (pcase sis--current
-    ('english
-     sis-default-cursor-color)
-    ('other
-     sis-other-cursor-color)
-    (_
-     color)))
+  (list
+   (pcase sis--current
+     ('english
+      sis-default-cursor-color)
+     ('other
+      sis-other-cursor-color)
+     (_
+      color))))
 
 (defun sis--update-cursor-color()
   "Update cursor color according to input source."
