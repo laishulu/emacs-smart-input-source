@@ -502,19 +502,18 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
 ;; Following codes are mainly about cursor color mode
 ;;
 
-(defun sis--set-cursor-color-advice (color)
+(defun sis--set-cursor-color-advice (&rest color)
   "Advice for FN of `set-cursor-color' with COLOR.
 
 The advice is needed, because other packages may set cursor color in their only
 way."
-  (list
-   (pcase sis--current
-     ('english
-      sis-default-cursor-color)
-     ('other
-      sis-other-cursor-color)
-     (_
-      color))))
+  (pcase sis--current
+    ('english
+     (list sis-default-cursor-color))
+    ('other
+     (list sis-other-cursor-color))
+    (_
+     color)))
 
 (defun sis--update-cursor-color()
   "Update cursor color according to input source."
