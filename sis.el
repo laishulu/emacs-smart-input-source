@@ -583,7 +583,10 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (defvar sis--respect-post-cmd-timer nil
   "Timer to run after returning to command loop.")
 
-(defvar sis--respect-force-restore-after-cmd nil
+(defvar sis--respect-go-english nil
+  "Go english.")
+
+(defvar sis--respect-force-restore nil
   "Force restore after command finishes.")
 
 (defvar sis--prefix-override-order -1000
@@ -606,7 +609,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
              sis--for-buffer (current-buffer)
              sis--for-buffer-locked))
   (setq sis--for-buffer-locked t)
-  (sis--set-english))
+  (sis--set-english)
+  (setq sis--respect-go-english t))
 
 (defun sis--respect-restore-advice (res)
   "Restore buffer input source."
@@ -614,7 +618,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (message "restore-advice: %s@%s, %s@locked"
              sis--for-buffer (current-buffer)
              sis--for-buffer-locked))
-  (sis--restore-from-buffer)
+  (setq sis--respect-go-english nil)
+  (setq sis--respect-force-restore t)
   res)
 
 (defvar sis--prefix-override-map-enable nil
@@ -752,13 +757,18 @@ Possible values: 'normal, 'prefix, 'sequence.")
              (current-buffer)
              sis--prefix-override-map-enable))
   (setq sis--respect-post-cmd-timer nil)
+
+  ;; determine input source
   (cond
+   (; go english, nothing need to do
+    sis--respect-go-english
+    t)
    (; transient buffer shows
     (and (boundp 'transient--showp) transient--showp)
     (setq sis--for-buffer-locked t)
     (sis--set-english))
    (; restore
-    (or sis--respect-force-restore-after-cmd
+    (or sis--respect-force-restore
         (not (eq sis--buffer-before-command (current-buffer))))
     ;; entering minibuffer is handled separately.
     ;; some functions like `exit-minibuffer' won't trigger post-command-hook
@@ -810,13 +820,13 @@ Possible values: 'normal, 'prefix, 'sequence.")
       (; key sequence is canceled
        (not sis--real-this-command)
        (when sis-log-mode (message "Key sequence canceled."))
-       (setq sis--respect-force-restore-after-cmd t)
+       (setq sis--respect-force-restore t)
        (sis--to-normal-stage))
 
       (; end key sequence
        t
        (when sis-log-mode (message "Key sequence ended."))
-       (setq sis--respect-force-restore-after-cmd t)
+       (setq sis--respect-force-restore t)
        (sis--to-normal-stage))))
     (; current is normal stage
      'normal
@@ -834,7 +844,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (defun sis--minibuffer-exit-handler ()
   "Handler for `minibuffer-exit-hook'."
   (when sis-log-mode (message "exit minibuffer: [%s]@command" this-command))
-  (setq sis--respect-force-restore-after-cmd t)
+  (setq sis--respect-force-restore t)
   (unless sis--respect-post-cmd-timer
     (setq sis--respect-post-cmd-timer
           (run-with-timer 0 nil #'sis--respect-post-cmd-timer-fn))))
