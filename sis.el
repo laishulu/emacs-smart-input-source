@@ -614,8 +614,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 
 (defun sis--respect-restore-advice (fn &rest args)
   "Advice for FN in `sis-respect-restore-triggers' with ARGS args."
-  (unwind-protect
-      (apply fn args)
+  (unwind-protect (apply fn args)
     (when sis-log-mode
       (message "restore-advice: %s@%s, %s@locked"
                sis--for-buffer (current-buffer)
@@ -641,13 +640,13 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (when (local-variable-p 'sis--prefix-override-map-enable)
     (kill-local-variable 'sis--prefix-override-map-enable)))
 
-(defun sis--prefix-override-recap-advice (&rest res)
-  "Advice for `prefix-override-recap-triggers' with RES."
-  (add-to-ordered-list
-   'emulation-mode-map-alists
-   'sis--prefix-override-map-alist
-   sis--prefix-override-order)
-  res)
+(defun sis--prefix-override-recap-advice (fn &rest args)
+  "Advice for FN of `prefix-override-recap-triggers' with RES."
+  (unwind-protect (apply fn args)
+    (add-to-ordered-list
+     'emulation-mode-map-alists
+     'sis--prefix-override-map-alist
+     sis--prefix-override-order)))
 
 (defun sis--prefix-override-handler (arg)
   "Prefix key handler with ARG."
@@ -916,7 +915,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
        (setq sis--prefix-override-map-enable t)
        (sis--prefix-override-recap-advice)
        (dolist (trigger sis-prefix-override-recap-triggers)
-         (advice-add trigger :filter-return
+         (advice-add trigger :around
                      #'sis--prefix-override-recap-advice)))))
    (; turn off the mode
     (not sis-global-respect-mode)
