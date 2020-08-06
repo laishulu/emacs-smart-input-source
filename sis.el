@@ -911,22 +911,35 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (sis--try-disable-auto-refresh-mode)
     ;; for evil
     (when (featurep 'evil)
+      (remove-hook 'evil-insert-state-exit-hook #'sis-set-english)
       (advice-remove 'evil-activate-input-method #'sis--do-nothing-advice)
       (advice-remove 'evil-deactivate-input-method #'sis--do-nothing-advice)
-      (remove-hook 'evil-insert-state-exit-hook #'sis-set-english)
       (when sis-respect-evil-normal-escape
         (define-key evil-normal-state-map (kbd "<escape>") nil)))
 
-    (when sis-respect-prefix-and-buffer
-      ;; for preserving buffer input source
-      (remove-hook 'focus-out-hook #'sis--respect-focus-out-handler)
-      (remove-hook 'focus-in-hook #'sis--respect-focus-in-handler)
+    ;; preserve buffer input source
+    (remove-hook 'pre-command-hook #'sis--respect-pre-command-handler)
+    (remove-hook 'post-command-hook #'sis--respect-post-command-handler)
+    (remove-hook 'minibuffer-setup-hook #'sis--minibuffer-setup-handler)
+    (remove-hook 'minibuffer-exit-hook #'sis--minibuffer-exit-handler)
 
-      ;; for prefix key
-      (setq emulation-mode-map-alists
-            (delq 'sis--prefix-override-map-alist
-                  emulation-mode-map-alists))
-      (setq sis--prefix-override-map-enable nil)))))
+    ;; for preserving buffer input source
+    (remove-hook 'focus-out-hook #'sis--respect-focus-out-handler)
+    (remove-hook 'focus-in-hook #'sis--respect-focus-in-handler)
+
+    (dolist (trigger sis-respect-go-english-triggers)
+      (advice-remove trigger #'sis--respect-go-english-advice))
+
+    (dolist (trigger sis-respect-restore-triggers)
+      (advice-remove trigger #'sis--respect-restore-advice))
+
+    ;; for prefix key
+    (setq emulation-mode-map-alists
+          (delq 'sis--prefix-override-map-alist
+                emulation-mode-map-alists))
+    (setq sis--prefix-override-map-enable nil)
+    (dolist (trigger sis-prefix-override-recap-triggers)
+      (advice-remove trigger #'sis--prefix-override-recap-advice)))))
 
 ;;
 ;; Following codes are mainly about follow-context-mode
