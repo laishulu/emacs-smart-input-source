@@ -612,15 +612,16 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (sis--set-english)
   (setq sis--respect-go-english t))
 
-(defun sis--respect-restore-advice (res)
-  "Restore buffer input source."
-  (when sis-log-mode
-    (message "restore-advice: %s@%s, %s@locked"
-             sis--for-buffer (current-buffer)
-             sis--for-buffer-locked))
-  (setq sis--respect-go-english nil)
-  (setq sis--respect-force-restore t)
-  res)
+(defun sis--respect-restore-advice (fn &rest args)
+  "Advice for FN in `sis-respect-restore-triggers' with ARGS args."
+  (unwind-protect
+      (apply fn args)
+    (when sis-log-mode
+      (message "restore-advice: %s@%s, %s@locked"
+               sis--for-buffer (current-buffer)
+               sis--for-buffer-locked))
+    (setq sis--respect-go-english nil)
+    (setq sis--respect-force-restore t)))
 
 (defvar sis--prefix-override-map-enable nil
   "Enabe the override keymap.")
@@ -899,7 +900,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
          (advice-add trigger :before #'sis--respect-go-english-advice))
 
        (dolist (trigger sis-respect-restore-triggers)
-         (advice-add trigger :filter-return #'sis--respect-restore-advice))
+         ;; Don't use :filter-return, advice may not run when trigger has error.
+         (advice-add trigger :around #'sis--respect-restore-advice))
 
        ;; set english when prefix key pressed
        (setq sis--prefix-override-map-alist
