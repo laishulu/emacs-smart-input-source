@@ -811,13 +811,13 @@ Possible values: 'normal, 'prefix, 'sequence.")
       (; key sequence is canceled
        (not sis--real-this-command)
        (when sis-log-mode (message "Key sequence canceled."))
-       (sis--respect-force-restore-after-cmd t)
+       (setq sis--respect-force-restore-after-cmd t)
        (sis--to-normal-stage))
 
       (; end key sequence
        t
        (when sis-log-mode (message "Key sequence ended."))
-       (sis--respect-force-restore-after-cmd t)
+       (setq sis--respect-force-restore-after-cmd t)
        (sis--to-normal-stage))))
     (; current is normal stage
      'normal
