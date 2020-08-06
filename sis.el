@@ -640,13 +640,17 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (when (local-variable-p 'sis--prefix-override-map-enable)
     (kill-local-variable 'sis--prefix-override-map-enable)))
 
+(defun sis--prefix-override-recap-do ()
+  "Recap prefix key override."
+  (add-to-ordered-list
+     'emulation-mode-map-alists
+     'sis--prefix-override-map-alist
+     sis--prefix-override-order))
+
 (defun sis--prefix-override-recap-advice (fn &rest args)
   "Advice for FN of `prefix-override-recap-triggers' with RES."
   (unwind-protect (apply fn args)
-    (add-to-ordered-list
-     'emulation-mode-map-alists
-     'sis--prefix-override-map-alist
-     sis--prefix-override-order)))
+    (sis--prefix-override-recap-do)))
 
 (defun sis--prefix-override-handler (arg)
   "Prefix key handler with ARG."
@@ -913,7 +917,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
                    keymap))))
 
        (setq sis--prefix-override-map-enable t)
-       (sis--prefix-override-recap-advice)
+       (sis--prefix-override-recap-do)
        (dolist (trigger sis-prefix-override-recap-triggers)
          (advice-add trigger :around
                      #'sis--prefix-override-recap-advice)))))
