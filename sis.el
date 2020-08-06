@@ -502,7 +502,7 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
 ;; Following codes are mainly about cursor color mode
 ;;
 
-(defun sis--set-cursor-color-advice (&rest color)
+(defun sis--set-cursor-color-advice (color)
   "Advice for FN of `set-cursor-color' with COLOR.
 
 The advice is needed, because other packages may set cursor color in their only
