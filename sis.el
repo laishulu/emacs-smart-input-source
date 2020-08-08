@@ -517,7 +517,7 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
 (defun sis--set-cursor-color-advice (color)
   "Advice for FN of `set-cursor-color' with COLOR.
 
-The advice is needed, because other packages may set cursor color in their only
+The advice is needed, because other packages may set cursor color in their own
 way."
   (pcase sis--current
     ('english
