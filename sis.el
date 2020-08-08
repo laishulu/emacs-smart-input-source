@@ -59,7 +59,8 @@ Should accept a string which is the id of the input source.")
 (defvar sis-auto-refresh-seconds 0.2
   "Idle timer interval to auto refresh input source status from OS.
 
-Emacs-nativ input method don't need it. nil to disable the timer.")
+Emacs-nativ input method don't need it. nil to disable the timer.
+Set after the modes may have no effect.")
 
 (defvar sis-change-hook nil
   "Hook to run when input source changes.")
@@ -82,10 +83,14 @@ nil means obtained from the envrionment.")
   "Preserve buffer input source when the /respect mode/ is enabled.")
 
 (defvar sis-respect-go-english-triggers nil
-  "Triggers to save input source to buffer and then go to english.")
+  "Triggers to save input source to buffer and then go to english.
+
+Set after the modes may have no effect.")
 
 (defvar sis-respect-restore-triggers nil
-  "Triggers to restore the input source from buffer.")
+  "Triggers to restore the input source from buffer.
+
+Set after the modes may have no effect.")
 
 (defvar sis-prefix-override-keys
   (list "C-c" "C-x" "C-h")
@@ -95,7 +100,8 @@ nil means obtained from the envrionment.")
   (list 'evil-local-mode 'yas-minor-mode)
   "Commands trigger the recap of the prefix override.
 
-Some functions take precedence of the override, need to recap after.")
+Some functions take precedence of the override, need to recap after.
+Set after the modes may have no effect.")
 
 (defvar sis-follow-context-fixed nil
   "Context is fixed to a specific language in the /follow context mode/.
@@ -375,6 +381,7 @@ SOURCE should be 'english or 'other."
 (defun sis-ism-lazyman-config (english-source other-source &optional ism-type)
   "Config ism for lazy man.
 
+Run after the modes may have no effect.
 ENGLISH-SOURCE: ENGLISH input source, nil means default,
                 ignored by ISM-TYPE of 'fcitx, 'fcitx5, 'native.
 OTHER-SOURCE: OTHER language input source, nil means default,
@@ -452,16 +459,15 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
   (when sis--auto-refresh-timer
     (cancel-timer sis--auto-refresh-timer))
   (sis--save-to-buffer)
-  (when (and sis-auto-refresh-seconds sis-auto-refresh-mode)
-    (setq sis--auto-refresh-timer
-          (run-with-idle-timer
-           ;; every time the wait period increases by auto-refresh-seconds
-           (time-add (current-idle-time)
-                     (* sis-auto-refresh-seconds sis--auto-refresh-timer-scale))
-           nil
-           #'sis--auto-refresh-timer-function))
-    (setq sis--auto-refresh-timer-scale
-          (* 1.05 sis--auto-refresh-timer-scale))))
+  (setq sis--auto-refresh-timer
+        (run-with-idle-timer
+         ;; every time the wait period increases by auto-refresh-seconds
+         (time-add (current-idle-time)
+                   (* sis-auto-refresh-seconds sis--auto-refresh-timer-scale))
+         nil
+         #'sis--auto-refresh-timer-function))
+  (setq sis--auto-refresh-timer-scale
+        (* 1.05 sis--auto-refresh-timer-scale)))
 
 (defvar sis--auto-refresh-timer-scale 1
   "Interval scale during this idle period.")
@@ -494,9 +500,15 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
 
 (defun sis--try-disable-auto-refresh-mode ()
   "Try to disable auto refresh mode."
-  (when (and (not sis-global-cursor-color-mode)
-             (not sis-global-respect-mode))
+  (when (or (not sis-auto-refresh-seconds)
+            (and (not sis-global-cursor-color-mode)
+                 (not sis-global-respect-mode)))
     (sis-auto-refresh-mode -1)))
+
+(defun sis--try-enable-auto-refresh-mode ()
+  "Try to enable auto refresh mode."
+  (when sis-auto-refresh-seconds
+    (sis-auto-refresh-mode t)))
 
 ;;
 ;; Following codes are mainly about cursor color mode
@@ -543,7 +555,7 @@ way."
     sis-global-cursor-color-mode
 
     ;; auto refresh input source
-    (sis-auto-refresh-mode t)
+    (sis--try-enable-auto-refresh-mode)
     ;; save original cursor color
     (unless sis-default-cursor-color
       (setq sis-default-cursor-color
@@ -868,7 +880,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
     sis-global-respect-mode
     (sis--ensure-ism
      ;; /respect mode/ depends on /auto refresh mode/
-     (sis-auto-refresh-mode t)
+     (sis--try-enable-auto-refresh-mode)
      ;; set english when mode enabled
      (when sis-respect-start (sis--set sis-respect-start))
 
