@@ -772,7 +772,6 @@ Possible values: 'normal, 'prefix, 'sequence.")
              sis--real-this-command
              (current-buffer)
              sis--prefix-override-map-enable))
-  (setq sis--respect-post-cmd-timer nil)
 
   ;; determine input source
   (cond
@@ -802,7 +801,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
   (unless (local-variable-p 'sis--prefix-override-map-enable)
     (setq sis--prefix-override-map-enable t))
 
-  (setq sis--prefix-handle-stage 'normal))
+  (setq sis--prefix-handle-stage 'normal)
+  (setq sis--respect-post-cmd-timer nil))
 
 (defsubst sis--to-normal-stage()
   "Transite to normal stage."
