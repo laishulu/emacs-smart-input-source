@@ -611,7 +611,6 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (defsubst sis--restore-from-buffer ()
   "Restore buffer input source."
   (setq sis--for-buffer-locked nil)
-  (setq sis--respect-force-restore nil)
   (sis--set (or sis--for-buffer 'english)))
 
 (defun sis--respect-go-english-advice (&rest _)
@@ -791,7 +790,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (unless (minibufferp)
       (when sis-log-mode
         (message "restore: [%s]@[%s]" sis--for-buffer (current-buffer)))
-      (sis--restore-from-buffer))))
+      (sis--restore-from-buffer)
+      (setq sis--respect-force-restore nil))))
 
   ;; disable prefix override for current buffer
   (when (and (not (local-variable-p 'sis--prefix-override-map-enable))
