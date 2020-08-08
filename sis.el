@@ -611,6 +611,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (defsubst sis--restore-from-buffer ()
   "Restore buffer input source."
   (setq sis--for-buffer-locked nil)
+  (setq sis--respect-force-restore nil)
   (sis--set (or sis--for-buffer 'english)))
 
 (defun sis--respect-go-english-advice (&rest _)
