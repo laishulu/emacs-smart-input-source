@@ -1,4 +1,4 @@
-;;; sis.el --- Switch native or OS input source (input method) smartly -*- lexical-binding: t; -*-
+;;; sis.el --- Less manual switch for native or OS input source (input method). -*- lexical-binding: t; -*-
 
 ;; URL: https://github.com/laishulu/emacs-smart-input-source
 ;; Created: March 27th, 2020
@@ -22,8 +22,8 @@
 ;; along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; This package provide modes to switch OS native input source smartly.
-;; For more information see the README in the GitHub repo.
+;; This package enables less manual switch for native or OS input source (input
+;; method). For more information see the README in the GitHub repo.
 
 ;;; Code:
 (require 'subr-x)
@@ -259,7 +259,7 @@ Possible values:
        ,@body)))
 
 (defmacro sis--ensure-dir (&rest body)
-  "Ensure BODY runs in home directory."
+  "Ensure BODY run in home directory."
   `(let ((default-directory "~"))
      ,@body))
 
@@ -660,7 +660,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
      sis--prefix-override-order))
 
 (defun sis--prefix-override-recap-advice (fn &rest args)
-  "Advice for FN of `prefix-override-recap-triggers' with RES."
+  "Advice for FN of `prefix-override-recap-triggers' with ARGS."
   (unwind-protect (apply fn args)
     (sis--prefix-override-recap-do)))
 
