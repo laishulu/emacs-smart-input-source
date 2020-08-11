@@ -368,14 +368,13 @@ SOURCE should be 'english or 'other."
   "Switch input source between english and other."
   (interactive)
   (setq sis--for-buffer-locked nil)
-  (sis--ensure-ism
-   (cond
-    (; current is english
-     (eq sis--current 'english)
-     (sis--set-other))
-    (; current is other
-     (eq sis--current 'other)
-     (sis--set-english)))))
+  (cond
+   (; current is english
+    (eq sis--current 'english)
+    (sis--set-other))
+   (; current is other
+    (eq sis--current 'other)
+    (sis--set-english))))
 
 ;;;###autoload
 (defun sis-ism-lazyman-config (english-source other-source &optional ism-type)
