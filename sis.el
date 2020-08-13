@@ -407,10 +407,18 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
     (eq ism-type 'native)
     (setq default-input-method other-source)
     (setq sis-english-source nil)
-    (add-hook 'input-method-activate-hook
-              (lambda () (sis--update-state sis-other-source)))
-    (add-hook 'input-method-deactivate-hook
-              (lambda () (sis--update-state sis-english-source)))
+
+    ;; evil's advice cause a lot of trouble
+    (when (featurep 'evil)
+      (advice-remove 'toggle-input-method #'ad-Advice-toggle-input-method))
+    ;; Don't use `input-method-activate-hook',
+    ;; because evil will make a buffer local one
+    (advice-add 'activate-input-method :filter-return
+                (lambda (res) (sis--update-state current-input-method) res))
+    ;; Don't use `input-method-deactivate-hook',
+    ;; because evil will make a buffer local one
+    (advice-add 'deactivate-input-method :filter-return
+                (lambda (res) (sis--update-state current-input-method) res))
     (setq sis-do-get (lambda() current-input-method))
     (setq sis-do-set (lambda(source)
                        (unless (equal source current-input-method)
