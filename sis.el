@@ -194,6 +194,10 @@ Possible values:
 
 (defun sis--do-nothing-advice (&rest _)
     "Advice to make existing function do nothing.")
+
+(defun sis--original-advice (fn &rest args)
+  "Advice to override existing advice to behave like without it."
+  (apply fn args))
 ;;
 ;; Following codes are mainly about input source manager
 ;;
@@ -407,10 +411,6 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
     (eq ism-type 'native)
     (setq default-input-method other-source)
     (setq sis-english-source nil)
-
-    ;; evil's advice cause a lot of trouble
-    (when (featurep 'evil)
-      (advice-remove 'toggle-input-method #'ad-Advice-toggle-input-method))
     ;; Don't use `input-method-activate-hook',
     ;; because evil will make a buffer local one
     (advice-add 'activate-input-method :filter-return
@@ -895,11 +895,14 @@ Possible values: 'normal, 'prefix, 'sequence.")
      ;; set english when exit evil insert state
      (when (featurep 'evil)
        (add-hook 'evil-insert-state-exit-hook #'sis-set-english)
+       ;; evil's advice cause a lot of trouble
        ;; let sis to manage input method
        (advice-add 'evil-activate-input-method :override
                    #'sis--do-nothing-advice)
        (advice-add 'evil-deactivate-input-method :override
                    #'sis--do-nothing-advice)
+       (advice-add 'ad-Advice-toggle-input-method :override
+                   #'sis--original-advice)
        (when sis-respect-evil-normal-escape
          (define-key evil-normal-state-map
            (kbd "<escape>") #'sis-set-english)))
@@ -949,6 +952,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
       (remove-hook 'evil-insert-state-exit-hook #'sis-set-english)
       (advice-remove 'evil-activate-input-method #'sis--do-nothing-advice)
       (advice-remove 'evil-deactivate-input-method #'sis--do-nothing-advice)
+      (advice-remove 'ad-Advice-toggle-input-method #'sis--original-advice)
       (when sis-respect-evil-normal-escape
         (define-key evil-normal-state-map (kbd "<escape>") nil)))
 
