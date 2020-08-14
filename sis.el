@@ -873,6 +873,22 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (setq sis--respect-post-cmd-timer
           (run-with-timer 0 nil #'sis--respect-post-cmd-timer-fn))))
 
+(defun sis--respect-evil ()
+  "Respect evil."
+  (when (featurep 'evil)
+    (add-hook 'evil-insert-state-exit-hook #'sis-set-english)
+    ;; evil's advice cause a lot of trouble
+    ;; let sis to manage input method
+    (advice-add 'evil-activate-input-method :override
+                #'sis--do-nothing-advice)
+    (advice-add 'evil-deactivate-input-method :override
+                #'sis--do-nothing-advice)
+    (advice-add 'ad-Advice-toggle-input-method :override
+                #'sis--original-advice)
+    (when sis-respect-evil-normal-escape
+      (define-key evil-normal-state-map
+        (kbd "<escape>") #'sis-set-english))))
+
 ;;;###autoload
 (define-minor-mode sis-global-respect-mode
   "Respect buffer/mode by proper input source.
@@ -892,20 +908,8 @@ Possible values: 'normal, 'prefix, 'sequence.")
      ;; set english when mode enabled
      (when sis-respect-start (sis--set sis-respect-start))
 
-     ;; set english when exit evil insert state
-     (when (featurep 'evil)
-       (add-hook 'evil-insert-state-exit-hook #'sis-set-english)
-       ;; evil's advice cause a lot of trouble
-       ;; let sis to manage input method
-       (advice-add 'evil-activate-input-method :override
-                   #'sis--do-nothing-advice)
-       (advice-add 'evil-deactivate-input-method :override
-                   #'sis--do-nothing-advice)
-       (advice-add 'ad-Advice-toggle-input-method :override
-                   #'sis--original-advice)
-       (when sis-respect-evil-normal-escape
-         (define-key evil-normal-state-map
-           (kbd "<escape>") #'sis-set-english)))
+     ;; respect evil in case `evil' is loaded before `sis'
+     (add-hook 'after-init-hook #'sis--respect-evil)
 
      (when sis-respect-prefix-and-buffer
        ;; preserve buffer input source
