@@ -194,9 +194,14 @@ its all in English.
   ;;  ((text-mode prog-mode) . sis-inline-mode))
 
   :config
+  ;; For MacOS
   (sis-ism-lazyman-config
+  
+   ;; Your English input source may be: "ABC", "US" or another one.
    ;; "com.apple.keylayout.ABC"
    "com.apple.keylayout.US"
+
+   ;; Your other language input source: "rime", "sogou" or another one.
    ;; "im.rime.inputmethod.Squirrel.Rime"
    "com.sogou.inputmethod.sogou.pinyin")
 
