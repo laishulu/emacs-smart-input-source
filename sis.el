@@ -908,8 +908,9 @@ Possible values: 'normal, 'prefix, 'sequence.")
      ;; set english when mode enabled
      (when sis-respect-start (sis--set sis-respect-start))
 
-     ;; respect evil in case `evil' is loaded before `sis'
+     ;; respect evil
      (sis--respect-evil)
+     ;; in case `evil' is loaded after `sis'
      (add-hook 'after-init-hook #'sis--respect-evil)
 
      (when sis-respect-prefix-and-buffer
