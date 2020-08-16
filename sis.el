@@ -909,6 +909,7 @@ Possible values: 'normal, 'prefix, 'sequence.")
      (when sis-respect-start (sis--set sis-respect-start))
 
      ;; respect evil in case `evil' is loaded before `sis'
+     (sis--respect-evil)
      (add-hook 'after-init-hook #'sis--respect-evil)
 
      (when sis-respect-prefix-and-buffer
