@@ -141,7 +141,7 @@ Note:
    the following screenshot.
    #+CAPTION: Smart input source
    [[./screenshots/windows-im-select.jpg]]
-2. If you are using ~win~ key as ~super~ key, you may also need [[https://github.com/laishulu/winsuper][~winsuper~]].
+2. If you are using ~win~ key as ~super~ key, you may also need [[https://github.com/laishulu/winsuper][winsuper]].
 
 ** Linux
 *** ~fcitx~
