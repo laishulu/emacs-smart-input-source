@@ -135,13 +135,13 @@ Note:
 (sis-ism-lazyman-config "1033" "2052" 'im-select)
 #+END_SRC
 
-However, because even though ~im-select~ supports switching different input
-languages, it does not support multiple input methods in the same lanuage,
-thus you should ensure that in each input language there is only one input
-method, just like the following screenshot.
-
-#+CAPTION: Smart input source
-[[./screenshots/windows-im-select.jpg]]
+1. Even though ~im-select~ supports switching different input languages, it does
+   not support multiple input methods in the same lanuage, thus you should
+   ensure that in each input language there is only one input method, just like
+   the following screenshot.
+   #+CAPTION: Smart input source
+   [[./screenshots/windows-im-select.jpg]]
+2. If you are using ~win~ key as ~super~ key, you may also need [[https://github.com/laishulu/winsuper][~winsuper~]].
 
 ** Linux
 *** ~fcitx~
