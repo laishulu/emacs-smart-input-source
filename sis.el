@@ -716,14 +716,14 @@ Only used for graphic display."
         (sis--respect-focus-in-handler)
       (sis--respect-focus-out-handler))))
 
-(defun sis--respect-focus-in-advice ()
+(defun sis--respect-focus-in-advice (_)
   "Advice for `handle-focus-in'.
 
 Only used for `terminal-focus-reporting'."
   (unless (display-graphic-p)
     (sis--respect-focus-in-handler)))
 
-(defun sis--respect-focus-out-advice ()
+(defun sis--respect-focus-out-advice (_)
   "Advice for `handle-focus-out'.
 
 Only used for `terminal-focus-reporting'."
