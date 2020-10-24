@@ -103,9 +103,16 @@ Set after the modes may have no effect.")
 Some functions take precedence of the override, need to recap after.
 Set after the modes may have no effect.")
 
+(defvar sis-follow-context-fixed nil
+  "Context is fixed to a specific language in the /follow context mode/.
+
+Possible values:
+nil: dynamic context
+'english: English context
+'other: other language context.")
+
 (defvar sis-follow-context-detectors
-  (list (lambda (&rest)
-          (sis-follow-context-fixed))
+  (list (lambda (&rest) sis-follow-context-fixed)
         (lambda (back-detect fore-detect)
           (when (sis--context-english-p back-detect fore-detect)
             'english))
@@ -123,14 +130,6 @@ Each detector should:
   - nil: left the determination to later detectors.
   - 'english: English context.
   - 'other: other language context.")
-
-(defvar sis-follow-context-fixed nil
-  "Context is fixed to a specific language in the /follow context mode/.
-
-Possible values:
-nil: dynamic context
-'english: English context
-'other: other language context.")
 
 (defvar sis-follow-context-aggressive-line t
   "Aggressively detect context across blank lines.")
