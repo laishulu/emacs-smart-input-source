@@ -112,7 +112,7 @@ nil: dynamic context
 'other: other language context.")
 
 (defvar sis-follow-context-detectors
-  (list (lambda (&rest) sis-follow-context-fixed)
+  (list (lambda (&rest _) sis-follow-context-fixed)
         (lambda (back-detect fore-detect)
           (when (sis--context-english-p back-detect fore-detect)
             'english))
@@ -1153,8 +1153,8 @@ If POSITION is not provided, then default to be the current position."
          (context nil))
 
     (when sis-follow-context-detectors
-      (dolist (p sis-follow-context-detectors)
-        (setq context (or context (funcall p back-detect fore-detect)))))
+      (dolist (detector sis-follow-context-detectors)
+        (setq context (or context (funcall detector back-detect fore-detect)))))
 
     context))
 
