@@ -103,6 +103,27 @@ Set after the modes may have no effect.")
 Some functions take precedence of the override, need to recap after.
 Set after the modes may have no effect.")
 
+(defvar sis-follow-context-detectors
+  (list (lambda (&rest)
+          (sis-follow-context-fixed))
+        (lambda (back-detect fore-detect)
+          (when (sis--context-english-p back-detect fore-detect)
+            'english))
+        (lambda (back-detect fore-detect)
+          (when (sis--context-other-p back-detect fore-detect)
+            'other)))
+
+  "Detectors to detect the context.
+
+Each detector should:
+- have two arguments:
+  - back-detect: which is the result of (sis--back-detect-chars).
+  - fore-detect: which is the result of (sis--fore-detect-chars).
+- return one of the following values:
+  - nil: left the determination to later detectors.
+  - 'english: English context.
+  - 'other: other language context.")
+
 (defvar sis-follow-context-fixed nil
   "Context is fixed to a specific language in the /follow context mode/.
 
@@ -196,8 +217,17 @@ Possible values:
     "Advice to make existing function do nothing.")
 
 (defun sis--original-advice (fn &rest args)
-  "Advice to override existing advice to behave like without it."
+  "Advice to override existing advice on FN with ARGS."
   (apply fn args))
+
+(defsubst sis--string-match-p (regexp str &optional start)
+  "Robust wrapper of `string-match-p'.
+
+Works when REGEXP or STR is not a string REGEXP, STR, START all has the same
+meanings as `string-match-p'."
+  (and (stringp regexp)
+       (stringp str)
+       (string-match-p regexp str start)))
 ;;
 ;; Following codes are mainly about input source manager
 ;;
@@ -990,15 +1020,6 @@ Possible values: 'normal, 'prefix, 'sequence.")
 ;; Following codes are mainly about follow-context-mode
 ;;
 
-(defsubst sis--string-match-p (regexp str &optional start)
-  "Robust wrapper of `string-match-p'.
-
-Works when REGEXP or STR is not a string REGEXP, STR, START all has the same
-meanings as `string-match-p'."
-  (and (stringp regexp)
-       (stringp str)
-       (string-match-p regexp str start)))
-
 (defsubst sis--english-p (str)
   "Predicate on STR is English."
   (sis--string-match-p sis-english-pattern str))
@@ -1129,17 +1150,14 @@ If POSITION is not provided, then default to be the current position."
 (defun sis--context-guess ()
   "Guest the lang context for the current point."
   (let* ((back-detect (sis--back-detect-chars))
-         (fore-detect (sis--fore-detect-chars)))
-    (cond
-     (; context is fixed.
-      sis-follow-context-fixed
-      sis-follow-context-fixed)
-     (; english context
-      (sis--context-english-p back-detect fore-detect)
-      'english)
-     (; other lang context
-      (sis--context-other-p back-detect fore-detect)
-      'other))))
+         (fore-detect (sis--fore-detect-chars))
+         (context nil))
+
+    (when sis-follow-context-detectors
+      (dolist (p sis-follow-context-detectors)
+        (setq context (or context (funcall p back-detect fore-detect)))))
+
+    context))
 
 ;;;###autoload
 (define-minor-mode sis-follow-context-mode

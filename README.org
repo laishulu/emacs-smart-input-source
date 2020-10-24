@@ -283,6 +283,7 @@ Note:
 ** About /follow context mode/
 | Variable                             | Description                                    | Default          |
 |--------------------------------------+------------------------------------------------+------------------|
+| ~sis-follow-context-detectors~       | Detectors to detect the context                | see variable doc |
 | ~sis-follow-context-fixed~           | Context is fixed to a specific language        | ~nil~            |
 | ~sis-follow-context-aggressive-line~ | Aggressively detect context across blank lines | ~t~              |
 | ~sis-follow-context-hooks~           | Hooks trigger the context following            | see variable doc |
