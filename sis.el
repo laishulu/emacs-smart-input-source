@@ -211,6 +211,7 @@ Possible values:
 (declare-function mac-select-input-source "ext:macfns.c"
                   (SOURCE &optional SET-KEYBOARD-LAYOUT-OVERRIDE-P) t)
 (defvar transient--showp)
+(defvar evil-normal-state-map)
 
 (defun sis--do-nothing-advice (&rest _)
     "Advice to make existing function do nothing.")
@@ -374,6 +375,15 @@ SOURCE should be 'english or 'other."
   (sis--get)
   sis--current)
 
+(defsubst sis--save-to-buffer ()
+  "Save buffer input source."
+  (sis--get))
+
+(defsubst sis--restore-from-buffer ()
+  "Restore buffer input source."
+  (setq sis--for-buffer-locked nil)
+  (sis--set (or sis--for-buffer 'english)))
+
 (defun sis--set-english ()
   "Function to set input source to `english'."
   (sis--set 'english))
@@ -490,6 +500,9 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
 (defvar sis--auto-refresh-manager-timer nil
   "Timer to manage `sis--auto-refresh-timer'.")
 
+(defvar sis--auto-refresh-timer-scale 1
+  "Interval scale during this idle period.")
+
 (defun sis--auto-refresh-timer-function ()
   "Auto refresh input source on idle timer."
   (when sis--auto-refresh-timer
@@ -504,15 +517,6 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
          #'sis--auto-refresh-timer-function))
   (setq sis--auto-refresh-timer-scale
         (* 1.05 sis--auto-refresh-timer-scale)))
-
-(defvar sis--auto-refresh-timer-scale 1
-  "Interval scale during this idle period.")
-
-(defun sis--auto-refresh-timer-restart ()
-  "Restart `sis--auto-refresh-timer'."
-  (when (and sis-auto-refresh-seconds sis-auto-refresh-mode)
-    (setq sis--auto-refresh-timer-scale 1)
-    (sis--auto-refresh-timer-function)))
 
 ;;;###autoload
 (define-minor-mode sis-auto-refresh-mode
@@ -534,12 +538,11 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
       (cancel-timer sis--auto-refresh-manager-timer))
     (when sis--auto-refresh-timer (cancel-timer sis--auto-refresh-timer)))))
 
-(defun sis--try-disable-auto-refresh-mode ()
-  "Try to disable auto refresh mode."
-  (when (or (not sis-auto-refresh-seconds)
-            (and (not sis-global-cursor-color-mode)
-                 (not sis-global-respect-mode)))
-    (sis-auto-refresh-mode -1)))
+(defun sis--auto-refresh-timer-restart ()
+  "Restart `sis--auto-refresh-timer'."
+  (when (and sis-auto-refresh-seconds sis-auto-refresh-mode)
+    (setq sis--auto-refresh-timer-scale 1)
+    (sis--auto-refresh-timer-function)))
 
 (defun sis--try-enable-auto-refresh-mode ()
   "Try to enable auto refresh mode."
@@ -567,7 +570,8 @@ way."
   "Update cursor color according to input source."
   ;; for GUI
   (when (display-graphic-p)
-    ;; actually which color passed to the function does not matter,
+    ;;
+    ;;actually which color passed to the function does not matter,
     ;; the advice will take care of it.
     (set-cursor-color sis-default-cursor-color))
 
@@ -640,15 +644,6 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (defvar sis--prefix-override-order -1000
   "Order of the prefix override in `emulation-mode-map-alists'.")
 
-(defsubst sis--save-to-buffer ()
-  "Save buffer input source."
-  (sis--get))
-
-(defsubst sis--restore-from-buffer ()
-  "Restore buffer input source."
-  (setq sis--for-buffer-locked nil)
-  (sis--set (or sis--for-buffer 'english)))
-
 (defun sis--respect-go-english-advice (&rest _)
   "Advice for `sis-respect-go-english-triggers'."
   (sis--save-to-buffer)
@@ -711,6 +706,29 @@ Possible values: 'normal, 'prefix, 'sequence.")
         (append (mapcar (lambda (e) (cons t e))
                         (listify-key-sequence (this-command-keys)))
                 unread-command-events)))
+
+(defun sis--respect-focus-change-advice ()
+  "Advice for `after-focus-change-function'.
+
+Only used for graphic display."
+  (when (display-graphic-p)
+    (if (frame-focus-state)
+        (sis--respect-focus-in-handler)
+      (sis--respect-focus-out-handler))))
+
+(defun sis--respect-focus-in-advice ()
+  "Advice for `handle-focus-in'.
+
+Only used for `terminal-focus-reporting'."
+  (unless (display-graphic-p)
+    (sis--respect-focus-in-handler)))
+
+(defun sis--respect-focus-out-advice ()
+  "Advice for `handle-focus-out'.
+
+Only used for `terminal-focus-reporting'."
+  (unless (display-graphic-p)
+    (sis--respect-focus-out-handler)))
 
 (defun sis--respect-focus-out-handler ()
   "Handler for `focus-out-hook'."
@@ -954,8 +972,15 @@ Possible values: 'normal, 'prefix, 'sequence.")
          (require 'terminal-focus-reporting)
          (terminal-focus-reporting-mode t))
 
-       (add-hook 'focus-out-hook #'sis--respect-focus-out-handler)
-       (add-hook 'focus-in-hook #'sis--respect-focus-in-handler)
+       (unless (boundp 'after-focus-change-function)
+         (setq after-focus-change-function (lambda ())))
+
+       (advice-add 'after-focus-change-function :after
+                   #'sis--respect-focus-change-advice)
+       (advice-add 'handle-focus-in :after
+                   #'sis--respect-focus-in-advice)
+       (advice-add 'handle-focus-out :after
+                   #'sis--respect-focus-out-advice)
 
        (dolist (trigger sis-respect-go-english-triggers)
          (advice-add trigger :before #'sis--respect-go-english-advice))
@@ -998,8 +1023,12 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (remove-hook 'minibuffer-exit-hook #'sis--minibuffer-exit-handler)
 
     ;; for preserving buffer input source
-    (remove-hook 'focus-out-hook #'sis--respect-focus-out-handler)
-    (remove-hook 'focus-in-hook #'sis--respect-focus-in-handler)
+    (advice-remove 'after-focus-change-function
+                   #'sis--respect-focus-change-advice)
+    (advice-remove 'handle-focus-in
+                   #'sis--respect-focus-in-advice)
+    (advice-remove 'handle-focus-out
+                   #'sis--respect-focus-out-advice)
 
     (dolist (trigger sis-respect-go-english-triggers)
       (advice-remove trigger #'sis--respect-go-english-advice))
@@ -1014,6 +1043,13 @@ Possible values: 'normal, 'prefix, 'sequence.")
     (setq sis--prefix-override-map-enable nil)
     (dolist (trigger sis-prefix-override-recap-triggers)
       (advice-remove trigger #'sis--prefix-override-recap-advice)))))
+
+(defun sis--try-disable-auto-refresh-mode ()
+  "Try to disable auto refresh mode."
+  (when (or (not sis-auto-refresh-seconds)
+            (and (not sis-global-cursor-color-mode)
+                 (not sis-global-respect-mode)))
+    (sis-auto-refresh-mode -1)))
 
 ;;
 ;; Following codes are mainly about follow-context-mode
