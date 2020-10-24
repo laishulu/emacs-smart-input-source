@@ -967,20 +967,20 @@ Only used for `terminal-focus-reporting'."
        (add-hook 'minibuffer-setup-hook #'sis--minibuffer-setup-handler)
        (add-hook 'minibuffer-exit-hook #'sis--minibuffer-exit-handler)
 
-       ;; enable terminal focus event
-       (unless (display-graphic-p)
-         (require 'terminal-focus-reporting)
-         (terminal-focus-reporting-mode t))
-
        (unless (boundp 'after-focus-change-function)
          (setq after-focus-change-function (lambda ())))
 
        (advice-add 'after-focus-change-function :after
                    #'sis--respect-focus-change-advice)
-       (advice-add 'handle-focus-in :after
-                   #'sis--respect-focus-in-advice)
-       (advice-add 'handle-focus-out :after
-                   #'sis--respect-focus-out-advice)
+
+       ;; enable terminal focus event
+       (unless (display-graphic-p)
+         (require 'terminal-focus-reporting)
+         (terminal-focus-reporting-mode t)
+         (advice-add 'handle-focus-in :after
+                     #'sis--respect-focus-in-advice)
+         (advice-add 'handle-focus-out :after
+                     #'sis--respect-focus-out-advice))
 
        (dolist (trigger sis-respect-go-english-triggers)
          (advice-add trigger :before #'sis--respect-go-english-advice))
