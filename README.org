@@ -12,12 +12,11 @@ source (input method):
   3. Respect ~minibuffer~: switch to English when enter ~minibuffer~.
   4. Respect prefix key: switch to English for ~C-c~ / ~C-x~ / ~C-h~ and more.
   5. Respect buffer: recover buffer input source when it regain focus.
-- A buffer local mode: ~sis-follow-context-mode~ to switch input
-  source smarted according to context. It also has a global version
-  ~sis-global-follow-context-mode~ to enable the mode for all
-  buffers. When to switch input source by following context can be configured
-  easily by a variable, whose default value indicates when entering evil insert
-  mode.
+- A buffer local mode: ~sis-context-mode~ to switch input source smarted
+  according to context. It also has a global version ~sis-global-context-mode~
+  to enable the mode for all buffers. When to switch input source by following
+  context can be configured easily by a variable, whose default value
+  indicates when entering evil insert mode.
 - A buffer local mode: ~sis-inline-mode~ to enable the
   automatically triggering of a temporary overlay to input English/other
   language and then back to original input source without switching input
@@ -190,7 +189,7 @@ its all in English.
 (use-package sis
   ;; :hook
   ;; enable the /follow context/ and /inline region/ mode for specific buffers
-  ;; (((text-mode prog-mode) . sis-follow-context-mode)
+  ;; (((text-mode prog-mode) . sis-context-mode)
   ;;  ((text-mode prog-mode) . sis-inline-mode))
 
   :config
@@ -209,8 +208,8 @@ its all in English.
   (sis-global-cursor-color-mode t)
   ;; enable the /respect/ mode
   (sis-global-respect-mode t)
-  ;; enable the /follow context/ mode for all buffers
-  (sis-global-follow-context-mode t)
+  ;; enable the /context/ mode for all buffers
+  (sis-global-context-mode t)
   ;; enable the /inline english/ mode for all buffers
   (sis-global-inline-mode t)
   )
@@ -281,13 +280,13 @@ Note:
 |-----------------------+--------------------------------------------+--------------------------|
 
 ** About /follow context mode/
-| Variable                             | Description                                    | Default          |
-|--------------------------------------+------------------------------------------------+------------------|
-| ~sis-follow-context-detectors~       | Detectors to detect the context                | see variable doc |
-| ~sis-follow-context-fixed~           | Context is fixed to a specific language        | ~nil~            |
-| ~sis-follow-context-aggressive-line~ | Aggressively detect context across blank lines | ~t~              |
-| ~sis-follow-context-hooks~           | Hooks trigger the context following            | see variable doc |
-|--------------------------------------+------------------------------------------------+------------------|
+| Variable                      | Description                                    | Default          |
+|-------------------------------+------------------------------------------------+------------------|
+| ~sis-context-detectors~       | Detectors to detect the context                | see variable doc |
+| ~sis-context-fixed~           | Context is fixed to a specific language        | ~nil~            |
+| ~sis-context-aggressive-line~ | Aggressively detect context across blank lines | ~t~              |
+| ~sis-context-hooks~           | Hooks trigger the context following            | see variable doc |
+|-------------------------------+------------------------------------------------+------------------|
 
 ** About /inline mode/
 

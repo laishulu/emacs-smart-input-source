@@ -27,6 +27,7 @@
 
 ;;; Code:
 (require 'subr-x)
+(require 'uuid)
 
 (defvar sis-external-ism "macism"
   "Path of external ism.")
@@ -103,7 +104,7 @@ Set after the modes may have no effect.")
 Some functions take precedence of the override, need to recap after.
 Set after the modes may have no effect.")
 
-(defvar sis-follow-context-fixed nil
+(defvar sis-context-fixed nil
   "Context is fixed to a specific language in the /follow context mode/.
 
 Possible values:
@@ -111,8 +112,8 @@ nil: dynamic context
 'english: English context
 'other: other language context.")
 
-(defvar sis-follow-context-detectors
-  (list (lambda (&rest _) sis-follow-context-fixed)
+(defvar sis-context-detectors
+  (list (lambda (&rest _) sis-context-fixed)
         (lambda (back-detect fore-detect)
           (when (sis--context-english-p back-detect fore-detect)
             'english))
@@ -131,12 +132,33 @@ Each detector should:
   - 'english: English context.
   - 'other: other language context.")
 
-(defvar sis-follow-context-aggressive-line t
+(defvar sis-context-aggressive-line t
   "Aggressively detect context across blank lines.")
 
-(defvar sis-follow-context-hooks
+(defvar sis-context-hooks
   '(evil-insert-state-entry-hook)
   "Hooks trigger the set of input source following context.")
+
+(defvar sis-context-triggers
+  '(('+org/insert-item-below 'sis--line-context nil))
+  "Commands trigger the set of input source following context.
+
+Each trigger should be a list: (FN PRE-FN-DETECTOR POST-FN-DETECTOR).
+- FN: function to trigger the context following.
+- PRE-FN-DETECTOR:
+  - args: none
+  - return:
+    - nil: left the determination to later detectors.
+    - 'english: English context.
+    - 'other: other language context.
+- POST-FN-DETECTOR:
+  - args: none
+  - return:
+    - nil: left the determination to later detectors.
+    - 'english: English context.
+    - 'other: other language context.
+Input source will be switched to (or (PRE-FN-DETECTOR) (POST-FN-DETECTOR)) after
+FN is invoked.")
 
 (defvar sis-inline-english-activated-hook nil
   "Hook to run after inline english region activated.")
@@ -373,7 +395,7 @@ SOURCE should be 'english or 'other."
   "Get input source."
   (interactive)
   (sis--get)
-  sis--current)
+  (message sis--current))
 
 (defsubst sis--save-to-buffer ()
   "Save buffer input source."
@@ -430,7 +452,6 @@ OTHER-SOURCE: OTHER language input source, nil means default,
               ignored by ISM-TYPE of 'fcitx, 'fcitx5.
 TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
       nil TYPE fits both 'emp and 'macism."
-  (interactive)
   (when english-source
     (setq sis-english-source english-source))
   (when other-source
@@ -1052,24 +1073,35 @@ Only used for `terminal-focus-reporting'."
     (sis-auto-refresh-mode -1)))
 
 ;;
-;; Following codes are mainly about follow-context-mode
+;; Following codes are mainly about context-mode
 ;;
 
 (defsubst sis--english-p (str)
-  "Predicate on STR is English."
+  "Predicate on STR has English characters."
   (sis--string-match-p sis-english-pattern str))
 
 (defsubst sis--not-english-p (str)
-  "Predicate on STR is not English."
+  "Predicate on STR is has no English characters."
   (not (sis--string-match-p sis-english-pattern str)))
 
 (defsubst sis--other-p (str)
-  "Predicate on STR is other language."
+  "Predicate on STR has /other/ language characters."
   (sis--string-match-p sis-other-pattern str))
 
 (defsubst sis--not-other-p (str)
-  "Predicate on STR is not other language."
+  "Predicate on STR has no /other/ language characters."
   (not (sis--string-match-p sis-other-pattern str)))
+
+(defun sis--line-context ()
+  "Line context."
+  (let ((line (thing-at-point 'line t)))
+    (cond
+     (; has /other/ lang char
+      (sis--other-p line)
+      'other)
+     (; has no /other/ lang char
+      (sis--english-p line)
+      'english))))
 
 (cl-defstruct sis-back-detect ; result of backward detect
   to ; point after first non-blank char in the same line
@@ -1144,7 +1176,7 @@ If POSITION is not provided, then default to be the current position."
       (and (sis--not-english-p back-char) (sis--other-p fore-char))
       t)
      (; [other lang: to the previous line][blank][^]
-      (and (or sis-follow-context-aggressive-line
+      (and (or sis-context-aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
            (sis--other-p cross-line-back-char))
@@ -1176,7 +1208,7 @@ If POSITION is not provided, then default to be the current position."
       (and (sis--not-other-p back-char) (sis--english-p fore-char))
       t)
      (; [english: to the previous line][blank][^]
-      (and (or sis-follow-context-aggressive-line
+      (and (or sis-context-aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
            (sis--english-p cross-line-back-char))
@@ -1188,35 +1220,61 @@ If POSITION is not provided, then default to be the current position."
          (fore-detect (sis--fore-detect-chars))
          (context nil))
 
-    (when sis-follow-context-detectors
-      (dolist (detector sis-follow-context-detectors)
+    (when sis-context-detectors
+      (dolist (detector sis-context-detectors)
         (setq context (or context (funcall detector back-detect fore-detect)))))
 
     context))
 
 ;;;###autoload
-(define-minor-mode sis-follow-context-mode
+(define-minor-mode sis-context-mode
   "Switch input source smartly according to context."
   :init-value nil
   (cond
    (; turn of the mode
-    sis-follow-context-mode
+    sis-context-mode
     (sis--ensure-ism
-     (dolist (hook sis-follow-context-hooks)
-       (add-hook hook #'sis-follow-context nil t))))
+     (dolist (hook sis-context-hooks)
+       (add-hook hook #'sis-context nil t))
+     (dolist (trigger sis-context-triggers)
+       (let* ((trigger-fn (nth 0 trigger))
+              (pre-detector (nth 1 trigger))
+              (post-detector (nth 2 trigger))
+              (advice-name (format "sis--context-trigger-advice-%s"
+                                   (symbol-name (eval trigger-fn)))))
+         (defalias (intern advice-name)
+           `(lambda (fn &rest args)
+              (let ((pre-context (and (functionp ,pre-detector)
+                                      (funcall ,pre-detector)))
+                    (res (apply fn args))
+                    (post-context (and (functionp ,post-detector)
+                                       (funcall ,post-detector))))
+              (sis--set (or pre-context post-context)))
+              res))
+         ;; Add the 'sis--context-trigger-advice property to the advice
+         (put (intern advice-name) 'sis--context-trigger-advice t)
+         (advice-add (eval trigger-fn) :around (intern advice-name))))))
    (; turn off the mode
-    (not sis-follow-context-mode)
-    (dolist (hook sis-follow-context-hooks)
-      (remove-hook hook #'sis-follow-context nil)))))
+    (not sis-context-mode)
+    (dolist (hook sis-context-hooks)
+      (remove-hook hook #'sis-context nil))
+    (dolist (trigger sis-context-triggers)
+      (let ((trigger-fn (eval (nth 0 trigger)))
+        ;; delete advices with property of 'sis--context-trigger-advice
+        (advice-mapc
+         (lambda (advice _)
+           (when (get (intern advice) 'sis--context-trigger-advice)
+             (advice-remove trigger-fn advice))
+           trigger-fn))))))))
 
 ;;;###autoload
 (define-globalized-minor-mode
-  sis-global-follow-context-mode
-  sis-follow-context-mode
-  sis-follow-context-mode)
+  sis-global-context-mode
+  sis-context-mode
+  sis-context-mode)
 
 ;;;###autoload
-(defun sis-follow-context ()
+(defun sis-context ()
   "Follow the context to switch input source."
   (let ((context (sis--context-guess)))
     (when context
