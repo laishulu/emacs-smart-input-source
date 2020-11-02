@@ -398,7 +398,7 @@ SOURCE should be 'english or 'other."
   "Get input source."
   (interactive)
   (sis--get)
-  (message sis--current))
+  (message (sis--normalize-to-source sis--current)))
 
 (defsubst sis--save-to-buffer ()
   "Save buffer input source."
