@@ -140,7 +140,8 @@ Each detector should:
   "Hooks trigger the set of input source following context.")
 
 (defvar sis-context-triggers
-  '(('+org/insert-item-below 'sis--line-context nil))
+  '(('+org/insert-item-below 'sis--line-context nil)
+    ('+org/insert-item-above 'sis--line-context nil))
   "Commands trigger the set of input source following context.
 
 Each trigger should be a list: (FN PRE-FN-DETECTOR POST-FN-DETECTOR).
