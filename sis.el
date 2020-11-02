@@ -27,7 +27,6 @@
 
 ;;; Code:
 (require 'subr-x)
-(require 'uuid)
 
 (defvar sis-external-ism "macism"
   "Path of external ism.")
