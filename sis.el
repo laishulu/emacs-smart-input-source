@@ -1252,13 +1252,12 @@ If POSITION is not provided, then default to be the current position."
            (defalias (intern advice-name)
              `(lambda (fn &rest args)
                 (if sis-context-mode
-                    (progn
-                      (let ((pre-context (and (functionp ,pre-detector)
-                                              (funcall ,pre-detector)))
-                            (res (apply fn args))
-                            (post-context (and (functionp ,post-detector)
-                                               (funcall ,post-detector))))
-                        (sis--set (or pre-context post-context)))
+                    (let ((pre-context (and (functionp ,pre-detector)
+                                            (funcall ,pre-detector)))
+                          (res (apply fn args))
+                          (post-context (and (functionp ,post-detector)
+                                             (funcall ,post-detector))))
+                      (sis--set (or pre-context post-context))
                       res)
                   (apply fn args))))
            ;; Add special property to the advice, so it can be easily removed
