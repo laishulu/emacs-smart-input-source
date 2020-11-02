@@ -160,6 +160,8 @@ Each trigger should be a list: (FN PRE-FN-DETECTOR POST-FN-DETECTOR).
 Input source will be switched to (or (PRE-FN-DETECTOR) (POST-FN-DETECTOR)) after
 FN is invoked.")
 
+(defvar sis--context-triggers-adviced nil "Context triggers adviced.")
+
 (defvar sis-inline-english-activated-hook nil
   "Hook to run after inline english region activated.")
 
@@ -1236,25 +1238,32 @@ If POSITION is not provided, then default to be the current position."
     (sis--ensure-ism
      (dolist (hook sis-context-hooks)
        (add-hook hook #'sis-context nil t))
-     (dolist (trigger sis-context-triggers)
-       (let* ((trigger-fn (nth 0 trigger))
-              (pre-detector (nth 1 trigger))
-              (post-detector (nth 2 trigger))
-              (advice-name (format "sis--context-trigger-advice-%s"
-                                   (symbol-name (eval trigger-fn)))))
-         ;; dynamically create the advice
-         (defalias (intern advice-name)
-           `(lambda (fn &rest args)
-              (let ((pre-context (and (functionp ,pre-detector)
-                                      (funcall ,pre-detector)))
-                    (res (apply fn args))
-                    (post-context (and (functionp ,post-detector)
-                                       (funcall ,post-detector))))
-              (sis--set (or pre-context post-context)))
-              res))
-         ;; Add special property to the advice, so it can be easily removed
-         (put (intern advice-name) 'sis--context-trigger-advice t)
-         (advice-add (eval trigger-fn) :around (intern advice-name))))))
+
+     ;; adviced for all, but only take effect when sis-context-mode is enabled
+     (unless sis--context-triggers-adviced
+       (setq sis--context-triggers-adviced t)
+       (dolist (trigger sis-context-triggers)
+         (let* ((trigger-fn (nth 0 trigger))
+                (pre-detector (nth 1 trigger))
+                (post-detector (nth 2 trigger))
+                (advice-name (format "sis--context-trigger-advice-%s"
+                                     (symbol-name (eval trigger-fn)))))
+           ;; dynamically create the advice
+           (defalias (intern advice-name)
+             `(lambda (fn &rest args)
+                (if sis-context-mode
+                    (progn
+                      (let ((pre-context (and (functionp ,pre-detector)
+                                              (funcall ,pre-detector)))
+                            (res (apply fn args))
+                            (post-context (and (functionp ,post-detector)
+                                               (funcall ,post-detector))))
+                        (sis--set (or pre-context post-context)))
+                      res)
+                  (apply fn args))))
+           ;; Add special property to the advice, so it can be easily removed
+           (put (intern advice-name) 'sis--context-trigger-advice t)
+           (advice-add (eval trigger-fn) :around (intern advice-name)))))))
    (; turn off the mode
     (not sis-context-mode)
     (dolist (hook sis-context-hooks)
