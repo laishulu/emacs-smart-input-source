@@ -139,8 +139,8 @@ Each detector should:
   "Hooks trigger the set of input source following context.")
 
 (defvar sis-context-triggers
-  '(('+org/insert-item-below 'sis--line-context nil)
-    ('+org/insert-item-above 'sis--line-context nil))
+  '(('+org/insert-item-below 'sis--context-line nil)
+    ('+org/insert-item-above 'sis--context-line nil))
   "Commands trigger the set of input source following context.
 
 Each trigger should be a list: (FN PRE-FN-DETECTOR POST-FN-DETECTOR).
@@ -1094,17 +1094,6 @@ Only used for `terminal-focus-reporting'."
   "Predicate on STR has no /other/ language characters."
   (not (sis--string-match-p sis-other-pattern str)))
 
-(defun sis--line-context ()
-  "Line context."
-  (let ((line (thing-at-point 'line t)))
-    (cond
-     (; has /other/ lang char
-      (sis--other-p line)
-      'other)
-     (; has no /other/ lang char
-      (sis--english-p line)
-      'english))))
-
 (cl-defstruct sis-back-detect ; result of backward detect
   to ; point after first non-blank char in the same line
   char ; first non-blank char at the same line (just before position `to')
@@ -1215,6 +1204,17 @@ If POSITION is not provided, then default to be the current position."
            (< cross-line-back-to (line-beginning-position))
            (sis--english-p cross-line-back-char))
       t))))
+
+(defun sis--context-line ()
+  "Line context."
+  (let ((line (thing-at-point 'line t)))
+    (cond
+     (; has /other/ lang char
+      (sis--other-p line)
+      'other)
+     (; has no /other/ lang char
+      (sis--english-p line)
+      'english))))
 
 (defun sis--context-guess ()
   "Guest the lang context for the current point."
