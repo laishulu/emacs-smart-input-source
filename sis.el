@@ -926,6 +926,26 @@ Only used for `terminal-focus-reporting'."
      'normal
      (sis--to-normal-stage))))
 
+(defvar sis--minibuffer-triggers (list)
+  "Commands trigger to set input source in minibuffer.
+
+Each trigger should be a cons cell: (cons FN DETECTOR).
+- FN: function to trigger the context following.
+- DETECTOR:
+  - args: nil
+  - return:
+    - nil: left the determination to later detectors.
+    - 'english: english context.
+    - 'other: other language context.
+
+Example of adding a trigger:
+#+begin_src elisp
+(add-to-list sis--minibuffer-triggers
+             (cons 'org-roam-find-file (lambda () 'other)))
+#+end_src
+
+If no trigger returns a none-nil result, english will be used as default.")
+
 (defun sis--minibuffer-setup-handler ()
   "Handler for `minibuffer-setup-hook'."
   (when sis-log-mode
@@ -933,7 +953,14 @@ Only used for `terminal-focus-reporting'."
              (current-buffer)
              sis--buffer-before-command
              this-command))
-  (sis--set-english))
+
+  (let ((res nil))
+    (dolist (trigger sis--minibuffer-triggers)
+      (let ((cmd (car trigger))
+            (detector (cdr trigger)))
+        (if (and (not res) (eq this-command cmd))
+            (setq res (funcall detector)))))
+    (sis--set (or res 'english))))
 
 (defun sis--minibuffer-exit-handler ()
   "Handler for `minibuffer-exit-hook'."
