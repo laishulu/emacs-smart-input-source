@@ -926,7 +926,7 @@ Only used for `terminal-focus-reporting'."
      'normal
      (sis--to-normal-stage))))
 
-(defvar sis--minibuffer-triggers (list)
+(defvar sis-respect-minibuffer-triggers (list)
   "Commands trigger to set input source in minibuffer.
 
 Each trigger should be a cons cell: (cons FN DETECTOR).
@@ -940,7 +940,7 @@ Each trigger should be a cons cell: (cons FN DETECTOR).
 
 Example of adding a trigger:
 #+begin_src elisp
-(add-to-list sis--minibuffer-triggers
+(add-to-list sis-respect-minibuffer-triggers
              (cons 'org-roam-find-file (lambda () 'other)))
 #+end_src
 
@@ -955,7 +955,7 @@ If no trigger returns a none-nil result, english will be used as default.")
              this-command))
 
   (let ((res nil))
-    (dolist (trigger sis--minibuffer-triggers)
+    (dolist (trigger sis-respect-minibuffer-triggers)
       (let ((cmd (car trigger))
             (detector (cdr trigger)))
         (if (and (not res) (eq this-command cmd))
