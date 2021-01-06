@@ -298,7 +298,7 @@ Note:
 | ~sis-inline-not-max-point~            | Insert new line when the whole buffer ends with the region | ~t~     |
 | ~sis-inline-tighten-head-rule~        | Rule to delete the head spaces                             | ~1~     |
 | ~sis-inline-tighten-tail-rule~        | Rule to delete the tail spaces                             | ~1~     |
-| ~sis-inline-single-space-close~       | 1 space to close the region, default is 2 spaces/return    | ~t~     |
+| ~sis-inline-single-space-close~       | 1 space to close the region, default is 2 spaces/return    | ~nil~   |
 | ~sis-inline-with-english~             | enable the ~inline english~ region feature                 | ~t~     |
 | ~sis-inline-with-other~               | enable the ~inline other language~ region feature          | ~nil~   |
 | ~sis-inline-english-activated-hook~   | Hook to run after inline english region activated          | ~nil~   |
