@@ -486,7 +486,8 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
                              ('im-select "im-select.exe")
                              ('fcitx "fcitx-remote")
                              ('fcitx5 "fcitx5-remote")
-                             ('ibus "ibus"))))
+                             ('ibus "ibus")
+                             ('wsl "im-select.exe"))))
 
   (cond
    (; Emacs native input method, set do-get and do-set
@@ -521,6 +522,15 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
                                               nil sis--ism "-c"))
                           ("2" (start-process "set-input-source"
                                               nil sis--ism "-o")))))))
+    (; wsl, set do-get and do-set
+      (eq ism-type 'wsl)
+      (setq sis-do-get (lambda ()
+                        (sis--ensure-dir
+                          (string-trim
+                          (shell-command-to-string "im-select.exe")))))
+      (setq sis-do-set (lambda(source)
+                        (sis--ensure-dir
+                          (call-process "/bin/bash" nil t nil "-c" (concat "im-select.exe " source)))))
    (; ibus, set do-get and do-set
     (eq ism-type 'ibus)
     (setq sis-do-get (lambda ()
