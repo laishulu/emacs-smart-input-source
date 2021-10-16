@@ -486,8 +486,7 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
                              ('im-select "im-select.exe")
                              ('fcitx "fcitx-remote")
                              ('fcitx5 "fcitx5-remote")
-                             ('ibus "ibus")
-                             ('wsl "im-select.exe"))))
+                             ('ibus "ibus"))))
 
   (cond
    (; Emacs native input method, set do-get and do-set
