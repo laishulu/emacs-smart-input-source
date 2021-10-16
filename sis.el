@@ -508,7 +508,12 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
                          (toggle-input-method)))))
    (; for builtin supoort, use the default do-get and do-set
     (memq ism-type (list nil 'emp 'macism 'im-select))
-    t)
+    ; for WSL/Windows Subsystem for Linux, use the default do-get, set do-set
+    (if (eq system-type 'gnu/linux)
+        (setq sis-do-set (lambda(source)
+            (sis--ensure-dir
+              (call-process "/bin/bash" nil t nil "-c" (concat sis--ism " " source)))))
+    t))
    (; fcitx and fcitx5, use the default do-get, set do-set
     (memq ism-type (list 'fcitx 'fcitx5))
     (unless sis-english-source
