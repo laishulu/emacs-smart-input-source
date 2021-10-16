@@ -511,7 +511,7 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
     (if (eq system-type 'gnu/linux)
         (setq sis-do-set (lambda(source)
             (sis--ensure-dir
-              (make-process :name "im" :command (list sis--ism source) :connection-type 'pipe ))))
+              (make-process :name "set-input-source" :command (list sis--ism source) :connection-type 'pipe ))))
     t))
    (; fcitx and fcitx5, use the default do-get, set do-set
     (memq ism-type (list 'fcitx 'fcitx5))
