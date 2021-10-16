@@ -526,15 +526,6 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
                                               nil sis--ism "-c"))
                           ("2" (start-process "set-input-source"
                                               nil sis--ism "-o")))))))
-    (; wsl, set do-get and do-set
-      (eq ism-type 'wsl)
-      (setq sis-do-get (lambda ()
-                        (sis--ensure-dir
-                          (string-trim
-                          (shell-command-to-string "im-select.exe")))))
-      (setq sis-do-set (lambda(source)
-                        (sis--ensure-dir
-                          (call-process "/bin/bash" nil t nil "-c" (concat "im-select.exe " source)))))
    (; ibus, set do-get and do-set
     (eq ism-type 'ibus)
     (setq sis-do-get (lambda ()
