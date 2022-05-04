@@ -502,9 +502,7 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
     (advice-add 'deactivate-input-method :filter-return
                 (lambda (res) (sis--update-state current-input-method) res))
     (setq sis-do-get (lambda() current-input-method))
-    (setq sis-do-set (lambda(source)
-                       (unless (equal source current-input-method)
-                         (toggle-input-method)))))
+    (setq sis-do-set #'activate-input-method))
    (; for builtin supoort, use the default do-get and do-set
     (memq ism-type (list nil 'emp 'macism 'im-select))
     ; for WSL/Windows Subsystem for Linux, use the default do-get, set do-set
