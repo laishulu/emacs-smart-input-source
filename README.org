@@ -27,7 +27,7 @@ source (input method):
 
 * Features
 1. Ease the use of OS-native input source, no need to change use experience.
-2. Ease the use of Emacs-native input source, for further compatibility. 
+2. Ease the use of Emacs-native input source, for further compatibility.
 3. Support GUI Emacs, as well as Terminal Emacs.
 4. Easy to install and configure. No further configuration for
    ~GUI Emacs Mac Port~ with ~Sogou Input~.
@@ -195,7 +195,7 @@ its all in English.
   :config
   ;; For MacOS
   (sis-ism-lazyman-config
-  
+
    ;; English input source may be: "ABC", "US" or another one.
    ;; "com.apple.keylayout.ABC"
    "com.apple.keylayout.US"
@@ -276,7 +276,7 @@ Note:
 | Variable              | Description                                | Default                  |
 |-----------------------+--------------------------------------------+--------------------------|
 | ~sis-english-pattern~ | Pattern to identify a character as English | ~[a-zA-Z]~               |
-| ~sis-other-pattern~   | Pattern to identify a character as other   | ~\cc~ , see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]] |
+| ~sis-other-pattern~   | Pattern to identify a character as other   | ~\cC~ , see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]] |
 | ~sis-blank-pattern~   | Pattern to identify a character as blank   | ~[:blank:]~              |
 |-----------------------+--------------------------------------------+--------------------------|
 
@@ -307,7 +307,7 @@ Note:
 | ~sis-inline-other-deactivated-hook~   | Hook to run after inline other language region deactivated | ~nil~   |
 |---------------------------------------+------------------------------------------------------------+---------|
 
-* How to 
+* How to
 **  How to get the input source id
 After /input source manager/ is configured, you can get your /current
 input source id/ by the command ~sis-get~.
