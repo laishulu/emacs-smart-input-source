@@ -276,7 +276,7 @@ Note:
 | Variable              | Description                                | Default                  |
 |-----------------------+--------------------------------------------+--------------------------|
 | ~sis-english-pattern~ | Pattern to identify a character as English | ~[a-zA-Z]~               |
-| ~sis-other-pattern~   | Pattern to identify a character as other   | ~\cC~ , see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]] |
+| ~sis-other-pattern~   | Pattern to identify a character as other   | ~\cc~ , see [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Backslash.html][emacs manual]] |
 | ~sis-blank-pattern~   | Pattern to identify a character as blank   | ~[:blank:]~              |
 |-----------------------+--------------------------------------------+--------------------------|
 
