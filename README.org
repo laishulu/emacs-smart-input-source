@@ -131,8 +131,8 @@ Note:
 *** ~w32~
 ~Emacs 28+~ in Windows provide APIs to switch imput method directly without
 emploring external tools. ~sis~ has builtin support for those APIs under the ISM
-type of ~w32~, which is auto detected and configured. The follow codes actually do
-nothing but make you feel better.
+type of ~w32~, which is auto detected and configured. So the follow codes are
+not required actually.
 #+BEGIN_SRC lisp
 (sis-ism-lazyman-config nil nil 'w32)
 #+END_SRC
