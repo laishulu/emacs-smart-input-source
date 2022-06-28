@@ -254,6 +254,8 @@ Possible values:
 (declare-function mac-input-source "ext:macfns.c" (&optional SOURCE FORMAT) t)
 (declare-function mac-select-input-source "ext:macfns.c"
                   (SOURCE &optional SET-KEYBOARD-LAYOUT-OVERRIDE-P) t)
+(declare-function w32-get-ime-open-status "ext:w32fns.c" () t)
+(declare-function w32-set-ime-open-status "ext:w32fns.c" (status) t)
 (defvar transient--showp)
 (defvar evil-normal-state-map)
 
@@ -302,13 +304,20 @@ meanings as `string-match-p'."
     (let ((ism-path (executable-find sis-external-ism)))
       (when ism-path (setq sis--ism ism-path))))
 
-  ;; try EMP when do-get or do-set is missing
+  ;; try EMP/w32 when do-get or do-set is missing
   (unless (and (functionp sis-do-get)
                (functionp sis-do-set))
-    (when (and (string= (window-system) "mac")
-               (fboundp 'mac-input-source))
+    (cond
+     ((and (string= (window-system) "mac")
+           (fboundp 'mac-input-source))
       ;; EMP
-      (setq sis--ism 'emp)))
+      (setq sis--ism 'emp))
+     ((and (string= (window-system) "w32")
+           (fboundp 'w32-get-ime-open-status))
+      ;; w32, input sources are fixed
+      (setq sis-english-source nil)
+      (setq sis-other-source t)
+      (setq sis--ism 'w32))))
 
   ;; make `sis-do-set' and `sis-do-get'
   (when sis--ism
@@ -367,6 +376,9 @@ meanings as `string-match-p'."
    (; EMP
     (equal sis--ism 'emp)
     #'mac-input-source)
+   (;w32
+    (equal sis--ism 'w32)
+    #'w32-get-ime-open-status)
    (; external ism
     sis--ism
     (lambda ()
@@ -379,6 +391,9 @@ meanings as `string-match-p'."
    (; EMP
     (equal sis--ism 'emp)
     (lambda (source) (mac-select-input-source source)))
+   (;w32
+    (equal sis--ism 'w32)
+    #'w32-set-ime-open-status)
    (; external ism
     sis--ism
     (lambda (source)
@@ -469,10 +484,10 @@ SOURCE should be 'english or 'other."
 
 Run after the modes may have no effect.
 ENGLISH-SOURCE: ENGLISH input source, nil means default,
-                ignored by ISM-TYPE of 'fcitx, 'fcitx5, 'native.
+                ignored by ISM-TYPE of 'fcitx, 'fcitx5, 'native, 'w32.
 OTHER-SOURCE: OTHER language input source, nil means default,
-              ignored by ISM-TYPE of 'fcitx, 'fcitx5.
-TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
+              ignored by ISM-TYPE of 'fcitx, 'fcitx5, 'w32.
+TYPE: TYPE can be 'native, 'w32, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
       nil TYPE fits both 'emp and 'macism."
   (when english-source
     (setq sis-english-source english-source))
@@ -482,6 +497,7 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
     (setq sis-external-ism (pcase ism-type
                              ('native 'native)
                              ('emp 'emp)
+                             ('w32 'w32)
                              ('macism "macism")
                              ('im-select "im-select.exe")
                              ('fcitx "fcitx-remote")
@@ -504,7 +520,7 @@ TYPE: TYPE can be 'native, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
     (setq sis-do-get (lambda() current-input-method))
     (setq sis-do-set #'activate-input-method))
    (; for builtin supoort, use the default do-get and do-set
-    (memq ism-type (list nil 'emp 'macism 'im-select))
+    (memq ism-type (list nil 'emp 'w32 'macism 'im-select))
     ; for WSL/Windows Subsystem for Linux, use the default do-get, set do-set
     (if (eq system-type 'gnu/linux)
         (setq sis-do-set (lambda(source)

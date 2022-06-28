@@ -128,6 +128,15 @@ Note:
   #+END_QUOTE
 
 ** Microsoft Windows
+*** ~w32~
+~Emacs 28+~ in Windows provide APIs to switch imput method directly without
+emploring external tools. ~sis~ has builtin support for those APIs under the ISM
+type of ~w32~, which is auto detected and configured. The follow codes actually do
+nothing but make you feel better.
+#+BEGIN_SRC lisp
+(sis-ism-lazyman-config nil nil 'w32)
+#+END_SRC
+
 *** ~im-select~
 [[https://github.com/daipeihust/im-select][im-select]] can be used as a drop-in replacement of ~macism~ in Microsoft Windows.
 #+BEGIN_SRC lisp
