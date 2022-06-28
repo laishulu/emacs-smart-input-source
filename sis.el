@@ -860,9 +860,9 @@ Only used for `terminal-focus-reporting'."
 
 (defvar sis-prefix-override-buffer-disable-predicates
   (list 'minibufferp
-        (;; magit revision
+        (;; magit
          lambda (buffer)
-         (sis--string-match-p "^magit-revision:" (buffer-name buffer)))
+         (sis--string-match-p "^magit.*:" (buffer-name buffer)))
         (;; special buffer
          lambda (buffer)
          (and (sis--string-match-p "^\*" (buffer-name buffer))
