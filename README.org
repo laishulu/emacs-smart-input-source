@@ -134,7 +134,7 @@ emploring external tools. ~sis~ has builtin support for those APIs under the ISM
 type of ~w32~, which is auto detected and configured. So the follow codes are
 not required actually.
 #+BEGIN_SRC lisp
-(sis-ism-lazyman-config nil nil 'w32)
+(sis-ism-lazyman-config nil t 'w32)
 #+END_SRC
 
 *** ~im-select~
