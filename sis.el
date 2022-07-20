@@ -630,6 +630,13 @@ way."
 
 (defun sis--update-cursor-color()
   "Update cursor color according to input source."
+  ;; save original cursor color
+  (unless sis-default-cursor-color
+    (setq sis-default-cursor-color
+          (or (when (display-graphic-p)
+                (or (cdr (assq 'cursor-color default-frame-alist))
+                    (face-background 'cursor)))
+              "white")))
   ;; for GUI
   (when (display-graphic-p)
     ;;
@@ -658,13 +665,6 @@ way."
 
     ;; auto refresh input source
     (sis--try-enable-auto-refresh-mode)
-    ;; save original cursor color
-    (unless sis-default-cursor-color
-      (setq sis-default-cursor-color
-            (or (when (display-graphic-p)
-                  (or (cdr (assq 'cursor-color default-frame-alist))
-                      (face-background 'cursor)))
-                "white")))
     (advice-add 'set-cursor-color :filter-args #'sis--set-cursor-color-advice)
     (add-hook 'sis-change-hook #'sis--update-cursor-color))
    (; turn off the mode
