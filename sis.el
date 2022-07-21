@@ -868,6 +868,8 @@ Only used for `terminal-focus-reporting'."
          (and (sis--string-match-p "^\*" (buffer-name buffer))
               (not (sis--string-match-p "^\*new\*"
                                         (downcase (buffer-name buffer))))
+              (not (sis--string-match-p "^\*dashboard\*"
+                                        (downcase (buffer-name buffer))))
               (not (sis--string-match-p "^\*scratch\*"
                                         (downcase (buffer-name buffer)))))))
   "Predicates on buffers to disable prefix overriding.")
