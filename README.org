@@ -14,7 +14,7 @@ source (input method):
   5. Respect buffer: recover buffer input source when it regain focus.
 - A buffer local mode: ~sis-context-mode~ to switch input source smarted
   according to context. It also has a global version ~sis-global-context-mode~
-  to enable the mode for all buffers. When to switch input source by following
+  to enable the mode for all buffers. When to switch input source according to
   context can be configured easily by a variable, whose default value
   indicates when entering evil insert mode.
 - A buffer local mode: ~sis-inline-mode~ to enable the
@@ -197,7 +197,7 @@ its all in English.
 #+BEGIN_SRC lisp
 (use-package sis
   ;; :hook
-  ;; enable the /follow context/ and /inline region/ mode for specific buffers
+  ;; enable the /context/ and /inline region/ mode for specific buffers
   ;; (((text-mode prog-mode) . sis-context-mode)
   ;;  ((text-mode prog-mode) . sis-inline-mode))
 
@@ -228,11 +228,31 @@ Tips:
 1. For ~spacemacs~, if it works in the ~hybrid~ mode, some of the ~evil~ related
    features may not work. Change to ~vim~ mode instead.
 
-**  Default behavior for /inline english mode/ and /follow context mode/
-You can change some of the behaviors by configuring related variables, note:
-~inline other language~ feature is turned off by default.
+**  About /inline english mode/ and /context mode/
+*** Use case 1
+For example final result ~中文 some english text 中文~:
+input ~中文<spc><spc>some english text<spc><spc>中文~
+*** Use case 2
+For example final result ~中文some english text中文~:
+input ~中文<spc>some english text<spc><ret>中文~
+*** Use case 3
+If you don't want to support english phrase with blanks in it, you can input in
+an even esier way. First configure with the following codes.
+#+begin_src
+(setq sis-inline-single-space-close t)
+(setq sis-inline-tighten-head-rule 0)
+(setq sis-inline-tighten-tail-rule 0)
+#+end_src
+Then for example final result ~中文 english 中文~:
+just input expactly as the final result itself: ~中文<spc>english<spc>中文~,
+that's it.
+
+Default behavior is explained in detail in the following figure.
 #+CAPTION: Smart Input Source
 [[./screenshots/sis.png]]
+
+You can change some of the behaviors by configuring related variables, note:
+~inline other language~ feature is turned off by default.
 
 * Variables and commands
 ** About input source
@@ -289,7 +309,7 @@ Note:
 | ~sis-blank-pattern~   | Pattern to identify a character as blank   | ~[:blank:]~              |
 |-----------------------+--------------------------------------------+--------------------------|
 
-** About /follow context mode/
+** About /context mode/
 | Variable                      | Description                                    | Default          |
 |-------------------------------+------------------------------------------------+------------------|
 | ~sis-context-detectors~       | Detectors to detect the context                | see variable doc |
