@@ -210,21 +210,23 @@ FN is invoked.")
 Insert new line when the whole buffer ends with the region, to avoid
 autocomplete rendering a large area with the region background.")
 
-(defvar sis-inline-tighten-head-rule 1
+(defvar sis-inline-tighten-head-rule 'one
   "Rule to delete head spaces.
 
 Possible values:
-1: delete 1 space if exists
 0: don't delete space
-'all: delete all space.")
+1: delete 1 space if exists
+'zero: always ensure no space
+'one: always ensure one space")
 
-(defvar sis-inline-tighten-tail-rule 1
+(defvar sis-inline-tighten-tail-rule 'one
   "Rule to delete tail spaces.
 
 Possible values:
-1: delete 1 space if exists
 0: don't delete space
-'all: delete all space.")
+1: delete 1 space if exists
+'zero: always ensure no space
+'one: always ensure one space")
 
 (defvar sis-inline-single-space-close nil
   "Single space closes the inline region.")
@@ -1520,25 +1522,27 @@ START: start position of the inline region."
     (cond
      (; inline english region
       (eq sis--inline-lang 'english)
+      (sis-set-other))
       ;; [other lang][blank inline overlay]^
       ;; [overlay with trailing blank]^
-      (when (or (and (= back-to (sis--inline-overlay-start))
-                     (sis--other-p back-char))
-                (and (> back-to (sis--inline-overlay-start))
-                     (< back-to (sis--inline-overlay-end))
-                     (< back-to (point))))
-        (sis-set-other)))
+      ;; (when (or (and (= back-to (sis--inline-overlay-start))
+      ;;               (sis--other-p back-char))
+      ;;          (and (> back-to (sis--inline-overlay-start))
+      ;;               (< back-to (sis--inline-overlay-end))
+      ;;               (< back-to (point))))
+      ;;  (sis-set-other)))
 
-     (; inline english region
+     (; inline other lang region
       (eq sis--inline-lang 'other)
+      (sis-set-english)))
       ;; [not-other][blank inline overlay]^
       ;; [overlay with trailing blank]^
-      (when (or (and (= back-to (sis--inline-overlay-start))
-                     (sis--not-other-p back-char))
-                (and (> back-to (sis--inline-overlay-start))
-                     (< back-to (sis--inline-overlay-end))
-                     (< back-to (point))))
-        (sis-set-english))))
+      ;; (when (or (and (= back-to (sis--inline-overlay-start))
+      ;;                (sis--not-other-p back-char))
+      ;;           (and (> back-to (sis--inline-overlay-start))
+      ;;                (< back-to (sis--inline-overlay-end))
+      ;;                (< back-to (point))))
+      ;;   (sis-set-english))))
 
     ;; only tighten for none-blank inline region
     (when (and (<= (point) (sis--inline-overlay-end))
@@ -1548,18 +1552,26 @@ START: start position of the inline region."
         (goto-char (sis--inline-overlay-end))
         (let* ((tighten-back-detect (sis--back-detect-chars))
                (tighten-back-to (sis-back-detect-to tighten-back-detect)))
-          (when (and (< tighten-back-to (sis--inline-overlay-end))
+          (when (and (<= tighten-back-to (sis--inline-overlay-end))
                      (> tighten-back-to (sis--inline-overlay-start)))
             (cond
-             (; just delete one space
-              (eq sis-inline-tighten-tail-rule 1)
-              (delete-char -1))
-             (; don't delete space
+             (; delete 0 space
               (eq sis-inline-tighten-tail-rule 0)
               t)
-             (; don't delete space
-              (eq sis-inline-tighten-tail-rule 'all)
-              (delete-region (point) tighten-back-to))))))
+             (; delete 1 space
+              (eq sis-inline-tighten-tail-rule 1)
+              (delete-char -1))
+             (; always ensure 0 space
+              (eq sis-inline-tighten-tail-rule 'zero)
+              (delete-region (point) tighten-back-to))
+             (; always ensure 1 space
+              (eq sis-inline-tighten-tail-rule 'one)
+              (delete-region (point) tighten-back-to)
+              (insert-char ?\s))))))
+
+      ;; move point because of insertion of text adjacent to the saved point
+      (when (eq sis-inline-tighten-tail-rule 'one)
+        (forward-char))
 
       (save-excursion
         (goto-char (sis--inline-overlay-start))
@@ -1567,15 +1579,19 @@ START: start position of the inline region."
                (tighten-fore-to (sis-fore-detect-to tighten-fore-detect)))
           (when (> tighten-fore-to (sis--inline-overlay-start))
             (cond
-             (; just delete one space
-              (eq sis-inline-tighten-head-rule 1)
-              (delete-char 1))
-             (; don't delete space
+             (; delete 0 space
               (eq sis-inline-tighten-head-rule 0)
               t)
-             (; don't delete space
-              (eq sis-inline-tighten-head-rule 'all)
-              (delete-region (point) tighten-fore-to))))))))
+             (; delete 1 space
+              (eq sis-inline-tighten-head-rule 1)
+              (delete-char 1))
+             (; always ensure 0 space
+              (eq sis-inline-tighten-head-rule 'zero)
+              (delete-region (point) tighten-fore-to))
+             (; always ensure 1 space
+              (eq sis-inline-tighten-head-rule 'one)
+              (delete-region (point) tighten-fore-to)
+              (insert-char ?\s))))))))
   (delete-overlay sis--inline-overlay)
   (setq sis--inline-overlay nil)
   (pcase sis--inline-lang

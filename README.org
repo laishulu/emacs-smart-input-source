@@ -228,42 +228,11 @@ Tips:
 1. For ~spacemacs~, if it works in the ~hybrid~ mode, some of the ~evil~ related
    features may not work. Change to ~vim~ mode instead.
 
-**  About /inline english mode/ and /context mode/
-*** Use case 1 and 2
-If you want to support english phrase with blanks in it.
-**** Use case 1
-For example final result ~中文 some english text 中文~:
-input ~中文<spc><spc>some english text<spc><spc>中文~
-**** Use case 2
-For example final result ~中文some english text中文~:
-input ~中文<spc>some english text<spc><ret>中文~
-*** Use case 3 and 4
-If you don't want to support english phrase with blanks in it, you can input in
-an even esier way.
-**** Use case 3
-For example final result ~中文 english 中文~:
-First configure with the following codes.
-#+begin_src
-(setq sis-inline-single-space-close t)
-(setq sis-inline-tighten-head-rule 0)
-(setq sis-inline-tighten-tail-rule 0)
-#+end_src
-Then just input expactly as the final result itself: ~中文<spc>english<spc>中
-文~.
-**** Use case 4
-For example final result ~中文english中文~:
-First configure with the following codes.
-#+begin_src
-(setq sis-inline-single-space-close t)
-#+end_src
-Then input: ~中文<spc>english<spc>中文~.
-*** Misc
-Default behavior is explained in detail in the following figure.
-#+CAPTION: Smart Input Source
-[[./screenshots/sis.png]]
+**  About /inline english mode/
 
-You can change some of the behaviors by configuring related variables, note:
-~inline other language~ feature is turned off by default.
+For example final result ~中文 some english text 中文~,
+just input ~中文<spc>some english text<spc><RET>中文~, and no need to switch
+ISM manually.
 
 * Variables and commands
 ** About input source
@@ -336,8 +305,8 @@ Note:
 |---------------------------------------+------------------------------------------------------------+---------|
 | ~sis-inline-face~                     | Face for the inline region overlay                         |         |
 | ~sis-inline-not-max-point~            | Insert new line when the whole buffer ends with the region | ~t~     |
-| ~sis-inline-tighten-head-rule~        | Rule to delete the head spaces                             | ~1~     |
-| ~sis-inline-tighten-tail-rule~        | Rule to delete the tail spaces                             | ~1~     |
+| ~sis-inline-tighten-head-rule~        | Rule to delete the head spaces                             | ~'one~  |
+| ~sis-inline-tighten-tail-rule~        | Rule to delete the tail spaces                             | ~'one~  |
 | ~sis-inline-single-space-close~       | 1 space to close the region, default is 2 spaces/return    | ~nil~   |
 | ~sis-inline-with-english~             | enable the ~inline english~ region feature                 | ~t~     |
 | ~sis-inline-with-other~               | enable the ~inline other language~ region feature          | ~nil~   |
