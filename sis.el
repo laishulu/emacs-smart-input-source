@@ -862,13 +862,16 @@ Only used for `terminal-focus-reporting'."
 
 (defvar sis-prefix-override-buffer-disable-predicates
   (list 'minibufferp
+        (;; read only buffer
+         lambda ()
+         buffer-read-only)
         (;; magit
-         lambda (buffer)
-         (sis--string-match-p "^magit.*:" (buffer-name buffer)))
+         lambda ()
+         (sis--string-match-p "^magit.*:" (buffer-name)))
         (;; special buffer
-         lambda (buffer)
+         lambda ()
          (let ((normalized-buffer-name
-                (downcase (string-trim (buffer-name buffer)))))
+                (downcase (string-trim (buffer-name)))))
            (and (sis--string-match-p "^\*" normalized-buffer-name)
                 (not (sis--string-match-p "^\*new\*" normalized-buffer-name))
                 (not (sis--string-match-p "^\*dashboard\*"
@@ -877,11 +880,11 @@ Only used for `terminal-focus-reporting'."
                                           normalized-buffer-name))))))
   "Predicates on buffers to disable prefix overriding.")
 
-(defsubst sis--prefix-override-buffer-disable-p (buffer)
+(defsubst sis--prefix-override-buffer-disable-p ()
   "Final predicate on disabling prefix override in BUFFER."
   (let ((value nil))
     (dolist (p sis-prefix-override-buffer-disable-predicates)
-      (setq value (or value (funcall p buffer))))
+      (setq value (or value (funcall p))))
     value))
 
 (defun sis--respect-post-cmd-timer-fn ()
@@ -916,7 +919,7 @@ Only used for `terminal-focus-reporting'."
 
   ;; disable prefix override for current buffer
   (when (and (not (local-variable-p 'sis--prefix-override-map-enable))
-             (sis--prefix-override-buffer-disable-p (current-buffer)))
+             (sis--prefix-override-buffer-disable-p))
     (sis-prefix-override-buffer-disable))
 
   ;; re-enable if prefix override is disabled temporarily
