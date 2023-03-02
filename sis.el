@@ -867,13 +867,14 @@ Only used for `terminal-focus-reporting'."
          (sis--string-match-p "^magit.*:" (buffer-name buffer)))
         (;; special buffer
          lambda (buffer)
-         (and (sis--string-match-p "^\*" (buffer-name buffer))
-              (not (sis--string-match-p "^\*new\*"
-                                        (downcase (buffer-name buffer))))
-              (not (sis--string-match-p "^\*dashboard\*"
-                                        (downcase (buffer-name buffer))))
-              (not (sis--string-match-p "^\*scratch\*"
-                                        (downcase (buffer-name buffer)))))))
+         (let ((normalized-buffer-name
+                (downcase (string-trim (buffer-name buffer)))))
+           (and (sis--string-match-p "^\*" normalized-buffer-name)
+                (not (sis--string-match-p "^\*new\*" normalized-buffer-name))
+                (not (sis--string-match-p "^\*dashboard\*"
+                                          normalized-buffer-name))
+                (not (sis--string-match-p "^\*scratch\*"
+                                          normalized-buffer-name))))))
   "Predicates on buffers to disable prefix overriding.")
 
 (defsubst sis--prefix-override-buffer-disable-p (buffer)
