@@ -94,7 +94,7 @@ Each trigger should be a cons cell: (cons FN DETECTOR).
 Example of adding a trigger:
 #+begin_src elisp
 (add-to-list 'sis-respect-minibuffer-triggers
-             (cons 'org-roam-find-file (lambda () 'other)))
+             (cons 'org-roam-node-find (lambda () 'other)))
 #+end_src
 
 If no trigger returns a none-nil result, english will be used as default.")
