@@ -345,7 +345,7 @@ Customize ~sis-context-detectors~ like the following codes:
                'other))
 #+end_src
 ** Auto set input source in /minibuffer/ of a specific command.
-Customize ~sis-respect-minibuffer-triggers~ like the following codes:
+Customize ~sis-respect-minibuffer-triggers~.
 
 Here is an example to automatically switch to /other/ input resource in
 /minibuffer/ of command:
