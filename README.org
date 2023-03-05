@@ -317,11 +317,11 @@ Note:
 |---------------------------------------+------------------------------------------------------------+---------|
 
 * How to
-**  How to get the input source id
+**  Get the input source id
 After /input source manager/ is configured, you can get your /current
 input source id/ by the command ~sis-get~.
 
-**  How to inform the package of the input source change
+**  Inform the package of the input source change
 1. If your input source is switched from ~sis~, then everything
    should be OK naturally. And your ~sis-auto-refresh-seconds~
    can even be set to ~nil~.
@@ -332,15 +332,24 @@ input source id/ by the command ~sis-get~.
    inform the package by doing anything in Emacs to exit the long idle period,
    or invoke the command ~sis-get~ directly.
 
-** How to auto set /other/ input source for /org capture/ buffer
+** Auto set /other/ input source for /org capture/ buffer
 #+begin_src elisp
 (add-hook 'org-capture-mode-hook #'sis-set-other)
 #+end_src
 
-** How to customize my own context detector
+** Customize my own context detector
 Customize ~sis-context-detectors~ like the following codes:
 #+begin_src elisp
 (add-to-list 'sis-context-detectors
              (lambda (&rest _)
                'other))
+#+end_src
+** Auto set input source in /minibuffer/ of a specific command.
+Customize ~sis-respect-minibuffer-triggers~ like the following codes:
+
+Here is an example to automatically switch to /other/ input resource in
+/minibuffer/ of command:
+#+begin_src elisp
+(add-to-list 'sis-respect-minibuffer-triggers
+             (cons 'org-roam-node-find (lambda () 'other)))
 #+end_src
