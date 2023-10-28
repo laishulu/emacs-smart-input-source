@@ -514,11 +514,15 @@ TYPE: TYPE can be 'native, 'w32, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ib
     ;; Don't use `input-method-activate-hook',
     ;; because evil will make a buffer local one
     (advice-add 'activate-input-method :filter-return
-                (lambda (res) (sis--update-state current-input-method) res))
+                (lambda (res)
+                  (sis--update-state (sis--normalize-to-lang current-input-method))
+                  res))
     ;; Don't use `input-method-deactivate-hook',
     ;; because evil will make a buffer local one
     (advice-add 'deactivate-input-method :filter-return
-                (lambda (res) (sis--update-state current-input-method) res))
+                (lambda (res)
+                  (sis--update-state (sis--normalize-to-lang current-input-method))
+                  res))
     (setq sis-do-get (lambda() current-input-method))
     (setq sis-do-set #'activate-input-method))
    (; for builtin supoort, use the default do-get and do-set
