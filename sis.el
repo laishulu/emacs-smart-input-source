@@ -666,7 +666,8 @@ way."
     sis-global-cursor-color-mode
 
     ;; auto refresh input source
-    (sis--try-enable-auto-refresh-mode)
+    (unless (eq sis-external-ism 'native)
+      (sis--try-enable-auto-refresh-mode))
     (advice-add 'set-cursor-color :filter-args #'sis--set-cursor-color-advice)
     (add-hook 'sis-change-hook #'sis--update-cursor-color))
    (; turn off the mode
@@ -1028,7 +1029,8 @@ Only used for `terminal-focus-reporting'."
     sis-global-respect-mode
     (sis--ensure-ism
      ;; /respect mode/ depends on /auto refresh mode/
-     (sis--try-enable-auto-refresh-mode)
+     (unless (eq sis-external-ism 'native)
+       (sis--try-enable-auto-refresh-mode))
      ;; set english when mode enabled
      (when sis-respect-start (sis--set sis-respect-start))
 
