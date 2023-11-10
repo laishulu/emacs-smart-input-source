@@ -217,7 +217,10 @@ Possible values:
 0: don't delete space
 1: delete 1 space if exists
 'zero: always ensure no space
-'one: always ensure one space")
+'one: always ensure one space
+custom function: the cursor will be moved to the beginning of the inline region,
+                   and the function will be called with an argument which is the
+                   end position of the leading whitespaces in the inline region.")
 
 (defvar sis-inline-tighten-tail-rule 'one
   "Rule to delete tail spaces.
@@ -226,7 +229,10 @@ Possible values:
 0: don't delete space
 1: delete 1 space if exists
 'zero: always ensure no space
-'one: always ensure one space")
+'one: always ensure one space
+custom function: the cursor will be moved to the end of the inline region, and
+                   the function will be called with an argument which is the
+                   beginning of the tailing whitespaces in the inline region.")
 
 (defvar sis-inline-single-space-close nil
   "Single space closes the inline region.")
@@ -514,11 +520,15 @@ TYPE: TYPE can be 'native, 'w32, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ib
     ;; Don't use `input-method-activate-hook',
     ;; because evil will make a buffer local one
     (advice-add 'activate-input-method :filter-return
-                (lambda (res) (sis--update-state current-input-method) res))
+                (lambda (res)
+                  (sis--update-state (sis--normalize-to-lang current-input-method))
+                  res))
     ;; Don't use `input-method-deactivate-hook',
     ;; because evil will make a buffer local one
     (advice-add 'deactivate-input-method :filter-return
-                (lambda (res) (sis--update-state current-input-method) res))
+                (lambda (res)
+                  (sis--update-state (sis--normalize-to-lang current-input-method))
+                  res))
     (setq sis-do-get (lambda() current-input-method))
     (setq sis-do-set #'activate-input-method))
    (; for builtin supoort, use the default do-get and do-set
@@ -666,7 +676,8 @@ way."
     sis-global-cursor-color-mode
 
     ;; auto refresh input source
-    (sis--try-enable-auto-refresh-mode)
+    (unless (eq sis-external-ism 'native)
+      (sis--try-enable-auto-refresh-mode))
     (advice-add 'set-cursor-color :filter-args #'sis--set-cursor-color-advice)
     (add-hook 'sis-change-hook #'sis--update-cursor-color))
    (; turn off the mode
@@ -1028,7 +1039,8 @@ Only used for `terminal-focus-reporting'."
     sis-global-respect-mode
     (sis--ensure-ism
      ;; /respect mode/ depends on /auto refresh mode/
-     (sis--try-enable-auto-refresh-mode)
+     (unless (eq sis-external-ism 'native)
+       (sis--try-enable-auto-refresh-mode))
      ;; set english when mode enabled
      (when sis-respect-start (sis--set sis-respect-start))
 
@@ -1571,7 +1583,10 @@ START: start position of the inline region."
              (; always ensure 1 space
               (eq sis-inline-tighten-tail-rule 'one)
               (delete-region (point) tighten-back-to)
-              (insert-char ?\s))))))
+              (insert-char ?\s))
+             (;; handled by custom function
+              (functionp sis-inline-tighten-tail-rule)
+              (funcall sis-inline-tighten-tail-rule tighten-back-to))))))
 
       ;; move point because of insertion of text adjacent to the saved point
       (when (eq sis-inline-tighten-tail-rule 'one)
@@ -1595,7 +1610,11 @@ START: start position of the inline region."
              (; always ensure 1 space
               (eq sis-inline-tighten-head-rule 'one)
               (delete-region (point) tighten-fore-to)
-              (insert-char ?\s))))))))
+              (insert-char ?\s))
+             (; handled by custom function
+              (functionp sis-inline-tighten-head-rule)
+              (funcall sis-inline-tighten-head-rule tighten-fore-to))
+             ))))))
   (delete-overlay sis--inline-overlay)
   (setq sis--inline-overlay nil)
   (pcase sis--inline-lang
