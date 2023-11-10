@@ -1,4 +1,4 @@
-;;; sis.el --- Less manual switch for native or OS input source (input method).
+;;; sis.el --- Less manual switch for native or OS input source (input method). -*- lexical-binding: t; -*-
 
 ;; URL: https://github.com/laishulu/emacs-smart-input-source
 ;; Created: March 27th, 2020
@@ -1605,6 +1605,5 @@ START: start position of the inline region."
 (provide 'sis)
 ;; Local Variables:
 ;; coding: utf-8
-;; lexical-binding: t
 ;; End:
 ;;; sis.el ends here
