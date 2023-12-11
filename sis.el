@@ -220,7 +220,8 @@ Possible values:
 'one: always ensure one space
 custom function: the cursor will be moved to the beginning of the inline region,
                    and the function will be called with an argument which is the
-                   end position of the leading whitespaces in the inline region.")
+                   end position of the leading whitespaces in the inline region.
+")
 
 (defvar sis-inline-tighten-tail-rule 'one
   "Rule to delete tail spaces.
@@ -268,7 +269,7 @@ custom function: the cursor will be moved to the end of the inline region, and
 (defvar evil-normal-state-map)
 
 (defun sis--do-nothing-advice (&rest _)
-    "Advice to make existing function do nothing.")
+  "Advice to make existing function do nothing.")
 
 (defun sis--original-advice (fn &rest args)
   "Advice to override existing advice on FN with ARGS."
@@ -495,8 +496,8 @@ ENGLISH-SOURCE: ENGLISH input source, nil means default,
                 ignored by ISM-TYPE of 'fcitx, 'fcitx5, 'native, 'w32.
 OTHER-SOURCE: OTHER language input source, nil means default,
               ignored by ISM-TYPE of 'fcitx, 'fcitx5, 'w32.
-TYPE: TYPE can be 'native, 'w32, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ibus.
-      nil TYPE fits both 'emp and 'macism."
+TYPE: TYPE can be 'native, 'w32, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5,
+      'ibus. nil TYPE fits both 'emp and 'macism."
   (when english-source
     (setq sis-english-source english-source))
   (when other-source
@@ -521,24 +522,30 @@ TYPE: TYPE can be 'native, 'w32, 'emp, 'macism, 'im-select, 'fcitx, 'fcitx5, 'ib
     ;; because evil will make a buffer local one
     (advice-add 'activate-input-method :filter-return
                 (lambda (res)
-                  (sis--update-state (sis--normalize-to-lang current-input-method))
+                  (sis--update-state (sis--normalize-to-lang
+                                      current-input-method))
                   res))
     ;; Don't use `input-method-deactivate-hook',
     ;; because evil will make a buffer local one
     (advice-add 'deactivate-input-method :filter-return
                 (lambda (res)
-                  (sis--update-state (sis--normalize-to-lang current-input-method))
+                  (sis--update-state (sis--normalize-to-lang
+                                      current-input-method))
                   res))
     (setq sis-do-get (lambda() current-input-method))
     (setq sis-do-set #'activate-input-method))
    (; for builtin supoort, use the default do-get and do-set
     (memq ism-type (list nil 'emp 'w32 'macism 'im-select))
-    ; for WSL/Windows Subsystem for Linux, use the default do-get, set do-set
-    (if (eq system-type 'gnu/linux)
-        (setq sis-do-set (lambda(source)
-            (sis--ensure-dir
-              (make-process :name "set-input-source" :command (list sis--ism source) :connection-type 'pipe ))))
-    t))
+
+    (; for WSL/Windows Subsystem for Linux, use the default do-get, set do-set
+     if (eq system-type 'gnu/linux)
+     (setq sis-do-set
+           (lambda(source)
+             (sis--ensure-dir
+              (make-process :name "set-input-source"
+                            :command (list sis--ism source)
+                            :connection-type 'pipe ))))
+     t))
    (; fcitx and fcitx5, use the default do-get, set do-set
     (memq ism-type (list 'fcitx 'fcitx5))
     (unless sis-english-source
@@ -761,9 +768,9 @@ Possible values: 'normal, 'prefix, 'sequence.")
 (defun sis--prefix-override-recap-do ()
   "Recap prefix key override."
   (add-to-ordered-list
-     'emulation-mode-map-alists
-     'sis--prefix-override-map-alist
-     sis--prefix-override-order))
+   'emulation-mode-map-alists
+   'sis--prefix-override-map-alist
+   sis--prefix-override-order))
 
 (defun sis--prefix-override-recap-advice (fn &rest args)
   "Advice for FN of `prefix-override-recap-triggers' with ARGS."
@@ -1022,7 +1029,7 @@ Only used for `terminal-focus-reporting'."
                 #'sis--original-advice)
     (when sis-respect-evil-normal-escape
       (define-key evil-normal-state-map
-        (kbd "<escape>") #'sis-set-english))))
+                  (kbd "<escape>") #'sis-set-english))))
 
 ;;;###autoload
 (define-minor-mode sis-global-respect-mode
@@ -1085,7 +1092,7 @@ Only used for `terminal-focus-reporting'."
                 ,(let ((keymap (make-sparse-keymap)))
                    (dolist (prefix sis-prefix-override-keys)
                      (define-key keymap
-                       (kbd prefix) #'sis--prefix-override-handler))
+                                 (kbd prefix) #'sis--prefix-override-handler))
                    keymap))))
 
        (setq sis--prefix-override-map-enable t)
@@ -1299,7 +1306,7 @@ If POSITION is not provided, then default to be the current position."
   "Switch input source smartly according to context."
   :init-value nil
   (cond
-   (; turn of the mode
+   (; turn on the mode
     sis-context-mode
     (sis--ensure-ism
      (dolist (hook sis-context-hooks)
@@ -1331,16 +1338,18 @@ If POSITION is not provided, then default to be the current position."
            (advice-add (eval trigger-fn) :around (intern advice-name)))))))
    (; turn off the mode
     (not sis-context-mode)
-    (dolist (hook sis-context-hooks)
-      (remove-hook hook #'sis-context nil))
+    (dolist (buf (buffer-list))
+      (with-current-buffer buf
+        (dolist (hook sis-context-hooks)
+          (remove-hook hook #'sis-context nil))))
     (dolist (trigger sis-context-triggers)
       (let ((trigger-fn (eval (nth 0 trigger)))
-        ;; delete advices with property of 'sis--context-trigger-advice
-        (advice-mapc
-         (lambda (advice _)
-           (when (get (intern advice) 'sis--context-trigger-advice)
-             (advice-remove trigger-fn advice))
-           trigger-fn))))))))
+            ;; delete advices with property of 'sis--context-trigger-advice
+            (advice-mapc
+             (lambda (advice _)
+               (when (get (intern advice) 'sis--context-trigger-advice)
+                 (advice-remove trigger-fn advice))
+               trigger-fn))))))))
 
 ;;;###autoload
 (define-globalized-minor-mode
@@ -1462,9 +1471,9 @@ START: start position of the inline region."
    (overlay-put sis--inline-overlay 'keymap
                 (let ((keymap (make-sparse-keymap)))
                   (define-key keymap (kbd "RET")
-                    #'sis--inline-ret-check-to-deactivate)
+                              #'sis--inline-ret-check-to-deactivate)
                   (define-key keymap (kbd "<return>")
-                    #'sis--inline-ret-check-to-deactivate)
+                              #'sis--inline-ret-check-to-deactivate)
                   keymap))
    (add-hook 'post-command-hook #'sis--inline-fly-check-deactivate nil t)
    (sis--set sis--inline-lang))
@@ -1539,26 +1548,26 @@ START: start position of the inline region."
      (; inline english region
       (eq sis--inline-lang 'english)
       (sis-set-other))
-      ;; [other lang][blank inline overlay]^
-      ;; [overlay with trailing blank]^
-      ;; (when (or (and (= back-to (sis--inline-overlay-start))
-      ;;               (sis--other-p back-char))
-      ;;          (and (> back-to (sis--inline-overlay-start))
-      ;;               (< back-to (sis--inline-overlay-end))
-      ;;               (< back-to (point))))
-      ;;  (sis-set-other)))
+     ;; [other lang][blank inline overlay]^
+     ;; [overlay with trailing blank]^
+     ;; (when (or (and (= back-to (sis--inline-overlay-start))
+     ;;               (sis--other-p back-char))
+     ;;          (and (> back-to (sis--inline-overlay-start))
+     ;;               (< back-to (sis--inline-overlay-end))
+     ;;               (< back-to (point))))
+     ;;  (sis-set-other)))
 
      (; inline other lang region
       (eq sis--inline-lang 'other)
       (sis-set-english)))
-      ;; [not-other][blank inline overlay]^
-      ;; [overlay with trailing blank]^
-      ;; (when (or (and (= back-to (sis--inline-overlay-start))
-      ;;                (sis--not-other-p back-char))
-      ;;           (and (> back-to (sis--inline-overlay-start))
-      ;;                (< back-to (sis--inline-overlay-end))
-      ;;                (< back-to (point))))
-      ;;   (sis-set-english))))
+    ;; [not-other][blank inline overlay]^
+    ;; [overlay with trailing blank]^
+    ;; (when (or (and (= back-to (sis--inline-overlay-start))
+    ;;                (sis--not-other-p back-char))
+    ;;           (and (> back-to (sis--inline-overlay-start))
+    ;;                (< back-to (sis--inline-overlay-end))
+    ;;                (< back-to (point))))
+    ;;   (sis-set-english))))
 
     ;; only tighten for none-blank inline region
     (when (and (<= (point) (sis--inline-overlay-end))
