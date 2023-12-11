@@ -3,7 +3,7 @@
 ;; URL: https://github.com/laishulu/emacs-smart-input-source
 ;; Created: March 27th, 2020
 ;; Keywords: convenience
-;; Package-Requires: ((emacs "25.1") (terminal-focus-reporting "0.0"))
+;; Package-Requires: ((emacs "27.1"))
 ;; Version: 1.0
 
 ;; This file is not part of GNU Emacs.
@@ -790,26 +790,9 @@ Possible values: 'normal, 'prefix, 'sequence.")
                 unread-command-events)))
 
 (defun sis--respect-focus-change-advice ()
-  "Advice for `after-focus-change-function'.
-
-Only used for graphic display."
-  (when (display-graphic-p)
-    (if (frame-focus-state)
-        (sis--respect-focus-in-handler)
-      (sis--respect-focus-out-handler))))
-
-(defun sis--respect-focus-in-advice (_)
-  "Advice for `handle-focus-in'.
-
-Only used for `terminal-focus-reporting'."
-  (unless (display-graphic-p)
-    (sis--respect-focus-in-handler)))
-
-(defun sis--respect-focus-out-advice (_)
-  "Advice for `handle-focus-out'.
-
-Only used for `terminal-focus-reporting'."
-  (unless (display-graphic-p)
+  "Advice for `after-focus-change-function'."
+  (if (frame-focus-state)
+      (sis--respect-focus-in-handler)
     (sis--respect-focus-out-handler)))
 
 (defun sis--respect-focus-out-handler ()
@@ -1063,20 +1046,8 @@ Only used for `terminal-focus-reporting'."
        (add-hook 'minibuffer-setup-hook #'sis--minibuffer-setup-handler)
        (add-hook 'minibuffer-exit-hook #'sis--minibuffer-exit-handler)
 
-       (unless (boundp 'after-focus-change-function)
-         (setq after-focus-change-function (lambda ())))
-
        (advice-add 'after-focus-change-function :after
                    #'sis--respect-focus-change-advice)
-
-       ;; enable terminal focus event
-       (unless (display-graphic-p)
-         (require 'terminal-focus-reporting)
-         (terminal-focus-reporting-mode t)
-         (advice-add 'handle-focus-in :after
-                     #'sis--respect-focus-in-advice)
-         (advice-add 'handle-focus-out :after
-                     #'sis--respect-focus-out-advice))
 
        (dolist (trigger sis-respect-go-english-triggers)
          (advice-add trigger :before #'sis--respect-go-english-advice))
@@ -1121,10 +1092,6 @@ Only used for `terminal-focus-reporting'."
     ;; for preserving buffer input source
     (advice-remove 'after-focus-change-function
                    #'sis--respect-focus-change-advice)
-    (advice-remove 'handle-focus-in
-                   #'sis--respect-focus-in-advice)
-    (advice-remove 'handle-focus-out
-                   #'sis--respect-focus-out-advice)
 
     (dolist (trigger sis-respect-go-english-triggers)
       (advice-remove trigger #'sis--respect-go-english-advice))
