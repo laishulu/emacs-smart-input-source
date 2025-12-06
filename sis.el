@@ -365,34 +365,34 @@ meanings as `string-match-p'."
 (defsubst sis--normalize-to-lang (lang)
   "Normalize LANG in the form of source id or lang to lang."
   (cond
-   (; english
-    (member lang (list 'english sis-english-source))
+   ;; english
+   ((member lang (list 'english sis-english-source))
     'english)
-   (; other
-    (member lang (list 'other sis-other-source))
+   ;; other
+   ((member lang (list 'other sis-other-source))
     'other)))
 
 (defsubst sis--normalize-to-source (source)
   "Normalize SOURCE in the form of source id or lang to source."
   (cond
-   (; english
-    (member source (list 'english sis-english-source))
+   ;; english
+   ((member source (list 'english sis-english-source))
     sis-english-source)
-   (; other
-    (member source (list 'other sis-other-source))
+   ;; other
+   ((member source (list 'other sis-other-source))
     sis-other-source)))
 
 (defun sis--mk-get-fn ()
   "Make a function to be bound to `sis-do-get'."
   (cond
-   (; EMP
-    (equal sis--ism 'emp)
+   ;; EMP
+   ((equal sis--ism 'emp)
     #'mac-input-source)
-   (;w32
-    (equal sis--ism 'w32)
+   ;;w32
+   ((equal sis--ism 'w32)
     #'w32-get-ime-open-status)
-   (; external ism
-    sis--ism
+   ;; external ism
+   (sis--ism
     (lambda ()
       (sis--ensure-dir
        (string-trim (shell-command-to-string sis--ism)))))))
@@ -400,14 +400,14 @@ meanings as `string-match-p'."
 (defun sis--mk-set-fn ()
   "Make a function to be bound to `sis-do-set'."
   (cond
-   (; EMP
-    (equal sis--ism 'emp)
+   ;; EMP
+   ((equal sis--ism 'emp)
     (lambda (source) (mac-select-input-source source)))
-   (;w32
-    (equal sis--ism 'w32)
+   ;;w32
+   ((equal sis--ism 'w32)
     #'w32-set-ime-open-status)
-   (; external ism
-    sis--ism
+   ;; external ism
+   (sis--ism
     (lambda (source)
       (sis--ensure-dir
        (start-process "set-input-source" nil sis--ism source))))))
@@ -483,11 +483,11 @@ SOURCE should be \\='english or \\='other."
   (interactive)
   (setq sis--for-buffer-locked nil)
   (cond
-   (; current is \\='english
-    (eq sis--current 'english)
+   ;; current is \\='english
+   ((eq sis--current 'english)
     (sis--set-other))
-   (; current is \\='other
-    (eq sis--current 'other)
+   ;; current is \\='other
+   ((eq sis--current 'other)
     (sis--set-english))))
 
 ;;;###autoload
@@ -519,8 +519,9 @@ TYPE: TYPE can be \\='native, \\='w32, \\='emp, \\='macism, \\='im-select,
                              ('ibus "ibus"))))
 
   (cond
-   (; Emacs native input method, set do-get and do-set
-    (eq ism-type 'native)
+   ;; Emacs native input method, set do-get and do-set
+   ((eq ism-type 'native)
+
     (setq default-input-method other-source)
     (setq sis-english-source nil)
     ;; Don't use `input-method-activate-hook',
@@ -539,11 +540,10 @@ TYPE: TYPE can be \\='native, \\='w32, \\='emp, \\='macism, \\='im-select,
                   res))
     (setq sis-do-get (lambda() current-input-method))
     (setq sis-do-set #'activate-input-method))
-   (; for builtin supoort, use the default do-get and do-set
-    (memq ism-type (list nil 'emp 'w32 'macism 'im-select))
-
-    (; for WSL/Windows Subsystem for Linux, use the default do-get, set do-set
-     if (eq system-type 'gnu/linux)
+   ;; for builtin supoort, use the default do-get and do-set
+   ((memq ism-type (list nil 'emp 'w32 'macism 'im-select))
+    ;; for WSL/Windows Subsystem for Linux, use the default do-get, set do-set
+    (if (eq system-type 'gnu/linux)
      (setq sis-do-set
            (lambda(source)
              (sis--ensure-dir
@@ -551,8 +551,8 @@ TYPE: TYPE can be \\='native, \\='w32, \\='emp, \\='macism, \\='im-select,
                             :command (list sis--ism source)
                             :connection-type 'pipe ))))
      t))
-   (; fcitx and fcitx5, use the default do-get, set do-set
-    (memq ism-type (list 'fcitx 'fcitx5))
+   ;; fcitx and fcitx5, use the default do-get, set do-set
+   ((memq ism-type (list 'fcitx 'fcitx5))
     (unless sis-english-source
       (setq sis-english-source "1"))
     (unless sis-other-source
@@ -564,8 +564,8 @@ TYPE: TYPE can be \\='native, \\='w32, \\='emp, \\='macism, \\='im-select,
                                               nil sis--ism "-c"))
                           ("2" (start-process "set-input-source"
                                               nil sis--ism "-o")))))))
-   (; ibus, set do-get and do-set
-    (eq ism-type 'ibus)
+   ;; ibus, set do-get and do-set
+   ((eq ism-type 'ibus)
     (setq sis-do-get (lambda ()
                        (sis--ensure-dir
                         (string-trim
@@ -610,16 +610,16 @@ TYPE: TYPE can be \\='native, \\='w32, \\='emp, \\='macism, \\='im-select,
   :global t
   :init-value nil
   (cond
-   (; turn on the mode
-    sis-auto-refresh-mode
+   ;; turn on the mode
+   (sis-auto-refresh-mode
     (when sis-auto-refresh-seconds
       (when sis--auto-refresh-manager-timer
         (cancel-timer sis--auto-refresh-manager-timer))
       (setq sis--auto-refresh-manager-timer
             (run-with-idle-timer sis-auto-refresh-seconds t
                                  #'sis--auto-refresh-timer-restart))))
-   (; turn off the mode
-    (not sis-auto-refresh-mode)
+   ;; turn off the mode
+   ((not sis-auto-refresh-mode)
     (when sis--auto-refresh-manager-timer
       (cancel-timer sis--auto-refresh-manager-timer))
     (when sis--auto-refresh-timer (cancel-timer sis--auto-refresh-timer)))))
@@ -687,8 +687,8 @@ way."
   :global t
   :init-value nil
   (cond
-   (; turn on the mode
-    sis-global-cursor-color-mode
+   ;; turn on the mode
+   (sis-global-cursor-color-mode
 
     ;; auto refresh input source
     (unless (eq sis-external-ism 'native)
@@ -697,8 +697,8 @@ way."
     (add-hook 'disable-theme-functions #'sis--reset-default-cursor-color)
     (advice-add 'set-cursor-color :filter-args #'sis--set-cursor-color-advice)
     (add-hook 'sis-change-hook #'sis--update-cursor-color))
-   (; turn off the mode
-    (not sis-global-cursor-color-mode)
+   ;; turn off the mode
+   ((not sis-global-cursor-color-mode)
     (sis--try-disable-auto-refresh-mode)
     (remove-hook 'enable-theme-functions #'sis--reset-default-cursor-color)
     (remove-hook 'disable-theme-functions #'sis--reset-default-cursor-color)
@@ -843,15 +843,15 @@ Possible values: \\='normal, \\='prefix, \\='sequence.")
              sis--prefix-override-map-enable))
 
   (pcase sis--prefix-handle-stage
-    (; current is normal stage
-     'normal
+    ;; current is normal stage
+    ('normal
      (cond
-      (; not prefix key
-       (not (eq sis--real-this-command #'sis--prefix-override-handler))
+      ;; not prefix key
+      ((not (eq sis--real-this-command #'sis--prefix-override-handler))
        t)
 
-      (; for prefix key
-       (eq sis--real-this-command #'sis--prefix-override-handler)
+      ;; for prefix key
+      ((eq sis--real-this-command #'sis--prefix-override-handler)
 
        ;; go to pre@[prefix] directly
        (when sis-log-mode
@@ -860,8 +860,8 @@ Possible values: \\='normal, \\='prefix, \\='sequence.")
           (this-command-keys)))
        (setq sis--prefix-handle-stage 'prefix)
        (sis--respect-pre-command-handler))))
-    (; current is prefix stage
-     'prefix
+    ;; current is prefix stage
+    ('prefix
      (setq sis--prefix-override-map-enable nil)
      (setq sis--buffer-before-prefix (current-buffer))
      (sis--save-to-buffer)
@@ -870,27 +870,25 @@ Possible values: \\='normal, \\='prefix, \\='sequence.")
      (when sis-log-mode
        (message "Input source: [%s] (saved) => [%s]."
                 sis--for-buffer sis-english-source)))
-    (; current is sequence stage
-     'sequence t)))
+    ;; current is sequence stage
+    ('sequence t)))
 
 (defvar sis-prefix-override-buffer-disable-predicates
   (list 'minibufferp
-        (;; read only buffer
-         lambda ()
-         buffer-read-only)
-        (;; magit
-         lambda ()
-         (sis--string-match-p "^magit.*:" (buffer-name)))
-        (;; special buffer
-         lambda ()
-         (let ((normalized-buffer-name
-                (downcase (string-trim (buffer-name)))))
-           (and (sis--string-match-p "^\*" normalized-buffer-name)
-                (not (sis--string-match-p "^\*new\*" normalized-buffer-name))
-                (not (sis--string-match-p "^\*dashboard\*"
-                                          normalized-buffer-name))
-                (not (sis--string-match-p "^\*scratch\*"
-                                          normalized-buffer-name))))))
+        ;; read only buffer
+        (lambda () buffer-read-only)
+        ;; magit
+        (lambda () (sis--string-match-p "^magit.*:" (buffer-name)))
+        ;; special buffer
+        (lambda ()
+          (let ((normalized-buffer-name
+                 (downcase (string-trim (buffer-name)))))
+            (and (sis--string-match-p "^\*" normalized-buffer-name)
+                 (not (sis--string-match-p "^\*new\*" normalized-buffer-name))
+                 (not (sis--string-match-p "^\*dashboard\*"
+                                           normalized-buffer-name))
+                 (not (sis--string-match-p "^\*scratch\*"
+                                           normalized-buffer-name))))))
   "Predicates on buffers to disable prefix overriding.")
 
 (defsubst sis--prefix-override-buffer-disable-p ()
@@ -912,15 +910,15 @@ Possible values: \\='normal, \\='prefix, \\='sequence.")
 
   ;; determine input source
   (cond
-   (; go english, nothing need to do
-    sis--respect-go-english
+   ;; go english, nothing need to do
+   (sis--respect-go-english
     t)
-   (; transient buffer shows
-    (and (boundp 'transient--showp) transient--showp)
+   ;; transient buffer shows
+   ((and (boundp 'transient--showp) transient--showp)
     (setq sis--for-buffer-locked t)
     (sis--set-english))
-   (; restore
-    (or sis--respect-force-restore
+   ;; restore
+   ((or sis--respect-force-restore
         (not (eq sis--buffer-before-command (current-buffer))))
     ;; entering minibuffer is handled separately.
     ;; some functions like `exit-minibuffer' won't trigger post-command-hook
@@ -962,28 +960,28 @@ Possible values: \\='normal, \\='prefix, \\='sequence.")
              (current-buffer)
              sis--prefix-override-map-enable))
   (pcase sis--prefix-handle-stage
-    (; current is prefix stage
-     'prefix
+    ;; current is prefix stage
+    ('prefix
      (setq sis--prefix-handle-stage 'sequence))
-    (; current is sequence stage
-     'sequence
+    ;; current is sequence stage
+    ('sequence
      (cond
-      (; still in progress
-       (minibufferp)
+      ;; still in progress
+      ((minibufferp)
        (setq sis--prefix-handle-stage 'sequence))
-      (; key sequence is canceled
-       (not sis--real-this-command)
+      ;; key sequence is canceled
+      ((not sis--real-this-command)
        (when sis-log-mode (message "Key sequence canceled."))
        (setq sis--respect-force-restore t)
        (sis--to-normal-stage))
 
-      (; end key sequence
-       t
+      ;; end key sequence
+      (t
        (when sis-log-mode (message "Key sequence ended."))
        (setq sis--respect-force-restore t)
        (sis--to-normal-stage))))
-    (; current is normal stage
-     'normal
+    ;; current is normal stage
+    ('normal
      (sis--to-normal-stage))))
 
 (defun sis--minibuffer-setup-handler ()
@@ -1038,8 +1036,8 @@ Possible values: \\='normal, \\='prefix, \\='sequence.")
   :global t
   :init-value nil
   (cond
-   (; turn on the mode
-    sis-global-respect-mode
+   ;; turn on the mode
+   (sis-global-respect-mode
     (sis--ensure-ism
      ;; /respect mode/ depends on /auto refresh mode/
      (unless (eq sis-external-ism 'native)
@@ -1084,8 +1082,8 @@ Possible values: \\='normal, \\='prefix, \\='sequence.")
        (dolist (trigger sis-prefix-override-recap-triggers)
          (advice-add trigger :around
                      #'sis--prefix-override-recap-advice)))))
-   (; turn off the mode
-    (not sis-global-respect-mode)
+   ;; turn off the mode
+   ((not sis-global-respect-mode)
     (sis--try-disable-auto-refresh-mode)
     ;; for evil
     (when (featurep 'evil)
@@ -1207,20 +1205,20 @@ If POSITION is not provided, then default to be the current position."
          (fore-to (sis-fore-detect-to fore-detect))
          (fore-char (sis-fore-detect-char fore-detect)))
     (cond
-     (; [other]^
-      (and (= back-to (or position (point))) (sis--other-p back-char))
+     ;; [other]^
+     ((and (= back-to (or position (point))) (sis--other-p back-char))
       t)
-     (; ^[other]
-      (and (= fore-to (or position (point))) (sis--other-p fore-char))
+     ;; ^[other]
+     ((and (= fore-to (or position (point))) (sis--other-p fore-char))
       t)
-     (; [other lang][blank or not][^][blank or not][not english]
-      (and (sis--other-p back-char) (sis--not-english-p fore-char))
+     ;; [other lang][blank or not][^][blank or not][not english]
+     ((and (sis--other-p back-char) (sis--not-english-p fore-char))
       t)
-     (; [not english][blank or not][^][blank or not][other lang]
-      (and (sis--not-english-p back-char) (sis--other-p fore-char))
+     ;; [not english][blank or not][^][blank or not][other lang]
+     ((and (sis--not-english-p back-char) (sis--other-p fore-char))
       t)
-     (; [other lang: to the previous line][blank][^]
-      (and (or sis-context-aggressive-line
+     ;; [other lang: to the previous line][blank][^]
+     ((and (or sis-context-aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
            (sis--other-p cross-line-back-char))
@@ -1239,20 +1237,20 @@ If POSITION is not provided, then default to be the current position."
          (fore-to (sis-fore-detect-to fore-detect))
          (fore-char (sis-fore-detect-char fore-detect)))
     (cond
-     (; [english]^
-      (and (= back-to (or position (point))) (sis--english-p back-char))
+     ;; [english]^
+     ((and (= back-to (or position (point))) (sis--english-p back-char))
       t)
-     (; ^[english]
-      (and (= fore-to (or position (point))) (sis--english-p fore-char))
+     ;; ^[english]
+     ((and (= fore-to (or position (point))) (sis--english-p fore-char))
       t)
-     (; [english][blank or not][^][blank or not][not other]
-      (and (sis--english-p back-char) (sis--not-other-p fore-char))
+     ;; [english][blank or not][^][blank or not][not other]
+     ((and (sis--english-p back-char) (sis--not-other-p fore-char))
       t)
-     (; [not other][blank or not][^][blank or not][english]
-      (and (sis--not-other-p back-char) (sis--english-p fore-char))
+     ;; [not other][blank or not][^][blank or not][english]
+     ((and (sis--not-other-p back-char) (sis--english-p fore-char))
       t)
-     (; [english: to the previous line][blank][^]
-      (and (or sis-context-aggressive-line
+     ;; [english: to the previous line][blank][^]
+     ((and (or sis-context-aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
            (sis--english-p cross-line-back-char))
@@ -1262,11 +1260,11 @@ If POSITION is not provided, then default to be the current position."
   "Line context."
   (let ((line (thing-at-point 'line t)))
     (cond
-     (; has /other/ lang char
-      (sis--other-p line)
+     ;; has /other/ lang char
+     ((sis--other-p line)
       'other)
-     (; has no /other/ lang char
-      (sis--english-p line)
+     ;; has no /other/ lang char
+     ((sis--english-p line)
       'english))))
 
 (defun sis--context-guess ()
@@ -1287,8 +1285,8 @@ If POSITION is not provided, then default to be the current position."
   :global nil
   :init-value nil
   (cond
-   (; turn on the mode
-    sis-context-mode
+   ;; turn on the mode
+   (sis-context-mode
     (sis--ensure-ism
      (dolist (hook sis-context-hooks)
        (add-hook hook #'sis-context nil t))
@@ -1317,8 +1315,8 @@ If POSITION is not provided, then default to be the current position."
            ;; Add special property to the advice, so it can be easily removed
            (put (intern advice-name) 'sis--context-trigger-advice t)
            (advice-add (eval trigger-fn) :around (intern advice-name)))))))
-   (; turn off the mode
-    (not sis-context-mode)
+   ;; turn off the mode
+   ((not sis-context-mode)
     (dolist (buf (buffer-list))
       (with-current-buffer buf
         (dolist (hook sis-context-hooks)
@@ -1377,12 +1375,12 @@ If POSITION is not provided, then default to be the current position."
   "English overlay mode for mixed language editing."
   :init-value nil
   (cond
-   (; turn on the mode
-    sis-inline-mode
+   ;; turn on the mode
+   (sis-inline-mode
     (sis--ensure-ism
      (add-hook 'post-self-insert-hook #'sis--inline-check-to-activate nil t)))
-   (; turn off the mode
-    (not sis-inline-mode)
+   ;; turn off the mode
+   ((not sis-inline-mode)
     (remove-hook 'post-self-insert-hook #'sis--inline-check-to-activate t))))
 
 ;;;###autoload
@@ -1416,11 +1414,11 @@ if the answer is yes, then activate the /inline region/, set the
 input source to English."
   (let ((effective-space (sis--inline-effect-space-inserted-p)))
     (cond
-     (;if not effective space inserted, reset times to 0
-      (not effective-space)
+     ;;if not effective space inserted, reset times to 0
+     ((not effective-space)
       (setq sis--inline-first-space-point nil))
-     (;if effective space inserted
-      effective-space
+     ;;if effective space inserted
+     (effective-space
       (let* ((back-detect (sis--back-detect-chars))
              (fore-detect (sis--fore-detect-chars)))
 
@@ -1428,13 +1426,13 @@ input source to English."
           (setq sis--inline-first-space-point (point)))
 
         (cond
-         (;inline english region
-          (and sis-inline-with-english
+         ;;inline english region
+         ((and sis-inline-with-english
                (equal sis--for-buffer 'other))
           (sis--inline-activate 'english (1- (point))))
 
-         (;inline other lang region
-          (and sis-inline-with-other
+         ;;inline other lang region
+         ((and sis-inline-with-other
                (= (1+ sis--inline-first-space-point) (point))
                (sis--context-english-p back-detect fore-detect (- (point) 2))
                (equal sis--for-buffer 'english))
@@ -1528,15 +1526,15 @@ START: start position of the inline region."
          (back-to (sis-back-detect-to back-detect))
          (back-char (sis-back-detect-char back-detect)))
     (cond
-     (;if in evil but not insert state
-      (sis--evil-not-insert-state-p)
+     ;;if in evil but not insert state
+     ((sis--evil-not-insert-state-p)
       (sis-set-english))
-     (;if cursor is not at the end of the overlay
-      (and sis-context-mode
+     ;;if cursor is not at the end of the overlay
+     ((and sis-context-mode
            (/= (point) (sis--inline-overlay-end)))
       (sis-context))
-     (; inline english region
-      (eq sis--inline-lang 'english)
+     ;; inline english region
+     ((eq sis--inline-lang 'english)
       (sis-set-other))
      ;; [other lang][blank inline overlay]^
      ;; [overlay with trailing blank]^
@@ -1547,8 +1545,8 @@ START: start position of the inline region."
      ;;               (< back-to (point))))
      ;;  (sis-set-other)))
 
-     (; inline other lang region
-      (eq sis--inline-lang 'other)
+     ;; inline other lang region
+     ((eq sis--inline-lang 'other)
       (sis-set-english)))
     ;; [not-other][blank inline overlay]^
     ;; [overlay with trailing blank]^
@@ -1570,21 +1568,21 @@ START: start position of the inline region."
           (when (and (<= tighten-back-to (sis--inline-overlay-end))
                      (> tighten-back-to (sis--inline-overlay-start)))
             (cond
-             (; delete 0 space
-              (eq sis-inline-tighten-tail-rule 0)
+             ;; delete 0 space
+             ((eq sis-inline-tighten-tail-rule 0)
               t)
-             (; delete 1 space
-              (eq sis-inline-tighten-tail-rule 1)
+             ;; delete 1 space
+             ((eq sis-inline-tighten-tail-rule 1)
               (delete-char -1))
-             (; always ensure 0 space
-              (eq sis-inline-tighten-tail-rule 'zero)
+             ;; always ensure 0 space
+             ((eq sis-inline-tighten-tail-rule 'zero)
               (delete-region (point) tighten-back-to))
-             (; always ensure 1 space
-              (eq sis-inline-tighten-tail-rule 'one)
+             ;; always ensure 1 space
+             ((eq sis-inline-tighten-tail-rule 'one)
               (delete-region (point) tighten-back-to)
               (insert-char ?\s))
-             (;; handled by custom function
-              (functionp sis-inline-tighten-tail-rule)
+             ;; handled by custom function
+             ((functionp sis-inline-tighten-tail-rule)
               (funcall sis-inline-tighten-tail-rule tighten-back-to))))))
 
       ;; move point because of insertion of text adjacent to the saved point
@@ -1597,21 +1595,21 @@ START: start position of the inline region."
                (tighten-fore-to (sis-fore-detect-to tighten-fore-detect)))
           (when (> tighten-fore-to (sis--inline-overlay-start))
             (cond
-             (; delete 0 space
-              (eq sis-inline-tighten-head-rule 0)
+             ;; delete 0 space
+             ((eq sis-inline-tighten-head-rule 0)
               t)
-             (; delete 1 space
-              (eq sis-inline-tighten-head-rule 1)
+             ;; delete 1 space
+             ((eq sis-inline-tighten-head-rule 1)
               (delete-char 1))
-             (; always ensure 0 space
-              (eq sis-inline-tighten-head-rule 'zero)
+             ;; always ensure 0 space
+             ((eq sis-inline-tighten-head-rule 'zero)
               (delete-region (point) tighten-fore-to))
-             (; always ensure 1 space
-              (eq sis-inline-tighten-head-rule 'one)
+             ;; always ensure 1 space
+             ((eq sis-inline-tighten-head-rule 'one)
               (delete-region (point) tighten-fore-to)
               (insert-char ?\s))
-             (; handled by custom function
-              (functionp sis-inline-tighten-head-rule)
+             ;; handled by custom function
+             ((functionp sis-inline-tighten-head-rule)
               (funcall sis-inline-tighten-head-rule tighten-fore-to))))))))
   (delete-overlay sis--inline-overlay)
   (setq sis--inline-overlay nil)
