@@ -337,7 +337,7 @@ meanings as `string-match-p'."
   (unless sis--ism
     (let ((ism-path (executable-find "macism")))
       (when ism-path
-        (setq sis--ism ism-path)))))
+        (setq sis--ism ism-path))))
 
   ;; make `sis-do-set' and `sis-do-get'
   (when sis--ism
