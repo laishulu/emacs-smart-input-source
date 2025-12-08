@@ -29,7 +29,7 @@
 ;;; Code:
 (require 'subr-x)
 
-(defvar sis-external-ism "macism"
+(defvar sis-external-ism nil
   "Path of external ism.")
 
 (defvar sis-do-get nil
@@ -312,24 +312,32 @@ meanings as `string-match-p'."
   ;; `sis-do-get' and `sis-do-set' takes the first precedence.
 
   ;; external ism
-  (when (stringp sis-external-ism)
-    (let ((ism-path (executable-find sis-external-ism)))
-      (when ism-path (setq sis--ism ism-path))))
+  (if (stringp sis-external-ism)
+      (let ((ism-path (executable-find sis-external-ism)))
+        (when ism-path (setq sis--ism ism-path)))
+    (setq sis--ism sis-external-ism))
 
   ;; try EMP/w32 when do-get or do-set is missing
-  (unless (and (functionp sis-do-get)
-               (functionp sis-do-set))
+  (unless sis--ism
     (cond
+
+     ;; EMP
      ((and (member (window-system) (list 'ns 'mac))
            (fboundp 'mac-input-source))
-      ;; EMP
       (setq sis--ism 'emp))
+
+     ;; w32, input sources are fixed
      ((and (equal (window-system) 'w32)
            (fboundp 'w32-get-ime-open-status))
-      ;; w32, input sources are fixed
       (setq sis-english-source nil)
       (setq sis-other-source t)
       (setq sis--ism 'w32))))
+
+  ;; try macism
+  (unless sis--ism
+    (let ((ism-path (executable-find "macism")))
+      (when ism-path
+        (setq sis--ism ism-path)))))
 
   ;; make `sis-do-set' and `sis-do-get'
   (when sis--ism
@@ -519,9 +527,9 @@ TYPE: TYPE can be \\='native, \\='w32, \\='emp, \\='macism, \\='im-select,
                              ('ibus "ibus"))))
 
   (cond
+
    ;; Emacs native input method, set do-get and do-set
    ((eq ism-type 'native)
-
     (setq default-input-method other-source)
     (setq sis-english-source nil)
     ;; Don't use `input-method-activate-hook',
@@ -540,17 +548,18 @@ TYPE: TYPE can be \\='native, \\='w32, \\='emp, \\='macism, \\='im-select,
                   res))
     (setq sis-do-get (lambda() current-input-method))
     (setq sis-do-set #'activate-input-method))
+
    ;; for builtin supoort, use the default do-get and do-set
    ((memq ism-type (list nil 'emp 'w32 'macism 'im-select))
     ;; for WSL/Windows Subsystem for Linux, use the default do-get, set do-set
-    (if (eq system-type 'gnu/linux)
+    (when (eq system-type 'gnu/linux)
      (setq sis-do-set
            (lambda(source)
              (sis--ensure-dir
               (make-process :name "set-input-source"
                             :command (list sis--ism source)
-                            :connection-type 'pipe ))))
-     t))
+                            :connection-type 'pipe ))))))
+
    ;; fcitx and fcitx5, use the default do-get, set do-set
    ((memq ism-type (list 'fcitx 'fcitx5))
     (unless sis-english-source
@@ -564,6 +573,7 @@ TYPE: TYPE can be \\='native, \\='w32, \\='emp, \\='macism, \\='im-select,
                                               nil sis--ism "-c"))
                           ("2" (start-process "set-input-source"
                                               nil sis--ism "-o")))))))
+
    ;; ibus, set do-get and do-set
    ((eq ism-type 'ibus)
     (setq sis-do-get (lambda ()
@@ -691,7 +701,7 @@ way."
    (sis-global-cursor-color-mode
 
     ;; auto refresh input source
-    (unless (eq sis-external-ism 'native)
+    (unless (eq sis--ism 'native)
       (sis--try-enable-auto-refresh-mode))
     (add-hook 'enable-theme-functions #'sis--reset-default-cursor-color)
     (add-hook 'disable-theme-functions #'sis--reset-default-cursor-color)
@@ -1040,7 +1050,7 @@ Possible values: \\='normal, \\='prefix, \\='sequence.")
    (sis-global-respect-mode
     (sis--ensure-ism
      ;; /respect mode/ depends on /auto refresh mode/
-     (unless (eq sis-external-ism 'native)
+     (unless (eq sis--ism 'native)
        (sis--try-enable-auto-refresh-mode))
      ;; set english when mode enabled
      (when sis-respect-start (sis--set sis-respect-start))
