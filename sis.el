@@ -799,6 +799,18 @@ Possible values: \\='normal, \\='prefix, \\='sequence.")
   (unwind-protect (apply fn args)
     (sis--prefix-override-recap-do)))
 
+(defvar sis--prefix-override-help-fns
+  '(help--read-key-sequence describe-key describe-key-briefly)
+  "Functions advised to bypass the prefix override for key help.")
+
+(defun sis--prefix-override-help-advice (fn &rest args)
+  "Advice for FN reading or describing a key sequence with ARGS.
+
+The advice is needed, so that sequences like \\`C-x C-f' are read and
+looked up as a whole, like the default `describe-key' behavior."
+  (let ((sis--prefix-override-map-enable nil))
+    (apply fn args)))
+
 (defun sis--prefix-override-handler (arg)
   "Prefix key handler with ARG."
   (interactive "P")
@@ -1091,7 +1103,12 @@ Possible values: \\='normal, \\='prefix, \\='sequence.")
        (sis--prefix-override-recap-do)
        (dolist (trigger sis-prefix-override-recap-triggers)
          (advice-add trigger :around
-                     #'sis--prefix-override-recap-advice)))))
+                     #'sis--prefix-override-recap-advice))
+
+       ;; keep default behavior when a command reads or describes a key
+       ;; sequence for help, e.g. `describe-key' (C-h k)
+       (dolist (fn sis--prefix-override-help-fns)
+         (advice-add fn :around #'sis--prefix-override-help-advice)))))
    ;; turn off the mode
    ((not sis-global-respect-mode)
     (sis--try-disable-auto-refresh-mode)
@@ -1126,7 +1143,9 @@ Possible values: \\='normal, \\='prefix, \\='sequence.")
                 emulation-mode-map-alists))
     (setq sis--prefix-override-map-enable nil)
     (dolist (trigger sis-prefix-override-recap-triggers)
-      (advice-remove trigger #'sis--prefix-override-recap-advice)))))
+      (advice-remove trigger #'sis--prefix-override-recap-advice))
+    (dolist (fn sis--prefix-override-help-fns)
+      (advice-remove fn #'sis--prefix-override-help-advice)))))
 
 (defun sis--try-disable-auto-refresh-mode ()
   "Try to disable auto refresh mode."
