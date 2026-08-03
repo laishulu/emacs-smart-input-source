@@ -29,6 +29,10 @@
 ;;; Code:
 (require 'subr-x)
 
+(defgroup sis nil
+  "Smart input source."
+  :group 'convenience)
+
 (defvar sis-external-ism nil
   "Path of external ism.")
 
@@ -63,7 +67,9 @@ Default value is CJK characters and punctuations.")
 (defvar sis-auto-refresh-seconds 0.2
   "Idle timer interval to auto refresh input source status from OS.
 
-Emacs-nativ input method don't need it. nil to disable the timer.
+Emacs-native input methods do not need this timer; set this to nil to
+disable it.
+
 Set after the modes may have no effect.")
 
 (defvar sis-change-hook nil
@@ -250,7 +256,8 @@ custom function: the cursor will be moved to the end of the inline region, and
 (define-minor-mode sis-log-mode
   "Log the execution of this package."
   :global t
-  :init-value nil)
+  :init-value nil
+  :group 'sis)
 
 ;;
 ;; Following symbols are not supposed to be used directly by end user.
@@ -619,6 +626,7 @@ TYPE: TYPE can be \\='native, \\='w32, \\='emp, \\='macism, \\='im-select,
   "Automaticly refresh input source."
   :global t
   :init-value nil
+  :group 'sis
   (cond
    ;; turn on the mode
    (sis-auto-refresh-mode
@@ -696,6 +704,7 @@ way."
   "Automaticly change cursor color according to input source."
   :global t
   :init-value nil
+  :group 'sis
   (cond
    ;; turn on the mode
    (sis-global-cursor-color-mode
@@ -731,7 +740,7 @@ Possible values: \\='normal, \\='sequence.")
   "Current buffer before prefix.")
 
 (defvar sis--real-this-command nil
-  "Real this command. Some commands overwrite it.")
+  "Value of `this-command' before the current command runs.")
 
 (defvar sis--respect-post-cmd-timer nil
   "Timer to run after returning to command loop.")
@@ -829,8 +838,8 @@ Possible values: \\='normal, \\='sequence.")
 (defun sis--prefix-override-help-advice (fn &rest args)
   "Advice for FN reading or describing a key sequence with ARGS.
 
-The advice is needed, so that sequences like \\`C-x C-f' are read and
-looked up as a whole, like the default `describe-key' behavior."
+The advice makes key sequences read and looked up as a whole, matching
+the default `describe-key' behavior."
   (let ((sis--prefix-override-map-enable nil))
     (apply fn args)))
 
@@ -1024,6 +1033,7 @@ looked up as a whole, like the default `describe-key' behavior."
 - Respect buffer: restore buffer input source when it regain focus."
   :global t
   :init-value nil
+  :group 'sis
   (cond
    ;; turn on the mode
    (sis-global-respect-mode
@@ -1319,7 +1329,8 @@ If POSITION is not provided, then default to be the current position."
 (define-globalized-minor-mode
   sis-global-context-mode
   sis-context-mode
-  sis-context-mode)
+  sis-context-mode
+  :group 'sis)
 
 ;;;###autoload
 (defun sis-context ()
@@ -1371,7 +1382,8 @@ If POSITION is not provided, then default to be the current position."
 (define-globalized-minor-mode
   sis-global-inline-mode
   sis-inline-mode
-  sis-inline-mode)
+  sis-inline-mode
+  :group 'sis)
 
 (defsubst sis--evil-not-insert-state-p ()
   "In Evil but not at insert state."
@@ -1507,8 +1519,7 @@ START: start position of the inline region."
 
   ;; select input source
   (let* ((back-detect (sis--back-detect-chars))
-         (back-to (sis-back-detect-to back-detect))
-         (back-char (sis-back-detect-char back-detect)))
+         (back-to (sis-back-detect-to back-detect)))
     (cond
      ;;if in evil but not insert state
      ((sis--evil-not-insert-state-p)
