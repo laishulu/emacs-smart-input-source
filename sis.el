@@ -29,6 +29,10 @@
 ;;; Code:
 (require 'subr-x)
 
+(defgroup sis nil
+  "Smart input source."
+  :group 'convenience)
+
 (defvar sis-external-ism nil
   "Path of external ism.")
 
@@ -63,7 +67,9 @@ Default value is CJK characters and punctuations.")
 (defvar sis-auto-refresh-seconds 0.2
   "Idle timer interval to auto refresh input source status from OS.
 
-Emacs-nativ input method don't need it. nil to disable the timer.
+Emacs-native input methods do not need this timer; set this to nil to
+disable it.
+
 Set after the modes may have no effect.")
 
 (defvar sis-change-hook nil
@@ -250,7 +256,8 @@ custom function: the cursor will be moved to the end of the inline region, and
 (define-minor-mode sis-log-mode
   "Log the execution of this package."
   :global t
-  :init-value nil)
+  :init-value nil
+  :group 'sis)
 
 ;;
 ;; Following symbols are not supposed to be used directly by end user.
@@ -619,6 +626,7 @@ TYPE: TYPE can be \\='native, \\='w32, \\='emp, \\='macism, \\='im-select,
   "Automaticly refresh input source."
   :global t
   :init-value nil
+  :group 'sis
   (cond
    ;; turn on the mode
    (sis-auto-refresh-mode
@@ -696,6 +704,7 @@ way."
   "Automaticly change cursor color according to input source."
   :global t
   :init-value nil
+  :group 'sis
   (cond
    ;; turn on the mode
    (sis-global-cursor-color-mode
@@ -719,22 +728,19 @@ way."
 ;; Following codes are mainly about respect mode
 ;;
 
-(defvar sis--prefix-override-map-alist nil
-  "Map alist for override.")
+(defvar sis--prefix-override-saved-bindings nil
+  "Saved input-decode bindings replaced by respect mode.")
 
 (defvar sis--prefix-handle-stage 'normal
   "Processing state of the prefix key.
 
-Possible values: \\='normal, \\='prefix, \\='sequence.")
-
-(defvar sis--buffer-before-prefix nil
-  "Current buffer before prefix.")
+Possible values: \\='normal, \\='sequence.")
 
 (defvar sis--buffer-before-command nil
   "Current buffer before prefix.")
 
 (defvar sis--real-this-command nil
-  "Real this command. Some commands overwrite it.")
+  "Value of `this-command' before the current command runs.")
 
 (defvar sis--respect-post-cmd-timer nil
   "Timer to run after returning to command loop.")
@@ -744,9 +750,6 @@ Possible values: \\='normal, \\='prefix, \\='sequence.")
 
 (defvar sis--respect-force-restore nil
   "Force restore after command finishes.")
-
-(defvar sis--prefix-override-order -1000
-  "Order of the prefix override in `emulation-mode-map-alists'.")
 
 (defun sis--respect-go-english-advice (&rest _)
   "Advice for `sis-respect-go-english-triggers'."
@@ -787,12 +790,41 @@ Possible values: \\='normal, \\='prefix, \\='sequence.")
   (when (local-variable-p 'sis--prefix-override-map-enable)
     (kill-local-variable 'sis--prefix-override-map-enable)))
 
+(defun sis--prefix-override-make-translation (key)
+  "Return an input-decode translation for KEY."
+  (let ((translated-key (vconcat key)))
+    (lambda (&optional _prompt)
+      (when (and sis--prefix-override-map-enable
+                 (not (eq sis--prefix-handle-stage 'sequence)))
+        (setq sis--prefix-handle-stage 'sequence)
+        (sis--save-to-buffer)
+        (setq sis--for-buffer-locked t)
+        (sis--set-english)
+        (when sis-log-mode
+          (message "Input source: [%s] (saved) => [%s]."
+                   sis--for-buffer sis-english-source)))
+      translated-key)))
+
+(defun sis--prefix-override-install ()
+  "Install prefix override translations."
+  (unless sis--prefix-override-saved-bindings
+    (dolist (prefix sis-prefix-override-keys)
+      (let* ((key (kbd prefix))
+             (binding (lookup-key input-decode-map key)))
+        (push (cons key (unless (numberp binding) binding))
+              sis--prefix-override-saved-bindings)
+        (define-key input-decode-map key
+          (sis--prefix-override-make-translation key))))))
+
+(defun sis--prefix-override-uninstall ()
+  "Restore input-decode bindings replaced by respect mode."
+  (dolist (entry sis--prefix-override-saved-bindings)
+    (define-key input-decode-map (car entry) (cdr entry)))
+  (setq sis--prefix-override-saved-bindings nil))
+
 (defun sis--prefix-override-recap-do ()
   "Recap prefix key override."
-  (add-to-ordered-list
-   'emulation-mode-map-alists
-   'sis--prefix-override-map-alist
-   sis--prefix-override-order))
+  (sis--prefix-override-install))
 
 (defun sis--prefix-override-recap-advice (fn &rest args)
   "Advice for FN of `prefix-override-recap-triggers' with ARGS."
@@ -806,22 +838,10 @@ Possible values: \\='normal, \\='prefix, \\='sequence.")
 (defun sis--prefix-override-help-advice (fn &rest args)
   "Advice for FN reading or describing a key sequence with ARGS.
 
-The advice is needed, so that sequences like \\`C-x C-f' are read and
-looked up as a whole, like the default `describe-key' behavior."
+The advice makes key sequences read and looked up as a whole, matching
+the default `describe-key' behavior."
   (let ((sis--prefix-override-map-enable nil))
     (apply fn args)))
-
-(defun sis--prefix-override-handler (arg)
-  "Prefix key handler with ARG."
-  (interactive "P")
-  ;; Restore the prefix arg
-  (setq prefix-arg arg)
-  (prefix-command-preserve-state)
-  ;; Push the key back on the event queue
-  (setq unread-command-events
-        (append (mapcar (lambda (e) (cons t e))
-                        (listify-key-sequence (this-command-keys)))
-                unread-command-events)))
 
 (defun sis--respect-focus-change-advice ()
   "Advice for `after-focus-change-function'."
@@ -862,38 +882,7 @@ looked up as a whole, like the default `describe-key' behavior."
              (this-command-keys)
              sis--real-this-command
              (current-buffer)
-             sis--prefix-override-map-enable))
-
-  (pcase sis--prefix-handle-stage
-    ;; current is normal stage
-    ('normal
-     (cond
-      ;; not prefix key
-      ((not (eq sis--real-this-command #'sis--prefix-override-handler))
-       t)
-
-      ;; for prefix key
-      ((eq sis--real-this-command #'sis--prefix-override-handler)
-
-       ;; go to pre@[prefix] directly
-       (when sis-log-mode
-         (message
-          "[%s] is a prefix key, short circuit to prefix phase."
-          (this-command-keys)))
-       (setq sis--prefix-handle-stage 'prefix)
-       (sis--respect-pre-command-handler))))
-    ;; current is prefix stage
-    ('prefix
-     (setq sis--prefix-override-map-enable nil)
-     (setq sis--buffer-before-prefix (current-buffer))
-     (sis--save-to-buffer)
-     (setq sis--for-buffer-locked t)
-     (sis--set-english)
-     (when sis-log-mode
-       (message "Input source: [%s] (saved) => [%s]."
-                sis--for-buffer sis-english-source)))
-    ;; current is sequence stage
-    ('sequence t)))
+             sis--prefix-override-map-enable)))
 
 (defvar sis-prefix-override-buffer-disable-predicates
   (list 'minibufferp
@@ -982,26 +971,13 @@ looked up as a whole, like the default `describe-key' behavior."
              (current-buffer)
              sis--prefix-override-map-enable))
   (pcase sis--prefix-handle-stage
-    ;; current is prefix stage
-    ('prefix
-     (setq sis--prefix-handle-stage 'sequence))
     ;; current is sequence stage
     ('sequence
-     (cond
-      ;; still in progress
-      ((minibufferp)
-       (setq sis--prefix-handle-stage 'sequence))
-      ;; key sequence is canceled
-      ((not sis--real-this-command)
-       (when sis-log-mode (message "Key sequence canceled."))
-       (setq sis--respect-force-restore t)
-       (sis--to-normal-stage))
-
-      ;; end key sequence
-      (t
+     ;; A command may keep reading in the minibuffer.
+     (unless (minibufferp)
        (when sis-log-mode (message "Key sequence ended."))
        (setq sis--respect-force-restore t)
-       (sis--to-normal-stage))))
+       (sis--to-normal-stage)))
     ;; current is normal stage
     ('normal
      (sis--to-normal-stage))))
@@ -1057,6 +1033,7 @@ looked up as a whole, like the default `describe-key' behavior."
 - Respect buffer: restore buffer input source when it regain focus."
   :global t
   :init-value nil
+  :group 'sis
   (cond
    ;; turn on the mode
    (sis-global-respect-mode
@@ -1089,18 +1066,8 @@ looked up as a whole, like the default `describe-key' behavior."
          ;; Don't use :filter-return, advice may not run when trigger has error.
          (advice-add trigger :around #'sis--respect-restore-advice))
 
-       ;; set english when prefix key pressed
-       (setq sis--prefix-override-map-alist
-             `((sis--prefix-override-map-enable
-                .
-                ,(let ((keymap (make-sparse-keymap)))
-                   (dolist (prefix sis-prefix-override-keys)
-                     (define-key keymap
-                                 (kbd prefix) #'sis--prefix-override-handler))
-                   keymap))))
-
        (setq sis--prefix-override-map-enable t)
-       (sis--prefix-override-recap-do)
+       (sis--prefix-override-install)
        (dolist (trigger sis-prefix-override-recap-triggers)
          (advice-add trigger :around
                      #'sis--prefix-override-recap-advice))
@@ -1138,9 +1105,7 @@ looked up as a whole, like the default `describe-key' behavior."
       (advice-remove trigger #'sis--respect-restore-advice))
 
     ;; for prefix key
-    (setq emulation-mode-map-alists
-          (delq 'sis--prefix-override-map-alist
-                emulation-mode-map-alists))
+    (sis--prefix-override-uninstall)
     (setq sis--prefix-override-map-enable nil)
     (dolist (trigger sis-prefix-override-recap-triggers)
       (advice-remove trigger #'sis--prefix-override-recap-advice))
@@ -1364,7 +1329,8 @@ If POSITION is not provided, then default to be the current position."
 (define-globalized-minor-mode
   sis-global-context-mode
   sis-context-mode
-  sis-context-mode)
+  sis-context-mode
+  :group 'sis)
 
 ;;;###autoload
 (defun sis-context ()
@@ -1416,7 +1382,8 @@ If POSITION is not provided, then default to be the current position."
 (define-globalized-minor-mode
   sis-global-inline-mode
   sis-inline-mode
-  sis-inline-mode)
+  sis-inline-mode
+  :group 'sis)
 
 (defsubst sis--evil-not-insert-state-p ()
   "In Evil but not at insert state."
@@ -1552,8 +1519,7 @@ START: start position of the inline region."
 
   ;; select input source
   (let* ((back-detect (sis--back-detect-chars))
-         (back-to (sis-back-detect-to back-detect))
-         (back-char (sis-back-detect-char back-detect)))
+         (back-to (sis-back-detect-to back-detect)))
     (cond
      ;;if in evil but not insert state
      ((sis--evil-not-insert-state-p)
