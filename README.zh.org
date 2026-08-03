@@ -243,7 +243,6 @@ english text<spc><RET>中文~ ，无需手动切换输入法。
 | ~sis-respect-restore-triggers~                  | 额外的恢复输入源的触发器                  | ~nil~                  |
 | ~sis-respect-minibuffer-triggers~               | 在迷你缓冲区中设置输入源的命令触发器      | 见变量文档             |
 | ~sis-prefix-override-keys~                      | 需要被适应的前缀键                        | ~'("C-c" "C-x" "C-h")~ |
-| ~sis-prefix-override-recap-triggers~            | 触发前缀覆盖重新捕获的函数                | 见变量文档             |
 | ~sis-prefix-override-buffer-disable-predicates~ | 用于禁用前缀覆盖的缓冲区谓词              | 见变量文档             |
 |-------------------------------------------------+-------------------------------------------+------------------------|
 

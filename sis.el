@@ -125,13 +125,6 @@ Set after the modes may have no effect.")
   (list "C-c" "C-x" "C-h" "C-r" "M-SPC")
   "Prefix keys to be overrided.")
 
-(defvar sis-prefix-override-recap-triggers
-  (list 'evil-local-mode 'yas-minor-mode)
-  "Commands trigger the recap of the prefix override.
-
-Some functions take precedence of the override, need to recap after.
-Set after the modes may have no effect.")
-
 (defvar sis-context-fixed nil
   "Context is fixed to a specific language in the /follow context mode/.
 
@@ -739,9 +732,6 @@ Possible values: \\='normal, \\='sequence.")
 (defvar sis--buffer-before-command nil
   "Current buffer before prefix.")
 
-(defvar sis--real-this-command nil
-  "Value of `this-command' before the current command runs.")
-
 (defvar sis--respect-post-cmd-timer nil
   "Timer to run after returning to command loop.")
 
@@ -822,27 +812,6 @@ Possible values: \\='normal, \\='sequence.")
     (define-key input-decode-map (car entry) (cdr entry)))
   (setq sis--prefix-override-saved-bindings nil))
 
-(defun sis--prefix-override-recap-do ()
-  "Recap prefix key override."
-  (sis--prefix-override-install))
-
-(defun sis--prefix-override-recap-advice (fn &rest args)
-  "Advice for FN of `prefix-override-recap-triggers' with ARGS."
-  (unwind-protect (apply fn args)
-    (sis--prefix-override-recap-do)))
-
-(defvar sis--prefix-override-help-fns
-  '(help--read-key-sequence describe-key describe-key-briefly)
-  "Functions advised to bypass the prefix override for key help.")
-
-(defun sis--prefix-override-help-advice (fn &rest args)
-  "Advice for FN reading or describing a key sequence with ARGS.
-
-The advice makes key sequences read and looked up as a whole, matching
-the default `describe-key' behavior."
-  (let ((sis--prefix-override-map-enable nil))
-    (apply fn args)))
-
 (defun sis--respect-focus-change-advice ()
   "Advice for `after-focus-change-function'."
   (if (frame-focus-state)
@@ -875,12 +844,11 @@ the default `describe-key' behavior."
 (defun sis--respect-pre-command-handler ()
   "Handler for `pre-command-hook' to preserve input source."
   (setq sis--buffer-before-command (current-buffer))
-  (setq sis--real-this-command this-command)
   (when sis-log-mode
     (message "pre@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
              sis--prefix-handle-stage
              (this-command-keys)
-             sis--real-this-command
+             this-command
              (current-buffer)
              sis--prefix-override-map-enable)))
 
@@ -915,7 +883,7 @@ the default `describe-key' behavior."
     (message "timer@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
              sis--prefix-handle-stage
              (this-command-keys)
-             sis--real-this-command
+             this-command
              (current-buffer)
              sis--prefix-override-map-enable))
 
@@ -951,8 +919,8 @@ the default `describe-key' behavior."
   (setq sis--prefix-handle-stage 'normal)
   (setq sis--respect-post-cmd-timer nil))
 
-(defsubst sis--to-normal-stage()
-  "Transite to normal stage."
+(defsubst sis--schedule-post-command-check ()
+  "Schedule respect-mode processing after the command loop settles."
   ;; for some command, after the command end,
   ;; the command loop may change the current buffer,
   ;; so delay the real processing.
@@ -962,12 +930,11 @@ the default `describe-key' behavior."
 
 (defun sis--respect-post-command-handler ()
   "Handler for `post-command-hook' to preserve input source."
-  ;; (setq this-command sis--real-this-command)
   (when sis-log-mode
     (message "post@[%s]: [%s]@key [%s]@cmd [%s]@buf [%s]@override."
              sis--prefix-handle-stage
              (this-command-keys)
-             sis--real-this-command
+             this-command
              (current-buffer)
              sis--prefix-override-map-enable))
   (pcase sis--prefix-handle-stage
@@ -977,10 +944,10 @@ the default `describe-key' behavior."
      (unless (minibufferp)
        (when sis-log-mode (message "Key sequence ended."))
        (setq sis--respect-force-restore t)
-       (sis--to-normal-stage)))
+       (sis--schedule-post-command-check)))
     ;; current is normal stage
     ('normal
-     (sis--to-normal-stage))))
+     (sis--schedule-post-command-check))))
 
 (defun sis--minibuffer-setup-handler ()
   "Handler for `minibuffer-setup-hook'."
@@ -1002,9 +969,7 @@ the default `describe-key' behavior."
   "Handler for `minibuffer-exit-hook'."
   (when sis-log-mode (message "exit minibuffer: [%s]@command" this-command))
   (setq sis--respect-force-restore t)
-  (unless sis--respect-post-cmd-timer
-    (setq sis--respect-post-cmd-timer
-          (run-with-timer 0 nil #'sis--respect-post-cmd-timer-fn))))
+  (sis--schedule-post-command-check))
 
 (defun sis--respect-evil ()
   "Respect evil."
@@ -1067,15 +1032,7 @@ the default `describe-key' behavior."
          (advice-add trigger :around #'sis--respect-restore-advice))
 
        (setq sis--prefix-override-map-enable t)
-       (sis--prefix-override-install)
-       (dolist (trigger sis-prefix-override-recap-triggers)
-         (advice-add trigger :around
-                     #'sis--prefix-override-recap-advice))
-
-       ;; keep default behavior when a command reads or describes a key
-       ;; sequence for help, e.g. `describe-key' (C-h k)
-       (dolist (fn sis--prefix-override-help-fns)
-         (advice-add fn :around #'sis--prefix-override-help-advice)))))
+       (sis--prefix-override-install))))
    ;; turn off the mode
    ((not sis-global-respect-mode)
     (sis--try-disable-auto-refresh-mode)
@@ -1106,11 +1063,7 @@ the default `describe-key' behavior."
 
     ;; for prefix key
     (sis--prefix-override-uninstall)
-    (setq sis--prefix-override-map-enable nil)
-    (dolist (trigger sis-prefix-override-recap-triggers)
-      (advice-remove trigger #'sis--prefix-override-recap-advice))
-    (dolist (fn sis--prefix-override-help-fns)
-      (advice-remove fn #'sis--prefix-override-help-advice)))))
+    (setq sis--prefix-override-map-enable nil))))
 
 (defun sis--try-disable-auto-refresh-mode ()
   "Try to disable auto refresh mode."
