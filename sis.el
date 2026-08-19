@@ -27,6 +27,7 @@
 ;;For more information see the README in the GitHub repo.
 
 ;;; Code:
+(require 'cl-lib)
 (require 'subr-x)
 
 (defgroup sis nil
