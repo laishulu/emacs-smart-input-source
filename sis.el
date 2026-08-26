@@ -162,8 +162,8 @@ Each detector should:
   "Hooks trigger the set of input source following context.")
 
 (defvar sis-context-triggers
-  (list '('+org/insert-item-below 'sis--context-line nil)
-        '('+org/insert-item-above 'sis--context-line nil))
+  '((+org/insert-item-below sis--context-line nil)
+    (+org/insert-item-above sis--context-line nil))
   "Commands trigger the set of input source following context.
 
 Each trigger should be a list: (FN PRE-FN-DETECTOR POST-FN-DETECTOR).
@@ -182,8 +182,6 @@ Each trigger should be a list: (FN PRE-FN-DETECTOR POST-FN-DETECTOR).
     - \\='other: other language context.
 Input source will be switched to (or (PRE-FN-DETECTOR) (POST-FN-DETECTOR)) after
 FN is invoked.")
-
-(defvar sis--context-triggers-adviced nil "Context triggers adviced.")
 
 (defvar sis-inline-english-activated-hook nil
   "Hook to run after inline english region activated.")
@@ -1250,6 +1248,8 @@ If POSITION is not provided, then default to be the current position."
 
     context))
 
+(defvar sis--context-triggers-adviced nil "Context triggers adviced.")
+
 ;;;###autoload
 (define-minor-mode sis-context-mode
   "Switch input source smartly according to context."
@@ -1266,26 +1266,30 @@ If POSITION is not provided, then default to be the current position."
      (unless sis--context-triggers-adviced
        (setq sis--context-triggers-adviced t)
        (dolist (trigger sis-context-triggers)
-         (let* ((trigger-fn (nth 0 trigger))
-                (pre-detector (nth 1 trigger))
-                (post-detector (nth 2 trigger))
+         ;; Normalize legacy configs: remove extra `quote` if user configured it as '('fn 'pre 'post)
+         (let* ((raw-fn (nth 0 trigger))
+                (raw-pre (nth 1 trigger))
+                (raw-post (nth 2 trigger))
+                (trigger-fn (if (eq (car-safe raw-fn) 'quote) (cadr raw-fn) raw-fn))
+                (pre-detector (if (eq (car-safe raw-pre) 'quote) (cadr raw-pre) raw-pre))
+                (post-detector (if (eq (car-safe raw-post) 'quote) (cadr raw-post) raw-post))
                 (advice-name (format "sis--context-trigger-advice-%s"
-                                     (symbol-name (eval trigger-fn)))))
-           ;; dynamically create the advice
+                                     (symbol-name trigger-fn))))
+           ;; Dynamically create the advice using Lexical Closure instead of eval & backquote
            (defalias (intern advice-name)
-             `(lambda (fn &rest args)
-                (if sis-context-mode
-                    (let ((pre-context (and (functionp ,pre-detector)
-                                            (funcall ,pre-detector)))
-                          (res (apply fn args))
-                          (post-context (and (functionp ,post-detector)
-                                             (funcall ,post-detector))))
-                      (sis--set (or pre-context post-context))
-                      res)
-                  (apply fn args))))
+             (lambda (fn &rest args)
+               (if sis-context-mode
+                   (let ((pre-context (and (functionp pre-detector)
+                                           (funcall pre-detector)))
+                         (res (apply fn args))
+                         (post-context (and (functionp post-detector)
+                                            (funcall post-detector))))
+                     (sis--set (or pre-context post-context))
+                     res)
+                 (apply fn args))))
            ;; Add special property to the advice, so it can be easily removed
            (put (intern advice-name) 'sis--context-trigger-advice t)
-           (advice-add (eval trigger-fn) :around (intern advice-name)))))))
+           (advice-add trigger-fn :around (intern advice-name)))))))
    ;; turn off the mode
    ((not sis-context-mode)
     (dolist (buf (buffer-list))
@@ -1293,12 +1297,14 @@ If POSITION is not provided, then default to be the current position."
         (dolist (hook sis-context-hooks)
           (remove-hook hook #'sis-context nil))))
     (dolist (trigger sis-context-triggers)
-      (let ((trigger-fn (eval (nth 0 trigger))))
+      ;; Also handle potential extra quotes during teardown
+      (let* ((raw-fn (nth 0 trigger))
+             (trigger-fn (if (eq (car-safe raw-fn) 'quote) (cadr raw-fn) raw-fn)))
         ;; delete advices with property of 'sis--context-trigger-advice
         (advice-mapc (lambda (advice _)
                        (when (get advice 'sis--context-trigger-advice)
                          (advice-remove trigger-fn advice)
-                         (unintern advice nil)))
+                         (unintern (symbol-name advice) nil)))
                      trigger-fn)))
     (setq sis--context-triggers-adviced nil))))
 
