@@ -79,7 +79,7 @@ Set after the modes may have no effect.")
 (defvar sis-default-cursor-color nil
   "Default cursor color, used for English.
 
-nil means obtained from the envrionment.")
+nil means obtained from the environment.")
 
 (defvar sis-other-cursor-color "green"
   "Cursor color for other language.")
@@ -124,7 +124,7 @@ Set after the modes may have no effect.")
 
 (defvar sis-prefix-override-keys
   (list "C-c" "C-x" "C-h" "C-r" "M-SPC")
-  "Prefix keys to be overrided.")
+  "Prefix keys to be overriden.")
 
 (defvar sis-context-fixed nil
   "Context is fixed to a specific language in the /follow context mode/.
@@ -617,7 +617,7 @@ TYPE: TYPE can be \\='native, \\='w32, \\='emp, \\='macism, \\='im-select,
 
 ;;;###autoload
 (define-minor-mode sis-auto-refresh-mode
-  "Automaticly refresh input source."
+  "Automatically refresh input source."
   :global t
   :init-value nil
   :group 'sis
@@ -693,6 +693,12 @@ way."
        (send-string-to-terminal
         (format "\e]12;%s\a" sis-other-cursor-color))))))
 
+(defun sis--reset-tty-cursor-color (&optional frame)
+  "Reset terminal cursor color to default when terminal FRAME is closed."
+  (unless (display-graphic-p frame)
+    ;; Send OSC 112 to reset the cursor color in terminals like st or xterm
+    (send-string-to-terminal "\e]112\a" (frame-terminal frame))))
+
 ;;;###autoload
 (define-minor-mode sis-global-cursor-color-mode
   "Automaticly change cursor color according to input source."
@@ -702,21 +708,26 @@ way."
   (cond
    ;; turn on the mode
    (sis-global-cursor-color-mode
-
     ;; auto refresh input source
     (unless (eq sis--ism 'native)
       (sis--try-enable-auto-refresh-mode))
     (add-hook 'enable-theme-functions #'sis--reset-default-cursor-color)
     (add-hook 'disable-theme-functions #'sis--reset-default-cursor-color)
     (advice-add 'set-cursor-color :filter-args #'sis--set-cursor-color-advice)
-    (add-hook 'sis-change-hook #'sis--update-cursor-color))
+    (add-hook 'sis-change-hook #'sis--update-cursor-color)
+    ;; Reset TTY cursor color when a frame is closed to prevent color bleed
+    (add-hook 'delete-frame-functions #'sis--reset-tty-cursor-color))
    ;; turn off the mode
    ((not sis-global-cursor-color-mode)
     (sis--try-disable-auto-refresh-mode)
     (remove-hook 'enable-theme-functions #'sis--reset-default-cursor-color)
     (remove-hook 'disable-theme-functions #'sis--reset-default-cursor-color)
     (advice-remove 'set-cursor-color #'sis--set-cursor-color-advice)
-    (remove-hook 'sis-change-hook #'sis--update-cursor-color))))
+    (remove-hook 'sis-change-hook #'sis--update-cursor-color)
+    ;; Remove hook and force reset across all existing TTY frames
+    (remove-hook 'delete-frame-functions #'sis--reset-tty-cursor-color)
+    (dolist (f (frame-list))
+      (sis--reset-tty-cursor-color f)))))
 
 ;;
 ;; Following codes are mainly about respect mode
@@ -796,21 +807,31 @@ Possible values: \\='normal, \\='sequence.")
                    sis--for-buffer sis-english-source)))
       translated-key)))
 
-(defun sis--prefix-override-install ()
-  "Install prefix override translations."
-  (unless sis--prefix-override-saved-bindings
+(defun sis--prefix-override-install (&optional frame)
+  "Install prefix override translations for FRAME (or selected frame)."
+  (with-selected-frame (or frame (selected-frame))
     (dolist (prefix sis-prefix-override-keys)
       (let* ((key (kbd prefix))
              (binding (lookup-key input-decode-map key)))
-        (push (cons key (unless (numberp binding) binding))
-              sis--prefix-override-saved-bindings)
+        ;; Save the original binding on the first run across frames
+        (unless (assoc key sis--prefix-override-saved-bindings)
+          (push (cons key (unless (numberp binding) binding))
+                sis--prefix-override-saved-bindings))
+        ;; Bind translation to the terminal-local input-decode-map
         (define-key input-decode-map key
           (sis--prefix-override-make-translation key))))))
 
 (defun sis--prefix-override-uninstall ()
-  "Restore input-decode bindings replaced by respect mode."
-  (dolist (entry sis--prefix-override-saved-bindings)
-    (define-key input-decode-map (car entry) (cdr entry)))
+  "Restore input-decode bindings replaced by respect mode across all terminals."
+  (dolist (terminal (terminal-list))
+    ;; Ensure the terminal is still active before manipulating its keymap
+    (when (terminal-live-p terminal)
+      ;; Retrieve an active frame belonging to this specific terminal
+      (let ((terminal-frame (car (frames-on-display-list terminal))))
+        (when terminal-frame
+          (with-selected-frame terminal-frame
+            (dolist (entry sis--prefix-override-saved-bindings)
+              (define-key input-decode-map (car entry) (cdr entry))))))))
   (setq sis--prefix-override-saved-bindings nil))
 
 (defun sis--respect-focus-change-advice ()
@@ -1033,7 +1054,8 @@ Possible values: \\='normal, \\='sequence.")
          (advice-add trigger :around #'sis--respect-restore-advice))
 
        (setq sis--prefix-override-map-enable t)
-       (sis--prefix-override-install))))
+       (sis--prefix-override-install)
+       (add-hook 'after-make-frame-functions #'sis--prefix-override-install))))
    ;; turn off the mode
    ((not sis-global-respect-mode)
     (sis--try-disable-auto-refresh-mode)
@@ -1064,6 +1086,7 @@ Possible values: \\='normal, \\='sequence.")
 
     ;; for prefix key
     (sis--prefix-override-uninstall)
+    (remove-hook 'after-make-frame-functions #'sis--prefix-override-install)
     (setq sis--prefix-override-map-enable nil))))
 
 (defun sis--try-disable-auto-refresh-mode ()
@@ -1216,7 +1239,7 @@ If POSITION is not provided, then default to be the current position."
       'english))))
 
 (defun sis--context-guess ()
-  "Guest the lang context for the current point."
+  "Guess the lang context for the current point."
   (let* ((back-detect (sis--back-detect-chars))
          (fore-detect (sis--fore-detect-chars))
          (context nil))
