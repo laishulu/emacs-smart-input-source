@@ -264,11 +264,12 @@ Note:
 |--------------------------+------------------------------------------------------------|
 
 ** About /cursor color mode/
-| Variable                   | Description                                 | Default                  |
-|----------------------------+---------------------------------------------+--------------------------|
-| ~sis-default-cursor-color~ | Default cursor color, also used for English | ~nil~ (from envrionment) |
-| ~sis-other-cursor-color~   | Cursor color for other input source         | ~green~                  |
-|----------------------------+---------------------------------------------+--------------------------|
+| Variable                        | Description                                             | Default                  |
+|---------------------------------+---------------------------------------------------------+--------------------------|
+| ~sis-default-cursor-color~      | Default cursor color, also used for English             | ~nil~ (from envrionment) |
+| ~sis-other-cursor-color~        | Cursor color for other input source                     | ~green~                  |
+| ~sis-cursor-color-restore-hook~ | Restore editor cursor color for English (modal editors) | ~nil~                    |
+|---------------------------------+---------------------------------------------------------+--------------------------|
 
 ** About /respect mode/
 | Variable                                        | Description                                            | Default                |
