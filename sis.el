@@ -170,7 +170,7 @@ Each detector should:
   "Aggressively detect context across blank lines.")
 
 (defvar sis-context-hooks
-  '(evil-insert-state-entry-hook)
+  '(evil-insert-state-entry-hook meow-insert-enter-hook)
   "Hooks trigger the set of input source following context.")
 
 (defvar sis-context-triggers
@@ -274,6 +274,8 @@ custom function: the cursor will be moved to the end of the inline region, and
                   "ext:evil-states.el" (&optional state) t)
 (declare-function evil-refresh-cursor "ext:evil-common.el"
                   (&optional state buffer) t)
+(declare-function meow-update-display "meow-util" ())
+(declare-function meow-insert-mode-p "meow-util" ())
 (declare-function company--active-p "ext:company.el" () t)
 (declare-function company-complete-selection "ext:company.el" () t)
 (declare-function mac-input-source "ext:macfns.c" (&optional SOURCE FORMAT) t)
@@ -283,6 +285,7 @@ custom function: the cursor will be moved to the end of the inline region, and
 (declare-function w32-set-ime-open-status "ext:w32fns.c" (status) t)
 (defvar transient--showp)
 (defvar evil-normal-state-map)
+(defvar meow-mode)
 
 (defun sis--do-nothing-advice (&rest _)
   "Advice to make existing function do nothing.")
@@ -686,7 +689,9 @@ Called when `sis-global-cursor-color-mode' is enabled and again at
 `after-init-hook', so modal editors loaded after sis still get their restore
 function registered."
   (when (featurep 'evil)
-    (add-hook 'sis-cursor-color-restore-hook #'evil-refresh-cursor)))
+    (add-hook 'sis-cursor-color-restore-hook #'evil-refresh-cursor))
+  (when (featurep 'meow)
+    (add-hook 'sis-cursor-color-restore-hook #'meow-update-display)))
 
 (defun sis--update-cursor-color()
   "Update cursor color according to input source."
@@ -753,6 +758,7 @@ function registered."
     (advice-remove 'set-cursor-color #'sis--set-cursor-color-advice)
     (remove-hook 'sis-change-hook #'sis--update-cursor-color)
     (remove-hook 'sis-cursor-color-restore-hook #'evil-refresh-cursor)
+    (remove-hook 'sis-cursor-color-restore-hook #'meow-update-display)
     (remove-hook 'after-init-hook #'sis--setup-cursor-color-restore)
     ;; Remove hook and force reset across all existing TTY frames
     (remove-hook 'delete-frame-functions #'sis--reset-tty-cursor-color)
@@ -1039,6 +1045,11 @@ Possible values: \\='normal, \\='sequence.")
       (define-key evil-normal-state-map
                   (kbd "<escape>") #'sis-set-english))))
 
+(defun sis--respect-meow ()
+  "Respect meow."
+  (when (featurep 'meow)
+    (add-hook 'meow-insert-exit-hook #'sis-set-english)))
+
 ;;;###autoload
 (define-minor-mode sis-global-respect-mode
   "Respect buffer/mode by proper input source.
@@ -1065,6 +1076,11 @@ Possible values: \\='normal, \\='sequence.")
      (sis--respect-evil)
      ;; in case `evil' is loaded after `sis'
      (add-hook 'after-init-hook #'sis--respect-evil)
+
+     ;; respect meow
+     (sis--respect-meow)
+     ;; in case `meow' is loaded after `sis'
+     (add-hook 'after-init-hook #'sis--respect-meow)
 
      (when sis-respect-prefix-and-buffer
        ;; preserve buffer input source
@@ -1097,6 +1113,11 @@ Possible values: \\='normal, \\='sequence.")
       (advice-remove 'ad-Advice-toggle-input-method #'sis--original-advice)
       (when sis-respect-evil-normal-escape
         (define-key evil-normal-state-map (kbd "<escape>") nil)))
+
+    ;; for meow
+    (when (featurep 'meow)
+      (remove-hook 'meow-insert-exit-hook #'sis-set-english))
+    (remove-hook 'after-init-hook #'sis--respect-meow)
 
     ;; preserve buffer input source
     (remove-hook 'pre-command-hook #'sis--respect-pre-command-handler)
@@ -1408,12 +1429,23 @@ If POSITION is not provided, then default to be the current position."
            (evil-motion-state-p)
            (evil-operator-state-p))))
 
+(defsubst sis--meow-not-insert-state-p ()
+  "In Meow but not at insert state."
+  (and (featurep 'meow)
+       (bound-and-true-p meow-mode)
+       (not (meow-insert-mode-p))))
+
+(defsubst sis--modal-not-insert-state-p ()
+  "In a modal editor but not at insert state."
+  (or (sis--evil-not-insert-state-p)
+      (sis--meow-not-insert-state-p)))
+
 (defsubst sis--inline-effect-space-inserted-p ()
   "An effective space is inserted."
   (and sis-inline-mode
        (not (overlayp sis--inline-overlay))
        (not (button-at (point)))
-       (not (sis--evil-not-insert-state-p))
+       (not (sis--modal-not-insert-state-p))
        ;; around char is <spc> <DBC spc>
        (memq (preceding-char) (list ?\s 12288))))
 
@@ -1536,8 +1568,8 @@ START: start position of the inline region."
   (let* ((back-detect (sis--back-detect-chars))
          (back-to (sis-back-detect-to back-detect)))
     (cond
-     ;;if in evil but not insert state
-     ((sis--evil-not-insert-state-p)
+     ;;if in a modal editor but not insert state
+     ((sis--modal-not-insert-state-p)
       (sis-set-english))
      ;;if cursor is not at the end of the overlay
      ((and sis-context-mode
