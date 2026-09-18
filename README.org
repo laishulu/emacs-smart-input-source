@@ -10,7 +10,8 @@ in ~Emacs~, works for both native and OS input source (input method).
 - A global mode: ~sis-global-respect-mode~ to respect buffer/mode
   by proper input source
   1. Respect start: start Emacs with specified language.
-  2. Respect ~evil~: switch to English when leaving ~evil~ ~insert~ mode.
+  2. Respect ~evil~/~meow~: switch to English when leaving ~evil~/~meow~
+     ~insert~ mode.
   3. Respect ~minibuffer~: switch to English when enter ~minibuffer~.
   4. Respect prefix key: switch to English for ~C-c~ / ~C-x~ / ~C-h~ and more.
   5. Respect buffer: recover buffer input source when it regain focus.
@@ -18,7 +19,7 @@ in ~Emacs~, works for both native and OS input source (input method).
   according to context. It also has a global version ~sis-global-context-mode~
   to enable the mode for all buffers. When to switch input source according to
   context can be configured easily by a variable, whose default value
-  indicates when entering ~evil~ insert mode.
+  indicates when entering ~evil~ / ~meow~ insert mode.
 - A buffer local mode: ~sis-inline-mode~ to enable the
   automatically triggering of a temporary overlay to input English/other
   language and then back to original input source without switching input
@@ -36,7 +37,8 @@ in ~Emacs~, works for both native and OS input source (input method).
 5. Automatically change cursor color according to current input source.
 6. Respect buffer/mode by proper input source:
    1) Respect start: start Emacs with specified language.
-   2) Respect ~evil~: switch to English when leaving ~evil~ ~insert~ mode.
+   2) Respect ~evil~/~meow~: switch to English when leaving ~evil~/~meow~
+      ~insert~ mode.
    3) Respect ~minibuffer~: switch to English when enter ~minibuffer~.
    4) Respect prefix key: switch to English for ~C-c~ / ~C-x~ / ~C-h~ and more.
    5) Respect buffer: recover buffer input source when it regain focus.
@@ -55,7 +57,7 @@ in ~Emacs~, works for both native and OS input source (input method).
       and tail respectively (if exists) of the region will be deleted. But if
       the whole region is blank, the no character will be deleted.
 8. Switch input source according to context:
-   1) Pre-configured for entering evil insert mode.
+   1) Pre-configured for entering evil / meow insert mode.
    2) For native emacs user, you can configure by easily set a variable.
 9. Input source switching rules are designed carefully, for pure English
    editing, input source will never be switched to other languages.
