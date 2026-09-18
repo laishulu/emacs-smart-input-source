@@ -84,6 +84,18 @@ nil means obtained from the environment.")
 (defvar sis-other-cursor-color "green"
   "Cursor color for other language.")
 
+(defvar sis-cursor-color-restore-hook nil
+  "Hook run to restore the editor's cursor color when English is active.
+
+Functions are called with no arguments and should re-apply the cursor color
+of the current editing state.  Modal editing packages such as evil and meow
+can add their cursor-refresh function here, so that
+`sis-global-cursor-color-mode' only recolors the insert-state cursor for the
+/other/ input source and leaves every other state's color to the editor.
+
+When this hook is nil, `sis-global-cursor-color-mode' falls back to
+`sis-default-cursor-color'.")
+
 (defvar sis-respect-start 'english
   "Switch to specific input source when the /respect mode/ is enabled.")
 
@@ -260,6 +272,8 @@ custom function: the cursor will be moved to the end of the inline region, and
 (declare-function evil-motion-state-p "ext:evil-states.el" (&optional state) t)
 (declare-function evil-operator-state-p
                   "ext:evil-states.el" (&optional state) t)
+(declare-function evil-refresh-cursor "ext:evil-common.el"
+                  (&optional state buffer) t)
 (declare-function company--active-p "ext:company.el" () t)
 (declare-function company-complete-selection "ext:company.el" () t)
 (declare-function mac-input-source "ext:macfns.c" (&optional SOURCE FORMAT) t)
@@ -653,17 +667,26 @@ TYPE: TYPE can be \\='native, \\='w32, \\='emp, \\='macism, \\='im-select,
     (setq sis-default-cursor-color nil))
 
 (defun sis--set-cursor-color-advice (color)
-  "Advice for FN of `set-cursor-color' with COLOR.
+  "Advice for `set-cursor-color' with COLOR.
 
-The advice is needed, because other packages may set cursor color in their own
-way."
+While the /other/ input source is active, keep the cursor on
+`sis-other-cursor-color'.  While English is active, leave COLOR untouched so
+modal editors such as evil and meow can keep painting their per-state cursor
+colors."
   (pcase sis--current
-    ('english
-     (list sis-default-cursor-color))
     ('other
      (list sis-other-cursor-color))
     (_
      color)))
+
+(defun sis--setup-cursor-color-restore ()
+  "Register modal editors' cursor-color restore functions.
+
+Called when `sis-global-cursor-color-mode' is enabled and again at
+`after-init-hook', so modal editors loaded after sis still get their restore
+function registered."
+  (when (featurep 'evil)
+    (add-hook 'sis-cursor-color-restore-hook #'evil-refresh-cursor)))
 
 (defun sis--update-cursor-color()
   "Update cursor color according to input source."
@@ -676,17 +699,20 @@ way."
               "white")))
   ;; for GUI
   (when (display-graphic-p)
-    ;;
-    ;;actually which color passed to the function does not matter,
-    ;; the advice will take care of it.
-    (set-cursor-color sis-default-cursor-color))
+    (if (eq sis--current 'other)
+        (set-cursor-color sis-other-cursor-color)
+      (if sis-cursor-color-restore-hook
+          (run-hooks 'sis-cursor-color-restore-hook)
+        (set-cursor-color sis-default-cursor-color))))
 
   ;; for TUI
   (unless (display-graphic-p)
     (pcase sis--current
       ('english
-       (send-string-to-terminal
-        (format "\e]12;%s\a" sis-default-cursor-color)))
+       (if sis-cursor-color-restore-hook
+           (run-hooks 'sis-cursor-color-restore-hook)
+         (send-string-to-terminal
+          (format "\e]12;%s\a" sis-default-cursor-color))))
       ('other
        (send-string-to-terminal
         (format "\e]12;%s\a" sis-other-cursor-color))))))
@@ -713,6 +739,10 @@ way."
     (add-hook 'disable-theme-functions #'sis--reset-default-cursor-color)
     (advice-add 'set-cursor-color :filter-args #'sis--set-cursor-color-advice)
     (add-hook 'sis-change-hook #'sis--update-cursor-color)
+    ;; Leave modal editors' per-state cursor colors intact: only the /other/
+    ;; input source recolors the cursor.
+    (sis--setup-cursor-color-restore)
+    (add-hook 'after-init-hook #'sis--setup-cursor-color-restore)
     ;; Reset TTY cursor color when a frame is closed to prevent color bleed
     (add-hook 'delete-frame-functions #'sis--reset-tty-cursor-color))
    ;; turn off the mode
@@ -722,6 +752,8 @@ way."
     (remove-hook 'disable-theme-functions #'sis--reset-default-cursor-color)
     (advice-remove 'set-cursor-color #'sis--set-cursor-color-advice)
     (remove-hook 'sis-change-hook #'sis--update-cursor-color)
+    (remove-hook 'sis-cursor-color-restore-hook #'evil-refresh-cursor)
+    (remove-hook 'after-init-hook #'sis--setup-cursor-color-restore)
     ;; Remove hook and force reset across all existing TTY frames
     (remove-hook 'delete-frame-functions #'sis--reset-tty-cursor-color)
     (dolist (f (frame-list))
