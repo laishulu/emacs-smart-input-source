@@ -93,7 +93,11 @@ can add their cursor-refresh function here, so that
 `sis-global-cursor-color-mode' only recolors the insert-state cursor for the
 /other/ input source and leaves every other state's color to the editor.
 
-When this hook is nil, `sis-global-cursor-color-mode' falls back to
+On graphical frames, `sis-default-cursor-color' is restored before running
+this hook, so faces inheriting from `cursor' do not retain the other color.
+The hook can then apply the editor's per-state color.
+
+When this hook is nil, `sis-global-cursor-color-mode' uses
 `sis-default-cursor-color'.")
 
 (defvar sis-respect-start 'english
@@ -706,9 +710,10 @@ function registered."
   (when (display-graphic-p)
     (if (eq sis--current 'other)
         (set-cursor-color sis-other-cursor-color)
-      (if sis-cursor-color-restore-hook
-          (run-hooks 'sis-cursor-color-restore-hook)
-        (set-cursor-color sis-default-cursor-color))))
+      ;; Modal cursor faces may inherit `cursor', recolored above for other.
+      ;; Restore the English base before the editor reads those faces.
+      (set-cursor-color sis-default-cursor-color)
+      (run-hooks 'sis-cursor-color-restore-hook)))
 
   ;; for TUI
   (unless (display-graphic-p)
