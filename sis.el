@@ -89,16 +89,15 @@ nil means obtained from the environment.")
 
 Functions are called with no arguments and should re-apply the cursor color
 of the current editing state.  Modal editing packages such as evil and meow
-can add their cursor-refresh function here, so that
-`sis-global-cursor-color-mode' only recolors the insert-state cursor for the
-/other/ input source and leaves every other state's color to the editor.
+can add their cursor-refresh function here, so that SIS only recolors the
+insert-state cursor for the /other/ input source and leaves every other
+state's color to the editor.
 
 On graphical frames, `sis-default-cursor-color' is restored before running
 this hook, so faces inheriting from `cursor' do not retain the other color.
 The hook can then apply the editor's per-state color.
 
-When this hook is nil, `sis-global-cursor-color-mode' uses
-`sis-default-cursor-color'.")
+When this hook is nil, SIS uses `sis-default-cursor-color'.")
 
 (defvar sis-respect-start 'english
   "Switch to specific input source when the /respect mode/ is enabled.")
@@ -689,7 +688,7 @@ colors."
 (defun sis--setup-cursor-color-restore ()
   "Register modal editors' cursor-color restore functions.
 
-Called when `sis-global-cursor-color-mode' is enabled and again at
+Called by the command `sis-global-cursor-color-mode' on enable and again at
 `after-init-hook', so modal editors loaded after sis still get their restore
 function registered."
   (when (featurep 'evil)
@@ -1244,11 +1243,12 @@ If POSITION is not provided, then default to be the current position."
      ;; [not english][blank or not][^][blank or not][other lang]
      ((and (sis--not-english-p back-char) (sis--other-p fore-char))
       t)
-     ;; [other lang: to the previous line][blank][^]
+     ;; [other lang: to the previous line][blank][^][blank][not english]
      ((and (or sis-context-aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
-           (sis--other-p cross-line-back-char))
+           (sis--other-p cross-line-back-char)
+           (sis--not-english-p fore-char))
       t))))
 
 (defun sis--context-english-p (back-detect fore-detect &optional position)
@@ -1276,11 +1276,12 @@ If POSITION is not provided, then default to be the current position."
      ;; [not other][blank or not][^][blank or not][english]
      ((and (sis--not-other-p back-char) (sis--english-p fore-char))
       t)
-     ;; [english: to the previous line][blank][^]
+     ;; [english: to the previous line][blank][^][blank][not other]
      ((and (or sis-context-aggressive-line
                (> cross-line-back-to (line-beginning-position 0)))
            (< cross-line-back-to (line-beginning-position))
-           (sis--english-p cross-line-back-char))
+           (sis--english-p cross-line-back-char)
+           (sis--not-other-p fore-char))
       t))))
 
 (defun sis--context-line ()

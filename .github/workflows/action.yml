@@ -22,12 +22,14 @@ jobs:
         ignore_warnings:
           - true
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
       - uses: purcell/setup-emacs@master
         with:
           version: ${{ matrix.emacs_version }}
-      - name: Run cursor regression tests
-        run: emacs -Q --batch -L . -l test/sis-cursor-test.el -f ert-run-tests-batch-and-exit
+      - name: Run regression tests
+        run: >-
+          emacs -Q --batch -L . -l test/sis-cursor-test.el -l test/sis-context-test.el
+          -f ert-run-tests-batch-and-exit
       - uses: leotaku/elisp-check@master
         with:
           check: melpa
